@@ -39,11 +39,20 @@ realidad aumentada es lo importante, hay que ir por la ruta TWA descrita en
 ## Publicarlo
 
 Vale cualquier alojamiento estático servido por **HTTPS** (la cámara y el
-service worker no funcionan por HTTP). Con GitHub Pages:
+service worker no funcionan por HTTP).
 
-1. **Settings → Pages → Deploy from a branch**, rama `main`, carpeta `/ (root)`.
-2. Esperar a que salga la URL `https://USUARIO.github.io/REPOSITORIO/`.
-3. Abrirla en el móvil y, en el menú de Chrome, **Añadir a pantalla de inicio**.
+En este repositorio ya está puesto: cada empujón a `main` dispara
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml), que activa
+GitHub Pages si hiciera falta y publica la raíz del repositorio en
+
+    https://shaggy2983.github.io/Visor-de-obra/
+
+Ábrela en el móvil y, en el menú de Chrome, **Añadir a pantalla de inicio**.
+A partir de ahí arranca como una aplicación y funciona sin cobertura.
+
+Si el flujo falla al activar Pages —algunos repositorios no dejan que un
+workflow lo haga—, basta con entrar una vez a **Settings → Pages** y elegir
+como origen **GitHub Actions**. Después vuelve a funcionar solo.
 
 ## Incluir un modelo dentro de la app
 

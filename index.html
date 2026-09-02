@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>E04 · Modelo de obra</title>
+<meta name="description" content="Visor IFC de campo con realidad aumentada">
+<meta name="theme-color" content="#12161a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icono-192.png">
+<link rel="apple-touch-icon" href="./icono-192.png">
+<link rel="stylesheet" href="./css/estilos.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/three.module.min.js",
+    "three/addons/": "./vendor/three/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="lienzo-caja">
+  <canvas id="lienzo"></canvas>
+</div>
+
+<header class="barra-superior">
+  <h1 class="titulo">E04 · Modelo</h1>
+  <div class="acciones">
+    <button id="btn-abrir" class="boton" title="Abrir un archivo IFC del teléfono">Abrir IFC</button>
+    <button id="btn-ar" class="boton boton-destacado" disabled>Ver en obra</button>
+  </div>
+  <input type="file" id="entrada-ifc" accept=".ifc,.IFC,application/x-step" hidden>
+</header>
+
+<aside id="panel" class="panel" hidden>
+  <div class="panel-pestanas" role="tablist">
+    <button class="pestana activa" data-hoja="hoja-filtros" role="tab">Filtros</button>
+    <button class="pestana" data-hoja="hoja-buscar" role="tab">Buscar</button>
+    <button class="pestana" data-hoja="hoja-propiedades" role="tab">Propiedades</button>
+    <button id="btn-cerrar-panel" class="pestana pestana-cerrar" title="Cerrar panel">✕</button>
+  </div>
+
+  <section id="hoja-filtros" class="hoja activa">
+    <div class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Plantas</h2>
+        <button class="enlace" data-todo="plantas">Todas</button>
+      </div>
+      <div id="lista-plantas" class="lista"></div>
+    </div>
+    <div class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Categorías</h2>
+        <button class="enlace" data-todo="categorias">Todas</button>
+      </div>
+      <div id="lista-categorias" class="lista"></div>
+    </div>
+    <div class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Corte horizontal</h2>
+        <button class="enlace" id="btn-corte-apagar">Quitar</button>
+      </div>
+      <input type="range" id="corte" min="0" max="1000" value="1000" class="deslizador">
+      <p class="pie" id="corte-texto">Sin corte</p>
+    </div>
+  </section>
+
+  <section id="hoja-buscar" class="hoja">
+    <input type="search" id="entrada-buscar" class="campo" placeholder="Nombre, tipo o GUID…" autocomplete="off">
+    <div id="resultados" class="lista"></div>
+  </section>
+
+  <section id="hoja-propiedades" class="hoja">
+    <div id="propiedades" class="propiedades">
+      <p class="vacio">Toca un elemento del modelo para ver sus datos.</p>
+    </div>
+  </section>
+</aside>
+
+<nav class="barra-inferior">
+  <button id="btn-panel" class="boton-icono" disabled><span>☰</span>Panel</button>
+  <button id="btn-encuadrar" class="boton-icono" disabled><span>⛶</span>Encuadrar</button>
+  <button id="btn-aislar" class="boton-icono" disabled><span>◎</span>Aislar</button>
+  <button id="btn-ocultar" class="boton-icono" disabled><span>◌</span>Ocultar</button>
+  <button id="btn-todo" class="boton-icono" disabled><span>⟳</span>Todo</button>
+</nav>
+
+<div id="aviso" class="aviso" hidden></div>
+
+<div id="portada" class="portada">
+  <div class="portada-caja">
+    <h2>Visor de obra E04</h2>
+    <p id="portada-texto">Abre un archivo IFC para empezar. Queda guardado en el teléfono
+       y la próxima vez se abre solo, aunque no haya señal.</p>
+    <button id="btn-abrir-2" class="boton boton-destacado grande">Abrir archivo IFC</button>
+    <button id="btn-ejemplo" class="enlace">o ver un modelo de ejemplo</button>
+    <p class="pie" id="estado-ar">Comprobando la realidad aumentada…</p>
+  </div>
+</div>
+
+<div id="cargando" class="cargando" hidden>
+  <div class="cargando-caja">
+    <p id="cargando-texto">Leyendo el modelo…</p>
+    <div class="barra-progreso"><div id="progreso"></div></div>
+    <p class="pie" id="cargando-pie">Los modelos grandes pueden tardar un par de minutos.</p>
+  </div>
+</div>
+
+<div id="capa-ar" class="capa-ar" hidden>
+  <div class="ar-superior">
+    <p id="ar-mensaje" class="ar-mensaje">Apunta al suelo y mueve el teléfono despacio.</p>
+    <button id="ar-salir" class="boton ar-salir">Salir</button>
+  </div>
+  <div id="ar-ficha" class="ar-ficha" hidden></div>
+  <div class="ar-inferior">
+    <div class="ar-escalas">
+      <button class="boton ar-escala activa" data-escala="1">1:1</button>
+      <button class="boton ar-escala" data-escala="0.05">1:20</button>
+      <button class="boton ar-escala" data-escala="0.02">1:50</button>
+      <button class="boton ar-escala" data-escala="0.01">1:100</button>
+    </div>
+    <div class="ar-controles">
+      <button class="boton" id="ar-girar-izq">↺</button>
+      <button class="boton" id="ar-bajar">▼</button>
+      <button class="boton" id="ar-subir">▲</button>
+      <button class="boton" id="ar-girar-der">↻</button>
+      <button class="boton" id="ar-recolocar">Recolocar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

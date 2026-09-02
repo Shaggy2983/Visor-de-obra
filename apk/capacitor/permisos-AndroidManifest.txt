@@ -1,0 +1,56 @@
+AJUSTES PARA android\app\src\main\AndroidManifest.xml
+=====================================================
+
+1) PERMISOS — pegar justo antes de la etiqueta <application>
+---------------------------------------------------------------
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
+
+
+2) ARCore OPCIONAL — pegar DENTRO de <application>, antes de </application>
+---------------------------------------------------------------
+
+    <meta-data android:name="com.google.ar.core" android:value="optional" />
+
+Con "optional" la app se instala en cualquier teléfono. Con "required"
+Play Store solo la ofrece a equipos compatibles con realidad aumentada.
+
+
+3) ORIENTACIÓN LIBRE — en la etiqueta <activity> principal
+---------------------------------------------------------------
+
+Busca android:screenOrientation="portrait" y cámbialo por:
+
+    android:screenOrientation="fullUser"
+
+Así la tablet puede usarse apaisada, que es como se leen los planos.
+
+
+4) SI EL BOTÓN "Abrir IFC" NO ABRE EL SELECTOR
+---------------------------------------------------------------
+
+El WebView de Capacitor 6 ya maneja <input type="file">. Si aun así no
+responde, verifica en android\app\src\main\java\...\MainActivity.java
+que la clase extienda BridgeActivity sin sobrescribir el WebChromeClient.
+
+
+ADVERTENCIA SOBRE REALIDAD AUMENTADA
+=====================================================
+
+El WebView de Android NO expone WebXR igual que Chrome. Es muy probable
+que el botón "Ver en obra" avise que el equipo no admite AR, aunque el
+teléfono sí lo admita en Chrome.
+
+Si el AR es imprescindible, usa la ruta TWA (carpeta twa\), que sí corre
+sobre el motor de Chrome completo.
+
+El resto de la app —modelo 3D, selección de elementos, propiedades,
+abrir IFC del teléfono, funcionamiento sin señal— funciona bien en
+Capacitor.

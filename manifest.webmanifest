@@ -1,0 +1,15 @@
+{
+  "name": "E04 · Modelo de obra",
+  "short_name": "E04 3D",
+  "description": "Visor IFC de campo con realidad aumentada",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#eceae4",
+  "theme_color": "#12161a",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

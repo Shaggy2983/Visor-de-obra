@@ -1,0 +1,47 @@
+# Publica el visor en GitHub Pages en cada empujón a main.
+#
+# No hace falta configurar nada a mano: el paso configure-pages con
+# enablement activa el sitio la primera vez que corre este flujo.
+
+name: Publicar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue cada vez, sin cancelar el que ya esté en marcha.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Empaquetar el sitio
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # La raíz del repositorio ya es la aplicación.
+          # La acción deja fuera .git y .github por su cuenta.
+          path: .
+
+      - name: Desplegar
+        id: despliegue
+        uses: actions/deploy-pages@v4

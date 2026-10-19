@@ -14,6 +14,8 @@ import {
 } from './utiles.js';
 import { leerArchivoPlano, crearVisorPlano, componerPlano, TIPOS_NOTA } from './planos.js';
 import { generarInformeInteractivo } from './informe-interactivo.js';
+import { crearNube } from './nube.js';
+import { avisoPendiente } from './cuentas.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -63,6 +65,10 @@ const nodos = {
   entradaPlano: $('entrada-plano'),
   otrosPlanos: $('btn-otros-planos'),
   botonInteractivo: $('btn-interactivo'),
+  cuentas: $('cuentas'),
+  correo: $('btn-correo'),
+  nube: $('btn-nube'),
+  copiaNube: $('btn-copia-nube'),
   fotoGrande: $('foto-grande'),
   aviso: $('aviso')
 };
@@ -163,6 +169,7 @@ async function mostrarLista() {
   actual = null;
   liberarUrls();
   liberarUrlsPlanos();
+  nube.pintarCuentas(nodos.cuentas);
   nodos.vistaFicha.hidden = true;
   nodos.vistaLista.hidden = false;
   nodos.nueva.hidden = false;
@@ -769,13 +776,18 @@ async function planosConNotas(v) {
   return planos.filter(Boolean);
 }
 
+async function generarInforme(v) {
+  const blob = await generarInformeInteractivo(v, await planosConNotas(v), { contacto: CONTACTO, lema: LEMA });
+  const nombre = `informe-visita-${v.fecha}${v.obra ? '-' + v.obra.toLowerCase().replace(/[^a-z0-9áéíóúñü]+/gi, '-').replace(/^-|-$/g, '') : ''}.html`;
+  return { blob, nombre };
+}
+
 async function informeInteractivo() {
   await guardarYa();
   const v = actual;
   avisar(nodos.aviso, 'Preparando el informe interactivo…', 60000);
   try {
-    const blob = await generarInformeInteractivo(v, await planosConNotas(v), { contacto: CONTACTO, lema: LEMA });
-    const nombre = `informe-visita-${v.fecha}${v.obra ? '-' + v.obra.toLowerCase().replace(/[^a-z0-9áéíóúñü]+/gi, '-').replace(/^-|-$/g, '') : ''}.html`;
+    const { blob, nombre } = await generarInforme(v);
     const archivo = new File([blob], nombre, { type: 'text/html' });
     nodos.aviso.hidden = true;
     if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
@@ -856,11 +868,13 @@ async function compartir() {
 /* copia de seguridad: un JSON con las fotos dentro, en base64         */
 /* ------------------------------------------------------------------ */
 
-async function exportar() {
+/* La copia entera como JSON, o null si no hay nada que copiar. */
+async function generarCopia() {
+  await guardarYa();
   const visitas = await listarVisitas();
   if (!visitas.length) {
-    avisar(nodos.aviso, 'No hay visitas que exportar.');
-    return;
+    avisar(nodos.aviso, 'No hay visitas que copiar.');
+    return null;
   }
   avisar(nodos.aviso, 'Preparando la copia…', 10000);
   const salida = [];
@@ -874,8 +888,19 @@ async function exportar() {
   const planos = [];
   for (const p of await listarPlanos()) planos.push({ ...p, blob: await aDatos(p.blob) });
   const json = JSON.stringify({ formato: 'visitas-obra-e04', version: 2, exportada: new Date().toISOString(), visitas: salida, planos });
-  descargar(new Blob([json], { type: 'application/json' }), `visitas-obra-${hoy()}.json`);
-  avisar(nodos.aviso, `Copia lista: ${plural(visitas.length, 'visita', 'visitas')} y ${plural(planos.length, 'plano', 'planos')}.`);
+  nodos.aviso.hidden = true;
+  return {
+    blob: new Blob([json], { type: 'application/json' }),
+    nombre: `copia-visitas-${hoy()}-${ahora().replace(':', '')}.json`,
+    resumen: `${plural(visitas.length, 'visita', 'visitas')} y ${plural(planos.length, 'plano', 'planos')}`
+  };
+}
+
+async function exportar() {
+  const copia = await generarCopia();
+  if (!copia) return;
+  descargar(copia.blob, copia.nombre);
+  avisar(nodos.aviso, `Copia lista: ${copia.resumen}.`);
 }
 
 /* Al importar, una visita que ya existe sólo se sustituye si la copia es
@@ -958,6 +983,17 @@ nodos.entradaPlano.addEventListener('change', () => {
 nodos.otrosPlanos.addEventListener('click', () => { verTodosPlanos = true; pintarPlanos(); });
 nodos.botonInteractivo.addEventListener('click', informeInteractivo);
 
+const nube = crearNube({
+  avisar: (texto, ms) => avisar(nodos.aviso, texto, ms),
+  informe: generarInforme,
+  resumen,
+  copia: generarCopia,
+  restaurar: importar
+});
+nodos.correo.addEventListener('click', async () => { await guardarYa(); nube.enviar(actual); });
+nodos.nube.addEventListener('click', async () => { await guardarYa(); nube.guardar(actual); });
+nodos.copiaNube.addEventListener('click', () => nube.copiaNube());
+
 nodos.borrarFirma.addEventListener('click', () => firma.borrar());
 nodos.botonInforme.addEventListener('click', imprimir);
 nodos.compartir.addEventListener('click', compartir);
@@ -991,5 +1027,9 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+
+// Mensaje de la vuelta de Google o Microsoft (cuenta vinculada o error).
+const avisoCuentas = avisoPendiente();
+if (avisoCuentas) avisar(nodos.aviso, avisoCuentas.texto, avisoCuentas.error ? 7000 : 4000);
 
 enrutar();

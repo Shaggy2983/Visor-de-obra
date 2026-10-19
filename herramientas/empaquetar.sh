@@ -19,7 +19,7 @@ destino="$temporal/app"
 mkdir -p "$destino"
 cd "$raiz"
 
-for pieza in index.html visita.html manifest.webmanifest sw.js css js vendor marca \
+for pieza in index.html visita.html oauth.html manifest.webmanifest sw.js css js vendor marca \
              icono-192.png icono-512.png ejemplo.ifc modelo.ifc; do
   [ -e "$pieza" ] && cp -R "$pieza" "$destino/"
 done

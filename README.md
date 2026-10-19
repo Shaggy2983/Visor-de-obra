@@ -98,6 +98,83 @@ nombre. Si el símbolo cambia, cambia también su copia dentro de
 `index.html`, `visita.html` y `js/visita.js` (función `logotipo`), y vuelve
 a generar los iconos con `herramientas/iconos.py`.
 
+## Cuentas de correo y almacenamiento
+
+En la lista de visitas, **Cuentas vinculadas** conecta una cuenta de
+**Google** (Gmail y Google Drive) o de **Microsoft** (Outlook, Hotmail,
+Microsoft 365 y OneDrive). Con una cuenta vinculada:
+
+- **Enviar por correo** (en cada visita): destinatarios, copia, asunto y
+  el resumen del parte como mensaje, con el **informe interactivo
+  adjunto** y, si se quiere, las fotos sueltas. La app recuerda los
+  destinatarios de cada obra.
+- **Guardar en la nube** (en cada visita): sube el informe interactivo a
+  `COORDINATE Visitas / <obra>/`. Si ya estaba, lo sustituye.
+- **Copia de seguridad → En la nube…**: guarda la copia completa (visitas,
+  fotos y planos) en `COORDINATE Visitas / Copias de seguridad/` y permite
+  restaurarla, por ejemplo en otro teléfono.
+
+No hay servidor de por medio: el teléfono habla directamente con Google o
+Microsoft. Los permisos se piden al mínimo: en Google Drive la app sólo
+ve **los archivos que ella misma ha creado** (`drive.file`), y en el
+correo sólo puede **enviar**, no leer. Los tokens se guardan en el
+navegador del teléfono; **Desvincular** los borra (en Google además
+retira el permiso; en Microsoft se retira en account.microsoft.com →
+Privacidad → Aplicaciones).
+
+Las sesiones de Google duran una hora. Al caducar, la app ofrece
+renovarla: pasa un instante por Google, sin pedir contraseña, y vuelve a
+la misma visita, donde se repite la acción. Microsoft se renueva solo.
+
+### Registrar la app (una vez, por quien administra la app)
+
+Cada proveedor exige registrar la aplicación y da un **ID de cliente**.
+No es una contraseña: identifica la app. Se pega en
+`js/cuentas-config.js` o, sin tocar código, en la propia app:
+**Cuentas vinculadas → Configurar los ID de cliente**. Esa misma ventana
+muestra la **URI de redirección** exacta que hay que registrar; con la
+app publicada en GitHub Pages es:
+
+    https://shaggy2983.github.io/Visor-de-obra/oauth.html
+
+**Google** (console.cloud.google.com):
+
+1. Crea un proyecto.
+2. *APIs y servicios → Biblioteca*: habilita **Gmail API** y
+   **Google Drive API**.
+3. *Pantalla de consentimiento de OAuth* (Google Auth Platform): tipo
+   **Externo**, nombre «COORDINATE», correo de asistencia. En
+   *Acceso a datos* añade los permisos `openid`, `email`, `profile`,
+   `.../auth/drive.file` y `.../auth/gmail.send`. En *Público* añade como
+   **usuarios de prueba** las cuentas que la vayan a usar.
+4. *Clientes → Crear cliente*: tipo **Aplicación web**.
+   *Orígenes de JavaScript autorizados*: `https://shaggy2983.github.io`.
+   *URI de redireccionamiento autorizados*: la de arriba.
+5. Copia el **ID de cliente** (`….apps.googleusercontent.com`).
+
+`gmail.send` es un permiso que Google considera sensible: mientras la app
+esté en modo de prueba funciona con hasta 100 usuarios de prueba. Para
+abrirla a cualquiera hay que pasar la verificación de Google.
+
+**Microsoft** (entra.microsoft.com):
+
+1. *Aplicaciones → Registros de aplicaciones → Nuevo registro*.
+2. Nombre «COORDINATE Visitas». Tipos de cuenta: **cuentas de cualquier
+   directorio organizativo y cuentas personales de Microsoft**.
+3. URI de redirección: plataforma **Aplicación de página única (SPA)** y
+   la URI de arriba.
+4. *Permisos de API → Microsoft Graph → Permisos delegados*: `User.Read`,
+   `Mail.Send`, `Files.ReadWrite` y `offline_access`. En cuentas de
+   empresa puede que el administrador tenga que dar su consentimiento.
+5. Copia el **Id. de aplicación (cliente)**.
+
+Para probar en el ordenador, registra también
+`http://localhost:8000/oauth.html` (o el puerto que uses) en los dos.
+
+Funciona en el navegador y en la app instalada desde Chrome o como TWA.
+**No funciona dentro del APK de Capacitor**: Google no permite iniciar
+sesión desde una vista web incrustada.
+
 ## Realidad aumentada: qué hace falta
 
 Necesita **WebXR con `immersive-ar`**, que hoy significa **Android con
@@ -161,6 +238,10 @@ Para la ruta Capacitor, el zip que pide ese documento se prepara con:
 | `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom, dibujo y notas |
 | `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
 | `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |
+| `js/cuentas.js` | Vincular Google y Microsoft; correo y archivos en la nube |
+| `js/cuentas-config.js` | ID de cliente de Google y Microsoft |
+| `js/nube.js` | Tarjetas de cuentas y diálogos de correo, nube y copias |
+| `oauth.html` | Página a la que vuelven Google y Microsoft al vincular |
 | `sw.js` | Service worker: la app entera cabe en el teléfono |
 | `marca/` | Logotipos y favicon de COORDINATE |
 | `vendor/` | three.js, web-ifc, pdf.js e Inter, copiados aquí para no depender de un CDN |

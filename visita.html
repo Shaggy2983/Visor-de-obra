@@ -36,12 +36,20 @@
      para empezar el parte de hoy. Se guarda en el teléfono según escribes, aunque no haya señal.</p>
 
   <div class="grupo copia">
+    <h2>Cuentas vinculadas</h2>
+    <p class="pie">Vincula Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar los
+       partes por correo y guardarlos en la nube. La app habla directamente con tu cuenta.</p>
+    <div id="cuentas" class="cuentas"></div>
+  </div>
+
+  <div class="grupo copia">
     <h2>Copia de seguridad</h2>
     <p class="pie">Las visitas viven en este teléfono. Exporta una copia de vez en cuando
        para pasarla a otro equipo o guardarla en la nube.</p>
     <div class="fila-botones">
       <button id="btn-exportar" class="boton">Exportar copia</button>
       <button id="btn-importar" class="boton">Importar copia</button>
+      <button id="btn-copia-nube" class="boton">En la nube…</button>
     </div>
     <input type="file" id="entrada-copia" accept=".json,application/json" hidden>
   </div>
@@ -152,6 +160,8 @@
     <section class="grupo acciones-ficha">
       <button type="button" id="btn-informe" class="boton boton-destacado grande">Informe en PDF</button>
       <button type="button" id="btn-interactivo" class="boton boton-destacado grande">Informe interactivo (planos y fotos)</button>
+      <button type="button" id="btn-correo" class="boton grande">Enviar por correo</button>
+      <button type="button" id="btn-nube" class="boton grande">Guardar en la nube</button>
       <button type="button" id="btn-compartir" class="boton grande">Compartir resumen</button>
       <button type="button" id="btn-borrar" class="boton boton-peligro grande">Borrar esta visita</button>
     </section>
@@ -180,6 +190,7 @@
 </div>
 
 <div id="foto-grande" class="foto-grande" hidden><img alt=""></div>
+<dialog id="dialogo" class="dialogo"></dialog>
 <div id="aviso" class="aviso" hidden></div>
 
 <!-- Lo que sale al imprimir: se rellena justo antes de abrir el diálogo. -->

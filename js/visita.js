@@ -10,7 +10,7 @@ import {
 import { avisar } from './interfaz.js';
 import {
   el, nuevoId, dos, hoy, ahora, fechaLarga, plural, decodificar, reducirImagen,
-  aDatos, deDatos, descargar
+  aDatos, deDatos, descargar, enlaceSeguro
 } from './utiles.js';
 import { leerArchivoPlano, crearVisorPlano, componerPlano, TIPOS_NOTA } from './planos.js';
 import { generarInformeInteractivo } from './informe-interactivo.js';
@@ -79,9 +79,11 @@ let verTodosPlanos = false;
 /* utilidades                                                          */
 /* ------------------------------------------------------------------ */
 
-/* Visitas guardadas antes de que existieran los planos no traen notas. */
+/* Visitas guardadas antes de que existieran los planos no traen notas
+   ni dibujos. */
 function normalizar(v) {
   if (!Array.isArray(v.notas)) v.notas = [];
+  if (!Array.isArray(v.trazos)) v.trazos = [];
   for (const f of v.fotos) if (f.nota === undefined) f.nota = null;
   return v;
 }
@@ -180,7 +182,11 @@ function coincide(v, texto) {
     ...v.personal.map((p) => `${p.empresa} ${p.oficio}`),
     ...v.incidencias.map((i) => i.texto),
     ...v.fotos.map((f) => f.pie),
-    ...(v.notas || []).map((n) => n.texto)
+    ...(v.notas || []).map((n) => [
+      n.texto,
+      ...(n.pinturas || []).map((t) => `${t.marca} ${t.nombre} ${t.acabado}`),
+      ...(n.enlaces || []).map((e) => `${e.titulo} ${e.url}`)
+    ].join(' '))
   ].join(' ').toLowerCase();
   return texto.toLowerCase().split(/\s+/).every((t) => pajar.includes(t));
 }
@@ -235,6 +241,7 @@ async function nuevaVisita() {
     incidencias: anterior ? abiertas(anterior).map((i) => ({ ...i, desde: i.desde || anterior.fecha })) : [],
     fotos: [],
     notas: [],
+    trazos: [],
     observaciones: '',
     firma: null,
     creada: Date.now(),
@@ -473,20 +480,24 @@ async function pintarPlanos() {
   } catch (e) { /* sin planos */ }
   if (actual !== visita) return;
   liberarUrlsPlanos();
-  const propios = planos.filter((p) => mismaObra(p.obra, visita.obra) || visita.notas.some((n) => n.plano === p.id));
+  const usado = (p) => visita.notas.some((n) => n.plano === p.id) || visita.trazos.some((t) => t.plano === p.id);
+  const propios = planos.filter((p) => mismaObra(p.obra, visita.obra) || usado(p));
   const visibles = verTodosPlanos ? planos : propios;
   nodos.otrosPlanos.hidden = verTodosPlanos || planos.length === propios.length;
   nodos.otrosPlanos.textContent = `Ver planos de otras obras (${planos.length - propios.length})`;
   nodos.totalPlanos.textContent = visita.notas.length ? plural(visita.notas.length, 'nota', 'notas') : '';
   nodos.planos.replaceChildren(...visibles.map((p) => {
     const notas = visita.notas.filter((n) => n.plano === p.id);
+    const dibujos = visita.trazos.filter((t) => t.plano === p.id).length;
     const url = URL.createObjectURL(p.blob);
     urlsPlanos.push(url);
     return el('div', { class: 'plano-ficha' },
       el('button', { type: 'button', class: 'plano-abrir', onclick: () => abrirPlano(p.id) },
         el('img', { src: url, alt: '', loading: 'lazy' }),
         el('span', { class: 'plano-titulo' }, p.nombre),
-        el('span', { class: 'pie' }, notas.length ? plural(notas.length, 'nota', 'notas') : 'Sin notas en esta visita',
+        el('span', { class: 'pie' },
+          [notas.length && plural(notas.length, 'nota', 'notas'), dibujos && plural(dibujos, 'trazo', 'trazos')]
+            .filter(Boolean).join(' · ') || 'Sin notas en esta visita',
           !mismaObra(p.obra, visita.obra) && p.obra ? ` · ${p.obra}` : '')
       ),
       el('button', {
@@ -519,9 +530,10 @@ async function cargarPlano(archivo) {
    informes lo necesitan. */
 async function quitarPlano(plano) {
   await guardarYa();
-  const usos = (await listarVisitas()).filter((v) => (v.notas || []).some((n) => n.plano === plano.id));
+  const usos = (await listarVisitas()).filter((v) =>
+    (v.notas || []).some((n) => n.plano === plano.id) || (v.trazos || []).some((t) => t.plano === plano.id));
   if (usos.length) {
-    alert(`«${plano.nombre}» tiene notas en ${plural(usos.length, 'visita', 'visitas')}. Borra antes esas notas si quieres quitarlo.`);
+    alert(`«${plano.nombre}» tiene notas o dibujos en ${plural(usos.length, 'visita', 'visitas')}. Bórralos antes si quieres quitarlo.`);
     return;
   }
   if (!confirm(`¿Quitar el plano «${plano.nombre}» del teléfono?`)) return;
@@ -646,7 +658,8 @@ async function imprimir() {
   const planosInforme = [];
   for (const plano of await planosConNotas(v)) {
     const notas = v.notas.filter((k) => k.plano === plano.id).sort((a, b) => a.numero - b.numero);
-    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas) });
+    const trazos = v.trazos.filter((t) => t.plano === plano.id);
+    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas, trazos) });
   }
   nodos.aviso.hidden = true;
 
@@ -691,12 +704,12 @@ async function imprimir() {
     ...planosInforme.map(({ plano, imagen, notas }) => el('section', { class: 'informe-plano' },
       el('h2', {}, `Plano · ${plano.nombre}`),
       el('img', { src: url(imagen), alt: plano.nombre }),
-      el('table', { class: 'informe-tabla' },
+      notas.length > 0 && el('table', { class: 'informe-tabla' },
         el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Nº'), el('th', {}, 'Tipo'), el('th', {}, 'Nota'), el('th', {}, 'Fotos'))),
         el('tbody', {}, ...notas.map((k) => el('tr', {},
           el('td', { class: 'num' }, String(k.numero)),
           el('td', {}, TIPOS_NOTA[k.tipo] || k.tipo),
-          el('td', {}, k.texto || '—'),
+          el('td', {}, k.texto || '—', detallesInforme(k)),
           el('td', {}, v.fotos.map((f, i) => (f.nota === k.id ? String(i + 1) : null)).filter(Boolean).join(', ') || '—')))))
     )),
     v.fotos.length > 0 && el('section', {},
@@ -729,8 +742,29 @@ async function imprimir() {
   setTimeout(() => { for (const u of urls) URL.revokeObjectURL(u); }, 60000);
 }
 
+/* Tonos y enlaces de una nota para el PDF. Chrome conserva los enlaces
+   al guardar como PDF, así que siguen siendo clicables en el archivo. */
+function detallesInforme(k) {
+  const pinturas = (k.pinturas || []).filter((t) => t.marca || t.nombre);
+  const enlaces = (k.enlaces || []).filter((e) => e.titulo || e.url);
+  if (!pinturas.length && !enlaces.length) return null;
+  return el('div', { class: 'informe-detalles' },
+    pinturas.map((t) => el('div', {},
+      el('span', { class: 'muestra', style: `background:${/^#[0-9a-f]{6}$/i.test(t.hex) ? t.hex : '#fff'}` }),
+      [t.marca, t.nombre, t.acabado].filter(Boolean).join(' · '),
+      t.hex ? el('span', { class: 'informe-nota' }, ` (${t.hex.toUpperCase()})`) : null)),
+    enlaces.map((e) => {
+      const url = enlaceSeguro(e.url);
+      return el('div', {}, '↗ ',
+        url ? el('a', { href: url }, e.titulo || url) : (e.titulo || e.url),
+        url && e.titulo ? el('span', { class: 'informe-nota' }, ` ${url}`) : null,
+        !url && e.titulo && e.url ? el('span', { class: 'informe-nota' }, ` (${e.url})`) : null);
+    }));
+}
+
+/* Planos que salen en los informes: los que tienen notas o dibujos. */
 async function planosConNotas(v) {
-  const ids = [...new Set(v.notas.map((k) => k.plano))];
+  const ids = [...new Set([...v.notas.map((k) => k.plano), ...v.trazos.map((t) => t.plano)])];
   const planos = await Promise.all(ids.map((id) => leerPlano(id)));
   return planos.filter(Boolean);
 }
@@ -777,8 +811,13 @@ function resumen(v) {
       `  · [${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? ', resuelta' : ''}] ${i.texto}`),
     v.observaciones && `\nObservaciones:\n${v.observaciones}`,
     v.notas.length && '\nNotas en plano:',
-    ...v.notas.slice().sort((a, b) => a.numero - b.numero).map((k) =>
-      `  ${k.numero}. [${TIPOS_NOTA[k.tipo] || k.tipo}] ${k.texto || '(sin texto)'}`),
+    ...v.notas.slice().sort((a, b) => a.numero - b.numero).flatMap((k) => [
+      `  ${k.numero}. [${TIPOS_NOTA[k.tipo] || k.tipo}] ${k.texto || '(sin texto)'}`,
+      ...(k.pinturas || []).filter((t) => t.marca || t.nombre).map((t) =>
+        `     Pintura: ${[t.marca, t.nombre, t.acabado, t.hex && t.hex.toUpperCase()].filter(Boolean).join(' · ')}`),
+      ...(k.enlaces || []).filter((e) => e.titulo || e.url).map((e) =>
+        `     ${[e.titulo, e.url].filter(Boolean).join(': ')}`)
+    ]),
     v.fotos.length && `\n${plural(v.fotos.length, 'foto', 'fotos')}`,
     `\n— COORDINATE · ${CONTACTO}`
   ];

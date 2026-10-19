@@ -101,3 +101,24 @@ export function descargar(blob, nombre) {
   enlace.remove();
   setTimeout(() => URL.revokeObjectURL(enlace.href), 30000);
 }
+
+/* Convierte lo que se escribe en un campo de enlace en una URL web
+   segura (http o https), o null si es una referencia sin dirección
+   («Plano A-201», «Especificación 09 91 23»). Así nunca se enlaza a
+   javascript:, data: ni similares. */
+export function enlaceSeguro(texto) {
+  const t = (texto || '').trim();
+  if (!t || /\s/.test(t)) return null;
+  let candidato = t;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(t)) {
+    // «www.marca.com/ficha» o «marca.com»: se le pone https delante.
+    if (!/^[^/]+\.[a-z]{2,}(\/|$)/i.test(t)) return null;
+    candidato = `https://${t}`;
+  }
+  try {
+    const url = new URL(candidato);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+  } catch (e) {
+    return null;
+  }
+}

@@ -3,8 +3,8 @@
    WhatsApp y abrir en cualquier navegador, sin la app y sin conexión.
    En él se tocan los números del plano para ver cada nota con sus fotos. */
 
-import { aDatos, reducirImagen, fechaLarga } from './utiles.js';
-import { TIPOS_NOTA, COLOR_NOTA } from './planos.js';
+import { aDatos, reducirImagen, fechaLarga, enlaceSeguro } from './utiles.js';
+import { TIPOS_NOTA, COLOR_NOTA, COLORES_TRAZO, puntosTrazo, grosorTrazo } from './planos.js';
 
 const LADO_PLANO_INFORME = 3000;   // equilibrio entre detalle y peso del archivo
 
@@ -40,9 +40,29 @@ export async function generarInformeInteractivo(v, planos, { contacto, lema }) {
       incidencias: v.incidencias, observaciones: v.observaciones
     },
     planos: datosPlanos,
+    // Los enlaces se validan aquí: al informe sólo llegan direcciones web.
     notas: v.notas
       .filter((n) => planos.some((p) => p.id === n.plano))
-      .sort((a, b) => a.numero - b.numero),
+      .sort((a, b) => a.numero - b.numero)
+      .map((n) => ({
+        ...n,
+        pinturas: (n.pinturas || []).filter((t) => t.marca || t.nombre).map((t) => ({
+          ...t, hex: /^#[0-9a-f]{6}$/i.test(t.hex) ? t.hex : null
+        })),
+        enlaces: (n.enlaces || []).filter((e) => e.titulo || e.url).map((e) => ({
+          titulo: e.titulo, texto: e.url, url: enlaceSeguro(e.url)
+        }))
+      })),
+    // Trazos ya convertidos a puntos del plano reducido del informe.
+    trazos: v.trazos.flatMap((t) => {
+      const p = datosPlanos.find((x) => x.id === t.plano);
+      return p ? [{
+        plano: t.plano,
+        puntos: puntosTrazo(t, p.ancho, p.alto),
+        color: COLORES_TRAZO[t.color] || '#d64545',
+        grosor: grosorTrazo(t, p.ancho, p.alto).toFixed(1)
+      }] : [];
+    }),
     fotos,
     firma: v.firma ? await aDatos(v.firma) : null,
     tipos: TIPOS_NOTA,
@@ -100,6 +120,11 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
 .nota.activa{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-300)}
 .nota .pin{position:static;transform:none;flex:0 0 auto}
 .nota p{margin:2px 0 0;white-space:pre-wrap}
+.trazos{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.trazos polyline{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.detalles{margin-top:6px;font-size:13px;display:grid;gap:3px}
+.muestra{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid #9aa;vertical-align:-2px;margin-right:6px}
+.detalles a{color:var(--accent);word-break:break-all}
 .etiqueta{font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
 .miniaturas{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .miniaturas img{width:64px;height:48px;object-fit:cover;border-radius:6px}
@@ -191,9 +216,44 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
     }
   }
 
+  /* Tonos de pintura y enlaces de una nota. Los enlaces abren en otra
+     pestaña y no detienen el clic de la tarjeta para nada más. */
+  function detalles(n) {
+    if (!n.pinturas.length && !n.enlaces.length) return null;
+    return h('div', { class: 'detalles' },
+      n.pinturas.map(function (t) {
+        return h('div', {},
+          h('span', { class: 'muestra', style: 'background:' + (t.hex || '#fff') }),
+          [t.marca, t.nombre, t.acabado].filter(Boolean).join(' · '),
+          t.hex ? h('span', { class: 'vacio' }, ' ' + t.hex.toUpperCase()) : null);
+      }),
+      n.enlaces.map(function (e) {
+        return h('div', {}, '↗ ',
+          e.url
+            ? h('a', { href: e.url, target: '_blank', rel: 'noopener noreferrer', onclick: function (ev) { ev.stopPropagation(); } }, e.titulo || e.url)
+            : h('span', {}, [e.titulo, e.texto].filter(Boolean).join(': ')));
+      }));
+  }
+
   function figuraPlano(p, alTocarFondo) {
     var fig = h('figure', { class: 'plano', style: 'aspect-ratio:' + p.ancho + '/' + p.alto },
       h('img', { src: p.src, alt: p.nombre }));
+    var trazos = D.trazos.filter(function (t) { return t.plano === p.id; });
+    if (trazos.length) {
+      var NS = 'http://www.w3.org/2000/svg';
+      var svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('class', 'trazos');
+      svg.setAttribute('viewBox', '0 0 ' + p.ancho + ' ' + p.alto);
+      svg.setAttribute('preserveAspectRatio', 'none');
+      trazos.forEach(function (t) {
+        var l = document.createElementNS(NS, 'polyline');
+        l.setAttribute('points', t.puntos);
+        l.setAttribute('stroke', t.color);
+        l.setAttribute('stroke-width', t.grosor);
+        svg.append(l);
+      });
+      fig.append(svg);
+    }
     D.notas.filter(function (n) { return n.plano === p.id; }).forEach(function (n) {
       fig.append(pin(n, { style: 'background:' + color(n) + ';left:' + (n.x * 100) + '%;top:' + (n.y * 100) + '%' }));
     });
@@ -221,6 +281,7 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
             h('span', { class: 'etiqueta', style: 'color:' + color(n) }, D.tipos[n.tipo] || n.tipo),
             n.hora ? h('span', { class: 'vacio' }, ' · ' + n.hora) : null,
             h('p', {}, n.texto || h('span', { class: 'vacio' }, 'Sin texto')),
+            detalles(n),
             fs.length ? h('div', { class: 'miniaturas' }, fs.map(function (f) {
               return h('img', { src: f.src, alt: f.pie, onclick: function (ev) { ev.stopPropagation(); verFoto(f); } });
             })) : null));

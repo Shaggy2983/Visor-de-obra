@@ -50,6 +50,17 @@ instalado) está el parte de visita diaria de obra:
   de nota y, al tocarlo, abren el plano en ese punto. El plano se guarda
   una vez por obra y lo usan todas las visitas; las notas son de cada
   visita.
+- **Detalles de cada nota**: tonos de pintura (color con selector, marca,
+  nombre o código y acabado: mate, satinado, semibrillo o brillo) y
+  enlaces o referencias. Un enlace puede ser una dirección web («Abrir»
+  la lleva al navegador) o una referencia sin dirección («Plano A-501»).
+  Sólo se enlazan direcciones `http` y `https`; cualquier otra cosa se
+  muestra como texto.
+- **Dibujo a mano alzada** sobre el plano con **✎ Dibujar**: cinco
+  colores, tres grosores, goma (se pasa el dedo por encima del trazo),
+  deshacer y borrar todo. Con un dedo se dibuja y con dos se mueve y se
+  acerca el plano. Los dibujos son de cada visita, como las notas, y salen
+  en los dos informes.
 - **Informe interactivo**: un único archivo `.html` con todo dentro
   (planos, fotos, tipografía) que se comparte o descarga. Se abre en
   cualquier navegador, sin la app y sin conexión: al tocar un número del
@@ -58,7 +69,8 @@ instalado) está el parte de visita diaria de obra:
 - **Se guarda según se escribe**, sin conexión, en IndexedDB.
 - **Informe en PDF**: abre el diálogo de impresión con un parte en A4;
   en Android se elige *Guardar como PDF*. Incluye cada plano con sus
-  números pintados y la tabla de notas con las fotos de cada una.
+  dibujos y sus números, y la tabla de notas con sus tonos, enlaces
+  (clicables en el PDF) y fotos.
 - **Compartir resumen** por WhatsApp, correo… con las fotos si el teléfono
   lo permite; si no, copia el texto.
 - **Copia de seguridad**: exporta todas las visitas (fotos incluidas) a un
@@ -146,7 +158,7 @@ Para la ruta Capacitor, el zip que pide ese documento se prepara con:
 | `js/almacen.js` | El último modelo, guardado en IndexedDB |
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
 | `js/partes.js` | Las visitas y los planos, guardados en IndexedDB |
-| `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom y notas |
+| `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom, dibujo y notas |
 | `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
 | `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |
 | `sw.js` | Service worker: la app entera cabe en el teléfono |

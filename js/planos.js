@@ -1,10 +1,10 @@
 /* Planos de la visita: cargar un plano (PDF o imagen), verlo con zoom y
-   desplazamiento con los dedos, y clavar en él notas numeradas con sus
-   fotos. El plano se guarda una vez por obra; las notas son de cada
+   desplazamiento con los dedos, dibujar a mano alzada encima y clavar en
+   él notas numeradas con sus fotos, tonos de pintura y enlaces. El plano se guarda una vez por obra; las notas son de cada
    visita y sus coordenadas van en fracción del plano (0–1), así no
    dependen de la resolución con que se cargó. */
 
-import { el, nuevoId, ahora, reducirImagen, decodificar } from './utiles.js';
+import { el, nuevoId, ahora, reducirImagen, decodificar, enlaceSeguro } from './utiles.js';
 
 export const TIPOS_NOTA = {
   observacion: 'Observación',
@@ -18,6 +18,30 @@ export const COLOR_NOTA = {
   incidencia: '#d64545',
   avance: '#2f9e6a'
 };
+
+/* Colores del rotulador. */
+export const COLORES_TRAZO = {
+  rojo: '#d64545',
+  azul: '#3d7cc4',
+  verde: '#2f9e6a',
+  amarillo: '#e6b422',
+  negro: '#121826'
+};
+
+/* Grosor del trazo en fracción del lado mayor del plano: así se ve igual
+   en pantalla, en el PDF y en el informe, sea cual sea la resolución. */
+export const GROSORES = { fino: 0.0015, medio: 0.003, grueso: 0.006 };
+
+export const ACABADOS = ['Mate', 'Satinado', 'Semibrillo', 'Brillo'];
+
+/* Los puntos de un trazo, en píxeles de un plano de ancho × alto. */
+export function puntosTrazo(trazo, ancho, alto) {
+  return trazo.puntos.map(([x, y]) => `${(x * ancho).toFixed(1)},${(y * alto).toFixed(1)}`).join(' ');
+}
+
+export function grosorTrazo(trazo, ancho, alto) {
+  return (GROSORES[trazo.grosor] || GROSORES.medio) * Math.max(ancho, alto);
+}
 
 const LADO_PLANO = 4096;          // lado mayor del plano guardado, en píxeles
 const AREA_MAXIMA = 16e6;         // los móviles no pintan lienzos mayores
@@ -86,7 +110,7 @@ export async function leerArchivoPlano(archivo, obra, alProgreso = () => {}) {
 /* plano con sus notas pintadas, para el informe                       */
 /* ------------------------------------------------------------------ */
 
-export async function componerPlano(plano, notas, lado = 2400) {
+export async function componerPlano(plano, notas, trazos = [], lado = 2400) {
   const imagen = await decodificar(plano.blob);
   const escala = Math.min(1, lado / Math.max(imagen.width, imagen.height));
   const lienzo = document.createElement('canvas');
@@ -95,6 +119,15 @@ export async function componerPlano(plano, notas, lado = 2400) {
   const ctx = lienzo.getContext('2d');
   ctx.drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
   if (imagen.close) imagen.close();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (const t of trazos) {
+    ctx.strokeStyle = COLORES_TRAZO[t.color] || t.color;
+    ctx.lineWidth = grosorTrazo(t, lienzo.width, lienzo.height);
+    ctx.beginPath();
+    t.puntos.forEach(([x, y], i) => ctx[i ? 'lineTo' : 'moveTo'](x * lienzo.width, y * lienzo.height));
+    ctx.stroke();
+  }
   const radio = Math.max(16, Math.max(lienzo.width, lienzo.height) * 0.017);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -131,6 +164,9 @@ export function crearVisorPlano(opciones) {
     nombre: $('plano-nombre'),
     cerrar: $('plano-cerrar'),
     modo: $('plano-modo'),
+    dibujar: $('plano-dibujar'),
+    herramientas: $('plano-herramientas'),
+    trazos: $('plano-trazos'),
     ayuda: $('plano-ayuda'),
     marco: $('plano-marco'),
     lienzo: $('plano-lienzo'),
@@ -143,10 +179,13 @@ export function crearVisorPlano(opciones) {
   let urlPlano = null;
   let urlsHoja = [];
   let seleccionada = null;   // id de la nota abierta en la hoja
-  let modo = 'ver';          // 'ver' | 'anadir' | 'mover'
+  let modo = 'ver';          // 'ver' | 'anadir' | 'mover' | 'dibujar'
   const vista = { escala: 1, tx: 0, ty: 0, minimo: 0.1, maximo: 4 };
+  const pluma = { color: 'rojo', grosor: 'medio', goma: false };
+  let trazo = null;          // el trazo que se está dibujando: {datos, nodo}
 
   const visita = () => opciones.visita();
+  const trazosDelPlano = () => visita().trazos.filter((t) => t.plano === plano.id);
   const notasDelPlano = () => visita().notas.filter((x) => x.plano === plano.id);
   const nota = (id) => visita().notas.find((x) => x.id === id);
 
@@ -201,13 +240,25 @@ export function crearVisorPlano(opciones) {
     return { distancia: Math.hypot(a.x - b.x, a.y - b.y), centro: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
   }
 
+  // Sin esto el navegador toma el arrastre por una selección o por arrastrar
+  // la imagen y cancela el gesto a medias (pointercancel).
+  n.marco.addEventListener('dragstart', (ev) => ev.preventDefault());
+
   n.marco.addEventListener('pointerdown', (ev) => {
+    if (ev.pointerType === 'mouse') ev.preventDefault();
     n.marco.setPointerCapture(ev.pointerId);
     const p = local(ev);
     punteros.set(ev.pointerId, p);
     if (punteros.size === 1) {
       gesto = { inicio: p, ultimo: p, tiempo: performance.now(), movido: false, pin: ev.target.closest('.pin') };
+      if (modo === 'dibujar') {
+        gesto.movido = true;   // en modo dibujo un toque no es un toque
+        if (pluma.goma) borrarEn(p);
+        else empezarTrazo(p);
+      }
     } else if (punteros.size === 2) {
+      // El segundo dedo convierte el gesto en pellizco: el trazo a medias se descarta.
+      descartarTrazo();
       gesto.movido = true;
       const d = datosPinza();
       gesto.pinza = { ...d, escala: vista.escala, tx: vista.tx, ty: vista.ty };
@@ -218,7 +269,10 @@ export function crearVisorPlano(opciones) {
     if (!punteros.has(ev.pointerId) || !gesto) return;
     const p = local(ev);
     punteros.set(ev.pointerId, p);
-    if (punteros.size === 1) {
+    if (punteros.size === 1 && modo === 'dibujar' && !gesto.pinzado) {
+      if (pluma.goma) borrarEn(p);
+      else seguirTrazo(p);
+    } else if (punteros.size === 1) {
       if (Math.hypot(p.x - gesto.inicio.x, p.y - gesto.inicio.y) > 8) gesto.movido = true;
       if (!gesto.movido) return;
       vista.tx += p.x - gesto.ultimo.x;
@@ -244,7 +298,9 @@ export function crearVisorPlano(opciones) {
       // Queda un dedo tras pellizcar: sigue arrastrando desde donde está.
       gesto.ultimo = [...punteros.values()][0];
       gesto.pinza = null;
+      gesto.pinzado = true;
     } else if (punteros.size === 0) {
+      terminarTrazo();
       const toque = !gesto.movido && performance.now() - gesto.tiempo < 600 && ev.type === 'pointerup';
       const g = gesto;
       gesto = null;
@@ -264,6 +320,144 @@ export function crearVisorPlano(opciones) {
     const p = local(ev);
     zoom(2, p.x, p.y);
   });
+
+  /* --- dibujo a mano alzada --- */
+
+  function aPlano(p) {
+    return [
+      (p.x - vista.tx) / vista.escala / plano.ancho,
+      (p.y - vista.ty) / vista.escala / plano.alto
+    ];
+  }
+
+  function nodoTrazo() {
+    return document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+  }
+
+  function vestir(nodo, t) {
+    nodo.setAttribute('points', puntosTrazo(t, plano.ancho, plano.alto));
+    nodo.setAttribute('stroke', COLORES_TRAZO[t.color] || t.color);
+    nodo.setAttribute('stroke-width', grosorTrazo(t, plano.ancho, plano.alto).toFixed(1));
+    nodo.dataset.id = t.id;
+    return nodo;
+  }
+
+  function pintarTrazos() {
+    n.trazos.setAttribute('viewBox', `0 0 ${plano.ancho} ${plano.alto}`);
+    n.trazos.replaceChildren(...trazosDelPlano().map((t) => vestir(nodoTrazo(), t)));
+  }
+
+  const redondear = (v) => Math.round(v * 10000) / 10000;
+
+  function empezarTrazo(p) {
+    const [x, y] = aPlano(p);
+    const datos = {
+      id: nuevoId(), plano: plano.id, color: pluma.color, grosor: pluma.grosor,
+      puntos: [[redondear(x), redondear(y)]], hora: ahora()
+    };
+    trazo = { datos, nodo: vestir(nodoTrazo(), datos), ultimo: p };
+    n.trazos.append(trazo.nodo);
+  }
+
+  function seguirTrazo(p) {
+    if (!trazo) return;
+    // Un punto cada 2 px de pantalla basta y deja el trazo ligero.
+    if (Math.hypot(p.x - trazo.ultimo.x, p.y - trazo.ultimo.y) < 2) return;
+    trazo.ultimo = p;
+    const [x, y] = aPlano(p);
+    trazo.datos.puntos.push([redondear(x), redondear(y)]);
+    vestir(trazo.nodo, trazo.datos);
+  }
+
+  function terminarTrazo() {
+    if (!trazo) return;
+    const { datos } = trazo;
+    trazo = null;
+    // Un toque sin arrastrar deja un punto: se dibuja como un trazo mínimo.
+    if (datos.puntos.length === 1) datos.puntos.push([datos.puntos[0][0] + 0.0001, datos.puntos[0][1]]);
+    visita().trazos.push(datos);
+    opciones.cambiado();
+    actualizarHerramientas();
+  }
+
+  function descartarTrazo() {
+    if (!trazo) return;
+    trazo.nodo.remove();
+    trazo = null;
+  }
+
+  /* Goma: borra el trazo que pase a menos de 14 px de pantalla del dedo. */
+  function borrarEn(p) {
+    const [x, y] = aPlano(p);
+    const tolerancia = 14 / vista.escala;
+    const px = x * plano.ancho, py = y * plano.alto;
+    const cerca = (t) => {
+      const margen = tolerancia + grosorTrazo(t, plano.ancho, plano.alto) / 2;
+      for (let i = 1; i < t.puntos.length; i++) {
+        const ax = t.puntos[i - 1][0] * plano.ancho, ay = t.puntos[i - 1][1] * plano.alto;
+        const bx = t.puntos[i][0] * plano.ancho, by = t.puntos[i][1] * plano.alto;
+        const dx = bx - ax, dy = by - ay;
+        const largo = dx * dx + dy * dy || 1;
+        const u = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / largo));
+        if (Math.hypot(px - (ax + u * dx), py - (ay + u * dy)) <= margen) return true;
+      }
+      return false;
+    };
+    const v = visita();
+    const antes = v.trazos.length;
+    v.trazos = v.trazos.filter((t) => t.plano !== plano.id || !cerca(t));
+    if (v.trazos.length !== antes) {
+      opciones.cambiado();
+      pintarTrazos();
+      actualizarHerramientas();
+    }
+  }
+
+  function deshacer() {
+    const v = visita();
+    const ultimo = [...v.trazos].reverse().find((t) => t.plano === plano.id);
+    if (!ultimo) return;
+    v.trazos = v.trazos.filter((t) => t !== ultimo);
+    opciones.cambiado();
+    pintarTrazos();
+    actualizarHerramientas();
+  }
+
+  function borrarDibujos() {
+    if (!confirm('¿Borrar todos los dibujos de este plano en esta visita?')) return;
+    const v = visita();
+    v.trazos = v.trazos.filter((t) => t.plano !== plano.id);
+    opciones.cambiado();
+    pintarTrazos();
+    actualizarHerramientas();
+  }
+
+  function actualizarHerramientas() {
+    n.herramientas.replaceChildren(
+      el('div', { class: 'colores', role: 'radiogroup', 'aria-label': 'Color' },
+        Object.entries(COLORES_TRAZO).map(([nombre, hex]) => el('button', {
+          type: 'button', class: `color${!pluma.goma && pluma.color === nombre ? ' activo' : ''}`,
+          style: `background:${hex}`, title: nombre, 'aria-label': nombre,
+          'aria-pressed': String(!pluma.goma && pluma.color === nombre),
+          onclick: () => { pluma.color = nombre; pluma.goma = false; actualizarHerramientas(); }
+        }))),
+      el('div', { class: 'grosores' },
+        Object.keys(GROSORES).map((g) => el('button', {
+          type: 'button', class: `grosor${pluma.grosor === g ? ' activo' : ''}`, title: g, 'aria-label': `Trazo ${g}`,
+          'aria-pressed': String(pluma.grosor === g),
+          onclick: () => { pluma.grosor = g; pluma.goma = false; actualizarHerramientas(); }
+        }, el('span', { class: `raya raya-${g}` })))),
+      el('button', {
+        type: 'button', class: `boton${pluma.goma ? ' activo' : ''}`, 'aria-pressed': String(pluma.goma),
+        onclick: () => { pluma.goma = !pluma.goma; actualizarHerramientas(); }
+      }, 'Goma'),
+      el('button', { type: 'button', class: 'boton', disabled: !trazosDelPlano().length, onclick: deshacer }, 'Deshacer'),
+      el('button', { type: 'button', class: 'boton boton-peligro', disabled: !trazosDelPlano().length, onclick: borrarDibujos }, 'Borrar todo')
+    );
+    n.ayuda.textContent = pluma.goma
+      ? 'Pasa el dedo por encima de un trazo para borrarlo.'
+      : 'Dibuja con un dedo. Con dos dedos, mueve y acerca el plano.';
+  }
 
   function tocar(p, pin) {
     const x = (p.x - vista.tx) / vista.escala / plano.ancho;
@@ -297,10 +491,27 @@ export function crearVisorPlano(opciones) {
   }
 
   function ponerModo(nuevo) {
+    descartarTrazo();
+    const arriba = n.marco.getBoundingClientRect().top;
     modo = nuevo;
-    n.capa.classList.toggle('anadiendo', modo !== 'ver');
+    n.capa.classList.toggle('anadiendo', modo === 'anadir' || modo === 'mover');
+    n.capa.classList.toggle('dibujando', modo === 'dibujar');
+    n.modo.hidden = modo === 'dibujar';
     n.modo.textContent = modo === 'ver' ? '+ Nota' : 'Cancelar';
     n.modo.classList.toggle('boton-destacado', modo === 'ver');
+    n.dibujar.hidden = modo === 'anadir' || modo === 'mover';
+    n.dibujar.textContent = modo === 'dibujar' ? 'Listo' : '✎ Dibujar';
+    n.dibujar.classList.toggle('boton-destacado', modo === 'dibujar');
+    n.herramientas.hidden = modo !== 'dibujar';
+    // La barra de herramientas empuja el plano: se compensa para que no salte.
+    if (plano) {
+      vista.ty -= n.marco.getBoundingClientRect().top - arriba;
+      aplicar();
+    }
+    if (modo === 'dibujar') {
+      pluma.goma = false;
+      return actualizarHerramientas();
+    }
     const k = nota(seleccionada);
     n.ayuda.textContent = modo === 'anadir'
       ? 'Toca el plano donde quieras la nota.'
@@ -312,6 +523,11 @@ export function crearVisorPlano(opciones) {
   n.modo.addEventListener('click', () => {
     ponerModo(modo === 'ver' ? 'anadir' : 'ver');
     if (modo === 'anadir') seleccionar(null);
+  });
+
+  n.dibujar.addEventListener('click', () => {
+    ponerModo(modo === 'dibujar' ? 'ver' : 'dibujar');
+    if (modo === 'dibujar') seleccionar(null);
   });
 
   /* --- pines y hoja de la nota --- */
@@ -377,6 +593,86 @@ export function crearVisorPlano(opciones) {
     return entrada;
   }
 
+  /* --- detalles de la nota: tonos de pintura y enlaces o referencias.
+         Se editan sin repintar la hoja, para no perder el foco al escribir. --- */
+
+  function quitar(etiqueta, alQuitar) {
+    return el('button', { type: 'button', class: 'boton quitar', 'aria-label': etiqueta, title: etiqueta, onclick: alQuitar }, '✕');
+  }
+
+  function detallePinturas(k) {
+    k.pinturas = k.pinturas || [];
+    return el('div', { class: 'nota-detalle' },
+      el('div', { class: 'grupo-cabecera' },
+        el('h3', {}, 'Pintura y acabados'),
+        el('button', {
+          type: 'button', class: 'enlace',
+          onclick: () => {
+            k.pinturas.push({ id: nuevoId(), hex: '#f2efe6', marca: '', nombre: '', acabado: 'Mate' });
+            opciones.cambiado();
+            pintarHoja();
+            const filas = n.hoja.querySelectorAll('.fila-pintura');
+            filas[filas.length - 1].querySelector('input[type=text]').focus();
+          }
+        }, '+ Añadir tono')),
+      k.pinturas.map((pt) => {
+        const editar = (clave) => (ev) => { pt[clave] = ev.target.value; opciones.cambiado(); };
+        return el('div', { class: 'fila-pintura' },
+          el('input', { type: 'color', class: 'muestra-color', value: pt.hex || '#ffffff', 'aria-label': 'Color del tono', oninput: editar('hex') }),
+          el('input', { type: 'text', class: 'campo', value: pt.marca, placeholder: 'Marca', oninput: editar('marca') }),
+          el('input', { type: 'text', class: 'campo', value: pt.nombre, placeholder: 'Nombre o código del tono', oninput: editar('nombre') }),
+          el('select', { class: 'campo', 'aria-label': 'Acabado', onchange: editar('acabado') },
+            ACABADOS.map((a) => el('option', { value: a, selected: pt.acabado === a }, a))),
+          quitar('Quitar tono', () => {
+            k.pinturas = k.pinturas.filter((x) => x !== pt);
+            opciones.cambiado();
+            pintarHoja();
+          }));
+      }));
+  }
+
+  function detalleEnlaces(k) {
+    k.enlaces = k.enlaces || [];
+    return el('div', { class: 'nota-detalle' },
+      el('div', { class: 'grupo-cabecera' },
+        el('h3', {}, 'Enlaces y referencias'),
+        el('button', {
+          type: 'button', class: 'enlace',
+          onclick: () => {
+            k.enlaces.push({ id: nuevoId(), titulo: '', url: '' });
+            opciones.cambiado();
+            pintarHoja();
+            const filas = n.hoja.querySelectorAll('.fila-enlace');
+            filas[filas.length - 1].querySelector('input').focus();
+          }
+        }, '+ Añadir enlace')),
+      k.enlaces.map((e) => {
+        const abrir = el('a', { class: 'boton abrir-enlace', target: '_blank', rel: 'noopener noreferrer' }, 'Abrir');
+        const comprobar = () => {
+          const url = enlaceSeguro(e.url);
+          abrir.hidden = !url;
+          if (url) abrir.href = url; else abrir.removeAttribute('href');
+        };
+        comprobar();
+        return el('div', { class: 'fila-enlace' },
+          el('input', {
+            type: 'text', class: 'campo', value: e.titulo, placeholder: 'Título (ficha técnica, catálogo…)',
+            oninput: (ev) => { e.titulo = ev.target.value; opciones.cambiado(); }
+          }),
+          el('input', {
+            type: 'url', class: 'campo', value: e.url, inputmode: 'url', autocapitalize: 'off',
+            placeholder: 'https://… o una referencia (Plano A-201)',
+            oninput: (ev) => { e.url = ev.target.value; comprobar(); opciones.cambiado(); }
+          }),
+          abrir,
+          quitar('Quitar enlace', () => {
+            k.enlaces = k.enlaces.filter((x) => x !== e);
+            opciones.cambiado();
+            pintarHoja();
+          }));
+      }));
+  }
+
   function pintarHoja() {
     liberarHoja();
     const k = nota(seleccionada);
@@ -414,6 +710,8 @@ export function crearVisorPlano(opciones) {
         class: 'campo', rows: 3, value: k.texto, placeholder: 'Qué se ve aquí, qué hay que hacer, quién…',
         oninput: (ev) => { k.texto = ev.target.value; opciones.cambiado(); }
       }),
+      detallePinturas(k),
+      detalleEnlaces(k),
       suyas.length > 0 && el('div', { class: 'nota-fotos' }, suyas.map((f) => {
         const url = urlHoja(f.blob);
         return el('figure', {},
@@ -472,6 +770,7 @@ export function crearVisorPlano(opciones) {
         document.documentElement.classList.add('con-plano');
         encuadrar();
       }
+      pintarTrazos();
       ponerModo('ver');
       seleccionar(notaId);
       const k = nota(notaId);
@@ -488,12 +787,15 @@ export function crearVisorPlano(opciones) {
       n.img.removeAttribute('src');
       n.capa.hidden = true;
       n.hoja.hidden = true;
+      n.trazos.replaceChildren();
+      descartarTrazo();
       document.documentElement.classList.remove('con-plano');
     },
 
     /* Repintar tras un cambio hecho fuera del visor (fotos nuevas…). */
     refrescar() {
       if (!plano) return;
+      pintarTrazos();
       pintarPines();
       pintarHoja();
     }

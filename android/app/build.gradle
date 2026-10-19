@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.application'
+}
+
+def host = providers.gradleProperty('twaHost').get()
+def ruta = providers.gradleProperty('twaRuta').get()
+def codigo = (System.getenv('VERSION_CODE') ?: System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
+
+// La firma de publicación sale de variables de entorno (secretos de GitHub);
+// sin ellas se compila igual, pero sin firmar para Play.
+def almacen = System.getenv('ANDROID_KEYSTORE_PATH')
+
+android {
+    namespace 'do.coordinate.visorobra'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'do.coordinate.visorobra'
+        minSdk 23
+        targetSdk 36
+        versionCode codigo
+        versionName providers.gradleProperty('versionName').get()
+
+        resValue 'string', 'hostName', host
+        resValue 'string', 'launchUrl', "https://${host}${ruta}visita.html"
+        resValue 'string', 'assetStatements',
+            "[{\\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": {\\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${host}\\\"}}]"
+        manifestPlaceholders = [hostName: host, rutaApp: ruta]
+    }
+
+    signingConfigs {
+        if (almacen) {
+            publicacion {
+                storeFile file(almacen)
+                storePassword System.getenv('ANDROID_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('ANDROID_KEY_ALIAS')
+                keyPassword System.getenv('ANDROID_KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (almacen) signingConfig signingConfigs.publicacion
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

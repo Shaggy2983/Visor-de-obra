@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="appName">COORDINATE · Obra</string>
+    <string name="launcherName">CRD Obra</string>
+    <string name="providerAuthority">do.coordinate.visorobra.fileprovider</string>
+</resources>

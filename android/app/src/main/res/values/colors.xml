@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paleta Acero de COORDINATE -->
+<resources>
+    <color name="colorPrimary">#121826</color>
+    <color name="backgroundColor">#121826</color>
+    <color name="iconBackground">#121826</color>
+</resources>

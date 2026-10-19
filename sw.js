@@ -2,7 +2,7 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'crd-v3';
+const VERSION = 'crd-v4';
 const PIEZAS = [
   './',
   './index.html',
@@ -17,6 +17,11 @@ const PIEZAS = [
   './js/almacen.js',
   './js/partes.js',
   './js/visita.js',
+  './js/utiles.js',
+  './js/planos.js',
+  './js/informe-interactivo.js',
+  './vendor/pdfjs/pdf.min.mjs',
+  './vendor/pdfjs/pdf.worker.min.mjs',
   './js/ifc-worker.js',
   './vendor/three/three.module.min.js',
   './vendor/three/three.core.min.js',

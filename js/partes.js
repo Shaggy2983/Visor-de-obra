@@ -1,20 +1,25 @@
 /* Partes de visita diaria guardados en el teléfono (IndexedDB). Cada visita
    es un registro con sus fotos y su firma dentro, como Blob, para que todo
    siga ahí aunque no haya cobertura. Va en su propia base para no tocar la
-   del modelo IFC. */
+   del modelo IFC.
+
+   Los planos van en una tabla aparte: se cargan una vez por obra y los
+   usan todas las visitas. Las notas puestas sobre un plano sí son de cada
+   visita y viajan dentro de ella. */
 
 // Nombre heredado de la primera versión: cambiarlo dejaría huérfanas las
 // visitas ya guardadas en los teléfonos.
 const BASE = 'visitas-obra-e04';
 const TABLA = 'visitas';
+const PLANOS = 'planos';
 
 function abrir() {
   return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 1);
+    const peticion = indexedDB.open(BASE, 2);
     peticion.onupgradeneeded = () => {
       const bd = peticion.result;
-      if (!bd.objectStoreNames.contains(TABLA)) {
-        bd.createObjectStore(TABLA, { keyPath: 'id' });
+      for (const tabla of [TABLA, PLANOS]) {
+        if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
       }
     };
     peticion.onsuccess = () => cumplir(peticion.result);
@@ -22,12 +27,12 @@ function abrir() {
   });
 }
 
-async function operar(modo, hacer) {
+async function operar(modo, hacer, tabla = TABLA) {
   const bd = await abrir();
   try {
     return await new Promise((cumplir, fallar) => {
-      const t = bd.transaction(TABLA, modo);
-      const p = hacer(t.objectStore(TABLA));
+      const t = bd.transaction(tabla, modo);
+      const p = hacer(t.objectStore(tabla));
       t.oncomplete = () => cumplir(p ? p.result : undefined);
       t.onerror = () => fallar(t.error);
       t.onabort = () => fallar(t.error);
@@ -57,4 +62,23 @@ export function guardarVisita(visita) {
 
 export function borrarVisita(id) {
   return operar('readwrite', (t) => t.delete(id));
+}
+
+/* --- planos --- */
+
+export async function listarPlanos() {
+  const todos = await operar('readonly', (t) => t.getAll(), PLANOS);
+  return (todos || []).sort((a, b) => a.creado - b.creado);
+}
+
+export function leerPlano(id) {
+  return operar('readonly', (t) => t.get(id), PLANOS).then((p) => p || null);
+}
+
+export function guardarPlano(plano) {
+  return operar('readwrite', (t) => t.put(plano), PLANOS);
+}
+
+export function borrarPlano(id) {
+  return operar('readwrite', (t) => t.delete(id), PLANOS);
 }

@@ -41,9 +41,24 @@ instalado) está el parte de visita diaria de obra:
 - **Fotos** con la cámara o desde la galería, con pie. Se reducen a
   1600 px antes de guardarlas para que quepan muchas en el teléfono.
 - **Firma** con el dedo.
+- **Planos con notas**: se carga un plano en **PDF** (cada página es un
+  plano) o en imagen, se abre a pantalla completa con zoom de dos dedos, y
+  con **+ Nota** se toca el sitio. Cada nota lleva un número, un tipo
+  (observación, incidencia o avance, cada uno con su color), su texto y
+  **las fotos de esa zona**: hechas desde la propia nota o vinculando
+  fotos que ya estaban en la visita. Las fotos ligadas muestran su número
+  de nota y, al tocarlo, abren el plano en ese punto. El plano se guarda
+  una vez por obra y lo usan todas las visitas; las notas son de cada
+  visita.
+- **Informe interactivo**: un único archivo `.html` con todo dentro
+  (planos, fotos, tipografía) que se comparte o descarga. Se abre en
+  cualquier navegador, sin la app y sin conexión: al tocar un número del
+  plano aparece su nota con sus fotos, y desde cada foto se salta a su
+  punto del plano.
 - **Se guarda según se escribe**, sin conexión, en IndexedDB.
 - **Informe en PDF**: abre el diálogo de impresión con un parte en A4;
-  en Android se elige *Guardar como PDF*.
+  en Android se elige *Guardar como PDF*. Incluye cada plano con sus
+  números pintados y la tabla de notas con las fotos de cada una.
 - **Compartir resumen** por WhatsApp, correo… con las fotos si el teléfono
   lo permite; si no, copia el texto.
 - **Copia de seguridad**: exporta todas las visitas (fotos incluidas) a un
@@ -130,10 +145,13 @@ Para la ruta Capacitor, el zip que pide ese documento se prepara con:
 | `js/interfaz.js` | Nombres de clases IFC en castellano y piezas de interfaz |
 | `js/almacen.js` | El último modelo, guardado en IndexedDB |
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
-| `js/partes.js` | Las visitas, guardadas en IndexedDB |
+| `js/partes.js` | Las visitas y los planos, guardados en IndexedDB |
+| `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom y notas |
+| `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
+| `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |
 | `sw.js` | Service worker: la app entera cabe en el teléfono |
 | `marca/` | Logotipos y favicon de COORDINATE |
-| `vendor/` | three.js, web-ifc e Inter, copiados aquí para no depender de un CDN |
+| `vendor/` | three.js, web-ifc, pdf.js e Inter, copiados aquí para no depender de un CDN |
 | `apk/` | Recetas para empaquetar como APK (TWA y Capacitor) |
 | `herramientas/` | Guiones auxiliares |
 | `ejemplo.ifc` | Caseta de obra de dos plantas, para probar sin modelo real |
@@ -159,6 +177,14 @@ elementos es reescribir ese buffer dejando fuera los rangos que no tocan.
 
 ## Límites conocidos
 
+- Los planos se guardan como imagen de 4096 px de lado mayor: en un A1
+  equivale a unos 170 ppp, de sobra para leer cotas con zoom, pero no es
+  el vectorial original. Un PDF muy cargado tarda unos segundos en
+  prepararse la primera vez.
+- El informe interactivo pesa lo que sus fotos y planos (de 1 a 5 MB es lo
+  normal). WhatsApp lo envía como documento; al abrirlo hay que elegir un
+  navegador.
+
 - Las superficies del corte horizontal salen huecas: se ve el interior de
   los muros, no una tapa maciza.
 - Los modelos muy grandes (cientos de MB) pueden agotar la memoria de un
@@ -172,9 +198,10 @@ elementos es reescribir ese buffer dejando fuera los rangos que no tocan.
 
 ## Licencias
 
-El código de este repositorio es del proyecto. En `vendor/` viajan tres
+El código de este repositorio es del proyecto. En `vendor/` viajan cuatro
 librerías de terceros con sus licencias al lado:
 
 - [three.js](https://threejs.org) — MIT (`vendor/three/LICENSE.txt`)
 - [web-ifc](https://github.com/ThatOpen/engine_web-ifc) — MPL-2.0 (`vendor/web-ifc/LICENSE.md`)
+- [pdf.js](https://mozilla.github.io/pdf.js/) 4.10.38, compilación *legacy* — Apache-2.0 (`vendor/pdfjs/LICENSE.txt`)
 - [Inter](https://rsms.me/inter/) — SIL Open Font License 1.1 (`vendor/inter/LICENSE.txt`)

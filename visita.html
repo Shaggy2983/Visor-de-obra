@@ -107,6 +107,21 @@
 
     <section class="grupo">
       <div class="grupo-cabecera">
+        <h2>Planos y notas</h2>
+        <span id="total-planos" class="pie"></span>
+      </div>
+      <div id="planos" class="planos"></div>
+      <div class="fila-botones">
+        <button type="button" id="btn-plano" class="boton">+ Cargar plano (PDF o imagen)</button>
+        <button type="button" id="btn-otros-planos" class="enlace" hidden></button>
+      </div>
+      <input type="file" id="entrada-plano" accept="application/pdf,.pdf,image/*" hidden>
+      <p class="pie">Abre un plano, pulsa <strong>+ Nota</strong> y toca el sitio: cada nota lleva su
+         número, su texto y las fotos de esa zona.</p>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-cabecera">
         <h2>Fotos</h2>
         <span id="total-fotos" class="pie"></span>
       </div>
@@ -135,11 +150,30 @@
 
     <section class="grupo acciones-ficha">
       <button type="button" id="btn-informe" class="boton boton-destacado grande">Informe en PDF</button>
+      <button type="button" id="btn-interactivo" class="boton boton-destacado grande">Informe interactivo (planos y fotos)</button>
       <button type="button" id="btn-compartir" class="boton grande">Compartir resumen</button>
       <button type="button" id="btn-borrar" class="boton boton-peligro grande">Borrar esta visita</button>
     </section>
   </form>
 </main>
+
+<!-- ---------- plano a pantalla completa ---------- -->
+
+<div id="plano-capa" class="plano-capa" hidden>
+  <div class="plano-barra">
+    <button type="button" id="plano-cerrar" class="boton">← Volver</button>
+    <span id="plano-nombre" class="plano-nombre"></span>
+    <button type="button" id="plano-modo" class="boton boton-destacado">+ Nota</button>
+  </div>
+  <p id="plano-ayuda" class="plano-ayuda"></p>
+  <div id="plano-marco" class="plano-marco">
+    <div id="plano-lienzo" class="plano-lienzo">
+      <img id="plano-img" alt="" draggable="false">
+      <div id="plano-pines" class="plano-pines"></div>
+    </div>
+  </div>
+  <section id="nota-hoja" class="nota-hoja" hidden></section>
+</div>
 
 <div id="foto-grande" class="foto-grande" hidden><img alt=""></div>
 <div id="aviso" class="aviso" hidden></div>

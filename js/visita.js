@@ -1,9 +1,19 @@
-/* Visita diaria de obra: lista de partes, ficha de cada visita, informe
-   para imprimir en PDF y copia de seguridad. Todo se queda en el teléfono
-   y se guarda según se escribe. */
+/* Visita diaria de obra: lista de partes, ficha de cada visita, planos
+   con notas y fotos, informe para imprimir en PDF, informe interactivo y
+   copia de seguridad. Todo se queda en el teléfono y se guarda según se
+   escribe. */
 
-import { listarVisitas, leerVisita, guardarVisita, borrarVisita } from './partes.js';
+import {
+  listarVisitas, leerVisita, guardarVisita, borrarVisita,
+  listarPlanos, leerPlano, guardarPlano, borrarPlano
+} from './partes.js';
 import { avisar } from './interfaz.js';
+import {
+  el, nuevoId, dos, hoy, ahora, fechaLarga, plural, decodificar, reducirImagen,
+  aDatos, deDatos, descargar
+} from './utiles.js';
+import { leerArchivoPlano, crearVisorPlano, componerPlano, TIPOS_NOTA } from './planos.js';
+import { generarInformeInteractivo } from './informe-interactivo.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -47,6 +57,12 @@ const nodos = {
   botonInforme: $('btn-informe'),
   compartir: $('btn-compartir'),
   borrar: $('btn-borrar'),
+  planos: $('planos'),
+  totalPlanos: $('total-planos'),
+  botonPlano: $('btn-plano'),
+  entradaPlano: $('entrada-plano'),
+  otrosPlanos: $('btn-otros-planos'),
+  botonInteractivo: $('btn-interactivo'),
   fotoGrande: $('foto-grande'),
   aviso: $('aviso')
 };
@@ -56,52 +72,21 @@ let pendiente = false;    // hay cambios sin escribir en IndexedDB
 let temporizador = null;
 let urlsFicha = [];       // object URLs de las miniaturas, para liberarlas
 let todas = [];           // visitas de la lista, para el buscador
+let urlsPlanos = [];      // miniaturas de los planos en la ficha
+let verTodosPlanos = false;
 
 /* ------------------------------------------------------------------ */
 /* utilidades                                                          */
 /* ------------------------------------------------------------------ */
 
-function el(etiqueta, atributos = {}, ...hijos) {
-  const nodo = document.createElement(etiqueta);
-  for (const [clave, valor] of Object.entries(atributos)) {
-    if (valor == null || valor === false) continue;
-    if (clave.startsWith('on')) nodo.addEventListener(clave.slice(2), valor);
-    else if (clave === 'class') nodo.className = valor;
-    else if (clave in nodo && clave !== 'list') nodo[clave] = valor;
-    else nodo.setAttribute(clave, valor === true ? '' : valor);
-  }
-  for (const hijo of hijos.flat()) {
-    if (hijo == null || hijo === false) continue;
-    nodo.append(hijo instanceof Node ? hijo : String(hijo));
-  }
-  return nodo;
+/* Visitas guardadas antes de que existieran los planos no traen notas. */
+function normalizar(v) {
+  if (!Array.isArray(v.notas)) v.notas = [];
+  for (const f of v.fotos) if (f.nota === undefined) f.nota = null;
+  return v;
 }
 
-function nuevoId() {
-  if (crypto.randomUUID) return crypto.randomUUID();
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
-}
-
-const dos = (n) => String(n).padStart(2, '0');
-
-function hoy() {
-  const d = new Date();
-  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())}`;
-}
-
-function ahora() {
-  const d = new Date();
-  return `${dos(d.getHours())}:${dos(d.getMinutes())}`;
-}
-
-function fechaLarga(iso) {
-  if (!iso) return 'Sin fecha';
-  const [a, m, d] = iso.split('-').map(Number);
-  const texto = new Date(a, m - 1, d).toLocaleDateString('es-ES', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-  });
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
+const mismaObra = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
 
 function totalPersonas(v) {
   return v.personal.reduce((s, p) => s + (Number(p.numero) || 0), 0);
@@ -109,23 +94,63 @@ function totalPersonas(v) {
 
 const abiertas = (v) => v.incidencias.filter((i) => i.estado !== 'cerrada');
 
-function plural(n, uno, varios) {
-  return `${n} ${n === 1 ? uno : varios}`;
-}
+/* ------------------------------------------------------------------ */
+/* rutas: #/v/<id> abre una visita, #/v/<id>/plano/<id> uno de sus      */
+/* planos (así el botón atrás del teléfono cierra el plano); el resto,  */
+/* la lista                                                            */
+/* ------------------------------------------------------------------ */
 
-/* ------------------------------------------------------------------ */
-/* rutas: #/v/<id> abre una visita; cualquier otra cosa, la lista      */
-/* ------------------------------------------------------------------ */
+let notaAlAbrir = null;   // nota que enfocar al abrir el plano
+
+const rutaVisita = (v) => `#/v/${encodeURIComponent(v.id)}`;
+const rutaPlano = (v, planoId) => `${rutaVisita(v)}/plano/${encodeURIComponent(planoId)}`;
 
 async function enrutar() {
   await guardarYa();
-  const m = location.hash.match(/^#\/v\/(.+)$/);
+  const m = location.hash.match(/^#\/v\/([^/]+)(?:\/plano\/([^/]+))?$/);
   if (m) {
-    const v = await leerVisita(decodeURIComponent(m[1]));
-    if (v) return abrirFicha(v);
-    history.replaceState(null, '', location.pathname);
+    const id = decodeURIComponent(m[1]);
+    const planoId = m[2] && decodeURIComponent(m[2]);
+    if (!actual || actual.id !== id) {
+      visor.cerrar();
+      const v = await leerVisita(id);
+      if (!v) {
+        history.replaceState(null, '', location.pathname);
+        return mostrarLista();
+      }
+      abrirFicha(normalizar(v));
+    }
+    if (planoId) {
+      const plano = await leerPlano(planoId);
+      if (plano) {
+        const nota = notaAlAbrir;
+        notaAlAbrir = null;
+        return visor.abrir(plano, nota);
+      }
+    }
+    if (visor.abierto) {
+      visor.cerrar();
+      pintarPlanos();
+      pintarFotos();
+    }
+    return;
   }
+  visor.cerrar();
   return mostrarLista();
+}
+
+let planoDesdeFicha = false;   // se llegó al plano desde la ficha: "volver" es ir atrás
+
+function abrirPlano(planoId, notaId = null) {
+  notaAlAbrir = notaId;
+  planoDesdeFicha = true;
+  location.hash = rutaPlano(actual, planoId);
+}
+
+function cerrarPlano() {
+  if (planoDesdeFicha) history.back();
+  else location.replace(rutaVisita(actual));
+  planoDesdeFicha = false;
 }
 
 /* ------------------------------------------------------------------ */
@@ -135,6 +160,7 @@ async function enrutar() {
 async function mostrarLista() {
   actual = null;
   liberarUrls();
+  liberarUrlsPlanos();
   nodos.vistaFicha.hidden = true;
   nodos.vistaLista.hidden = false;
   nodos.nueva.hidden = false;
@@ -153,7 +179,8 @@ function coincide(v, texto) {
     v.fecha, v.obra, v.autor, v.trabajos, v.maquinaria, v.materiales, v.observaciones,
     ...v.personal.map((p) => `${p.empresa} ${p.oficio}`),
     ...v.incidencias.map((i) => i.texto),
-    ...v.fotos.map((f) => f.pie)
+    ...v.fotos.map((f) => f.pie),
+    ...(v.notas || []).map((n) => n.texto)
   ].join(' ').toLowerCase();
   return texto.toLowerCase().split(/\s+/).every((t) => pajar.includes(t));
 }
@@ -180,6 +207,7 @@ function tarjeta(v) {
       pendientes > 0 && el('span', { class: graves ? 'pendientes grave' : 'pendientes' },
         plural(pendientes, 'incidencia abierta', 'incidencias abiertas')),
       v.fotos.length > 0 && el('span', {}, plural(v.fotos.length, 'foto', 'fotos')),
+      (v.notas || []).length > 0 && el('span', {}, plural(v.notas.length, 'nota en plano', 'notas en plano')),
       v.clima.length > 0 && el('span', {}, v.clima.join(', '))
     )
   );
@@ -206,13 +234,14 @@ async function nuevaVisita() {
     materiales: '',
     incidencias: anterior ? abiertas(anterior).map((i) => ({ ...i, desde: i.desde || anterior.fecha })) : [],
     fotos: [],
+    notas: [],
     observaciones: '',
     firma: null,
     creada: Date.now(),
     modificada: Date.now()
   };
   await guardarVisita(v);
-  location.hash = `#/v/${encodeURIComponent(v.id)}`;
+  location.hash = rutaVisita(v);
 }
 
 /* ------------------------------------------------------------------ */
@@ -231,6 +260,8 @@ function abrirFicha(v) {
   pintarPersonal();
   pintarIncidencias();
   pintarFotos();
+  verTodosPlanos = false;
+  pintarPlanos();
   firma.cargar(v.firma);
   nodos.estadoGuardado.textContent = 'Guardado';
   scrollTo(0, 0);
@@ -374,8 +405,13 @@ function pintarFotos() {
   liberarUrls();
   nodos.fotos.replaceChildren(...actual.fotos.map((f) => {
     const url = urlDe(f.blob);
+    const nota = f.nota && actual.notas.find((n) => n.id === f.nota);
     return el('figure', { class: 'foto' },
       el('img', { src: url, alt: f.pie || 'Foto de obra', loading: 'lazy', onclick: () => ampliar(url) }),
+      nota && el('button', {
+        type: 'button', class: `foto-nota tipo-${nota.tipo}`, title: 'Ver en el plano',
+        onclick: () => abrirPlano(nota.plano, nota.id)
+      }, `Nota ${nota.numero}`),
       el('input', {
         class: 'campo', value: f.pie, placeholder: 'Pie de foto',
         oninput: (ev) => { f.pie = ev.target.value; cambiado(); }
@@ -399,56 +435,107 @@ function ampliar(url) {
   nodos.fotoGrande.hidden = false;
 }
 
-async function decodificar(archivo) {
-  try {
-    return await createImageBitmap(archivo, { imageOrientation: 'from-image' });
-  } catch (e) {
-    const url = URL.createObjectURL(archivo);
-    try {
-      const img = new Image();
-      img.src = url;
-      await img.decode();
-      return img;
-    } finally {
-      URL.revokeObjectURL(url);
-    }
-  }
-}
-
-/* Reduce la foto antes de guardarla: una de 12 MP del móvil pasa a unos
-   pocos cientos de KB, que es lo que aguanta bien IndexedDB en cantidad. */
-async function comprimir(archivo) {
-  const imagen = await decodificar(archivo);
-  const ancho = imagen.width, alto = imagen.height;
-  const escala = Math.min(1, LADO_FOTO / Math.max(ancho, alto));
-  const lienzo = document.createElement('canvas');
-  lienzo.width = Math.round(ancho * escala);
-  lienzo.height = Math.round(alto * escala);
-  lienzo.getContext('2d').drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
-  if (imagen.close) imagen.close();
-  return new Promise((cumplir) => lienzo.toBlob(cumplir, 'image/jpeg', CALIDAD_FOTO));
-}
-
-async function anadirFotos(archivos) {
+async function anadirFotos(archivos, notaId = null) {
   if (!actual || !archivos.length) return;
   const visita = actual;
   avisar(nodos.aviso, archivos.length > 1 ? `Guardando ${archivos.length} fotos…` : 'Guardando foto…');
   for (const archivo of archivos) {
     try {
-      const blob = await comprimir(archivo);
-      if (blob) visita.fotos.push({ id: nuevoId(), blob, pie: '', hora: ahora() });
+      const { blob } = await reducirImagen(archivo, LADO_FOTO, CALIDAD_FOTO);
+      if (blob) visita.fotos.push({ id: nuevoId(), blob, pie: '', hora: ahora(), nota: notaId });
     } catch (e) {
       avisar(nodos.aviso, `No se ha podido leer ${archivo.name || 'la imagen'}.`, 4000);
     }
   }
   if (actual === visita) {
-    pintarFotos();
+    if (!visor.abierto) pintarFotos();
     pendiente = true;
     await guardarYa();
   } else {
     await guardarVisita(visita);
   }
 }
+
+/* --- planos --- */
+
+function liberarUrlsPlanos() {
+  for (const u of urlsPlanos) URL.revokeObjectURL(u);
+  urlsPlanos = [];
+}
+
+/* Se muestran los planos de la obra de esta visita (y los que ya tengan
+   notas suyas); el resto, a un toque, por si la obra cambió de nombre. */
+async function pintarPlanos() {
+  const visita = actual;
+  let planos = [];
+  try {
+    planos = await listarPlanos();
+  } catch (e) { /* sin planos */ }
+  if (actual !== visita) return;
+  liberarUrlsPlanos();
+  const propios = planos.filter((p) => mismaObra(p.obra, visita.obra) || visita.notas.some((n) => n.plano === p.id));
+  const visibles = verTodosPlanos ? planos : propios;
+  nodos.otrosPlanos.hidden = verTodosPlanos || planos.length === propios.length;
+  nodos.otrosPlanos.textContent = `Ver planos de otras obras (${planos.length - propios.length})`;
+  nodos.totalPlanos.textContent = visita.notas.length ? plural(visita.notas.length, 'nota', 'notas') : '';
+  nodos.planos.replaceChildren(...visibles.map((p) => {
+    const notas = visita.notas.filter((n) => n.plano === p.id);
+    const url = URL.createObjectURL(p.blob);
+    urlsPlanos.push(url);
+    return el('div', { class: 'plano-ficha' },
+      el('button', { type: 'button', class: 'plano-abrir', onclick: () => abrirPlano(p.id) },
+        el('img', { src: url, alt: '', loading: 'lazy' }),
+        el('span', { class: 'plano-titulo' }, p.nombre),
+        el('span', { class: 'pie' }, notas.length ? plural(notas.length, 'nota', 'notas') : 'Sin notas en esta visita',
+          !mismaObra(p.obra, visita.obra) && p.obra ? ` · ${p.obra}` : '')
+      ),
+      el('button', {
+        type: 'button', class: 'boton quitar', title: 'Quitar plano', 'aria-label': `Quitar ${p.nombre}`,
+        onclick: () => quitarPlano(p)
+      }, '✕')
+    );
+  }));
+  if (!visibles.length) {
+    nodos.planos.append(el('p', { class: 'pie' }, 'Carga un plano (PDF o imagen) para marcar notas sobre él.'));
+  }
+}
+
+async function cargarPlano(archivo) {
+  const visita = actual;
+  avisar(nodos.aviso, 'Preparando el plano…', 60000);
+  try {
+    const planos = await leerArchivoPlano(archivo, visita.obra, (texto) => avisar(nodos.aviso, texto, 60000));
+    for (const p of planos) await guardarPlano(p);
+    avisar(nodos.aviso, planos.length > 1 ? `${planos.length} planos cargados.` : 'Plano cargado.');
+    if (actual !== visita) return;
+    await pintarPlanos();
+    if (planos.length === 1) abrirPlano(planos[0].id);
+  } catch (e) {
+    avisar(nodos.aviso, 'No se ha podido leer ese plano. Prueba con un PDF o una imagen.', 5000);
+  }
+}
+
+/* Un plano con notas en alguna visita no se borra: esas visitas y sus
+   informes lo necesitan. */
+async function quitarPlano(plano) {
+  await guardarYa();
+  const usos = (await listarVisitas()).filter((v) => (v.notas || []).some((n) => n.plano === plano.id));
+  if (usos.length) {
+    alert(`«${plano.nombre}» tiene notas en ${plural(usos.length, 'visita', 'visitas')}. Borra antes esas notas si quieres quitarlo.`);
+    return;
+  }
+  if (!confirm(`¿Quitar el plano «${plano.nombre}» del teléfono?`)) return;
+  await borrarPlano(plano.id);
+  pintarPlanos();
+}
+
+const visor = crearVisorPlano({
+  visita: () => actual,
+  cambiado,
+  anadirFotos,
+  ampliar: (url) => ampliar(url),
+  alCerrar: cerrarPlano
+});
 
 /* --- firma --- */
 
@@ -555,6 +642,13 @@ async function imprimir() {
   const v = actual;
   const urls = [];
   const url = (blob) => { const u = URL.createObjectURL(blob); urls.push(u); return u; };
+  avisar(nodos.aviso, 'Preparando el informe…', 20000);
+  const planosInforme = [];
+  for (const plano of await planosConNotas(v)) {
+    const notas = v.notas.filter((k) => k.plano === plano.id).sort((a, b) => a.numero - b.numero);
+    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas) });
+  }
+  nodos.aviso.hidden = true;
 
   // Pasa por el(): los apartados vacíos llegan como null y no deben pintarse.
   nodos.informe.replaceChildren(...el('div', {},
@@ -594,11 +688,25 @@ async function imprimir() {
           el('td', {}, i.estado === 'cerrada' ? 'Resuelta' : 'Abierta')))))
     ),
     bloque('Observaciones e instrucciones', v.observaciones),
+    ...planosInforme.map(({ plano, imagen, notas }) => el('section', { class: 'informe-plano' },
+      el('h2', {}, `Plano · ${plano.nombre}`),
+      el('img', { src: url(imagen), alt: plano.nombre }),
+      el('table', { class: 'informe-tabla' },
+        el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Nº'), el('th', {}, 'Tipo'), el('th', {}, 'Nota'), el('th', {}, 'Fotos'))),
+        el('tbody', {}, ...notas.map((k) => el('tr', {},
+          el('td', { class: 'num' }, String(k.numero)),
+          el('td', {}, TIPOS_NOTA[k.tipo] || k.tipo),
+          el('td', {}, k.texto || '—'),
+          el('td', {}, v.fotos.map((f, i) => (f.nota === k.id ? String(i + 1) : null)).filter(Boolean).join(', ') || '—')))))
+    )),
     v.fotos.length > 0 && el('section', {},
       el('h2', {}, 'Fotos'),
-      el('div', { class: 'informe-fotos' }, ...v.fotos.map((f, n) => el('figure', {},
-        el('img', { src: url(f.blob), alt: '' }),
-        el('figcaption', {}, [`${n + 1}`, f.pie, f.hora].filter(Boolean).join(' · ')))))
+      el('div', { class: 'informe-fotos' }, ...v.fotos.map((f, n) => {
+        const nota = f.nota && v.notas.find((k) => k.id === f.nota);
+        return el('figure', {},
+          el('img', { src: url(f.blob), alt: '' }),
+          el('figcaption', {}, [`${n + 1}`, nota && `Nota ${nota.numero}`, f.pie, f.hora].filter(Boolean).join(' · ')));
+      }))
     ),
     el('section', { class: 'informe-firma' },
       el('h2', {}, 'Firma'),
@@ -621,6 +729,36 @@ async function imprimir() {
   setTimeout(() => { for (const u of urls) URL.revokeObjectURL(u); }, 60000);
 }
 
+async function planosConNotas(v) {
+  const ids = [...new Set(v.notas.map((k) => k.plano))];
+  const planos = await Promise.all(ids.map((id) => leerPlano(id)));
+  return planos.filter(Boolean);
+}
+
+async function informeInteractivo() {
+  await guardarYa();
+  const v = actual;
+  avisar(nodos.aviso, 'Preparando el informe interactivo…', 60000);
+  try {
+    const blob = await generarInformeInteractivo(v, await planosConNotas(v), { contacto: CONTACTO, lema: LEMA });
+    const nombre = `informe-visita-${v.fecha}${v.obra ? '-' + v.obra.toLowerCase().replace(/[^a-z0-9áéíóúñü]+/gi, '-').replace(/^-|-$/g, '') : ''}.html`;
+    const archivo = new File([blob], nombre, { type: 'text/html' });
+    nodos.aviso.hidden = true;
+    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+      try {
+        await navigator.share({ title: `Visita ${v.fecha} ${v.obra}`.trim(), files: [archivo] });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+    descargar(blob, nombre);
+    avisar(nodos.aviso, 'Informe descargado. Ábrelo en el navegador o envíalo por correo.', 4000);
+  } catch (e) {
+    avisar(nodos.aviso, 'No se ha podido preparar el informe interactivo.', 4000);
+  }
+}
+
 function resumen(v) {
   const lineas = [
     `COORDINATE · PARTE DE VISITA · ${v.obra || 'Obra'}`,
@@ -638,6 +776,9 @@ function resumen(v) {
     ...v.incidencias.map((i) =>
       `  · [${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? ', resuelta' : ''}] ${i.texto}`),
     v.observaciones && `\nObservaciones:\n${v.observaciones}`,
+    v.notas.length && '\nNotas en plano:',
+    ...v.notas.slice().sort((a, b) => a.numero - b.numero).map((k) =>
+      `  ${k.numero}. [${TIPOS_NOTA[k.tipo] || k.tipo}] ${k.texto || '(sin texto)'}`),
     v.fotos.length && `\n${plural(v.fotos.length, 'foto', 'fotos')}`,
     `\n— COORDINATE · ${CONTACTO}`
   ];
@@ -676,19 +817,6 @@ async function compartir() {
 /* copia de seguridad: un JSON con las fotos dentro, en base64         */
 /* ------------------------------------------------------------------ */
 
-function aDatos(blob) {
-  return new Promise((cumplir, fallar) => {
-    const lector = new FileReader();
-    lector.onload = () => cumplir(lector.result);
-    lector.onerror = () => fallar(lector.error);
-    lector.readAsDataURL(blob);
-  });
-}
-
-async function deDatos(url) {
-  return (await fetch(url)).blob();
-}
-
 async function exportar() {
   const visitas = await listarVisitas();
   if (!visitas.length) {
@@ -704,16 +832,11 @@ async function exportar() {
       fotos: await Promise.all(v.fotos.map(async (f) => ({ ...f, blob: await aDatos(f.blob) })))
     });
   }
-  const json = JSON.stringify({ formato: 'visitas-obra-e04', version: 1, exportada: new Date().toISOString(), visitas: salida });
-  const enlace = el('a', {
-    href: URL.createObjectURL(new Blob([json], { type: 'application/json' })),
-    download: `visitas-obra-${hoy()}.json`
-  });
-  document.body.append(enlace);
-  enlace.click();
-  enlace.remove();
-  setTimeout(() => URL.revokeObjectURL(enlace.href), 30000);
-  avisar(nodos.aviso, `Copia lista: ${plural(visitas.length, 'visita', 'visitas')}.`);
+  const planos = [];
+  for (const p of await listarPlanos()) planos.push({ ...p, blob: await aDatos(p.blob) });
+  const json = JSON.stringify({ formato: 'visitas-obra-e04', version: 2, exportada: new Date().toISOString(), visitas: salida, planos });
+  descargar(new Blob([json], { type: 'application/json' }), `visitas-obra-${hoy()}.json`);
+  avisar(nodos.aviso, `Copia lista: ${plural(visitas.length, 'visita', 'visitas')} y ${plural(planos.length, 'plano', 'planos')}.`);
 }
 
 /* Al importar, una visita que ya existe sólo se sustituye si la copia es
@@ -723,6 +846,10 @@ async function importar(archivo) {
     const datos = JSON.parse(await archivo.text());
     if (datos.formato !== 'visitas-obra-e04' || !Array.isArray(datos.visitas)) {
       throw new Error('formato');
+    }
+    // Las copias de la versión 1 no traen planos.
+    for (const p of datos.planos || []) {
+      if (!(await leerPlano(p.id))) await guardarPlano({ ...p, blob: await deDatos(p.blob) });
     }
     let nuevas = 0, actualizadas = 0;
     for (const v of datos.visitas) {
@@ -783,6 +910,15 @@ for (const entrada of [nodos.entradaCamara, nodos.entradaGaleria]) {
 }
 nodos.fotoGrande.addEventListener('click', () => { nodos.fotoGrande.hidden = true; });
 
+nodos.botonPlano.addEventListener('click', () => nodos.entradaPlano.click());
+nodos.entradaPlano.addEventListener('change', () => {
+  const archivo = nodos.entradaPlano.files[0];
+  nodos.entradaPlano.value = '';
+  if (archivo) cargarPlano(archivo);
+});
+nodos.otrosPlanos.addEventListener('click', () => { verTodosPlanos = true; pintarPlanos(); });
+nodos.botonInteractivo.addEventListener('click', informeInteractivo);
+
 nodos.borrarFirma.addEventListener('click', () => firma.borrar());
 nodos.botonInforme.addEventListener('click', imprimir);
 nodos.compartir.addEventListener('click', compartir);
@@ -791,6 +927,7 @@ nodos.borrar.addEventListener('click', async () => {
   const id = actual.id;
   pendiente = false;
   actual = null;
+  liberarUrlsPlanos();
   await borrarVisita(id);
   location.hash = '';
 });

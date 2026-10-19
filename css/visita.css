@@ -212,6 +212,191 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
 .pagina-visita .aviso { bottom: calc(var(--seguro-abajo) + 1.2rem); }
 
+/* ---------- planos en la ficha ---------- */
+
+.planos { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; margin-bottom: .4rem; }
+
+.plano-ficha { position: relative; }
+
+.plano-abrir {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  width: 100%;
+  padding: 0 0 .4rem;
+  border: 1px solid var(--borde);
+  border-radius: .55rem;
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.plano-abrir img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #fff; }
+.plano-abrir .plano-titulo { padding: 0 .55rem; font-size: .86rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plano-abrir .pie { padding: 0 .55rem; margin: 0; }
+
+.plano-ficha .quitar {
+  position: absolute;
+  top: .3rem; right: .3rem;
+  min-height: 2rem; min-width: 2rem;
+  background: rgba(18,24,38,.8);
+}
+
+.foto-nota {
+  position: absolute;
+  top: .3rem; left: .3rem;
+  appearance: none;
+  border: 2px solid #fff;
+  border-radius: 1rem;
+  padding: .15rem .55rem;
+  font: 700 .74rem "Inter", system-ui, sans-serif;
+  color: #fff;
+  background: var(--nota-observacion);
+  cursor: pointer;
+}
+
+/* colores de los tipos de nota (los mismos que pinta el informe) */
+:root {
+  --nota-observacion: #3d7cc4;
+  --nota-incidencia: #d64545;
+  --nota-avance: #2f9e6a;
+}
+
+.tipo-observacion { background: var(--nota-observacion) !important; }
+.tipo-incidencia { background: var(--nota-incidencia) !important; }
+.tipo-avance { background: var(--nota-avance) !important; }
+
+/* ---------- plano a pantalla completa ---------- */
+
+.con-plano, .con-plano body { overflow: hidden; }
+
+.plano-capa {
+  position: fixed;
+  inset: 0;
+  z-index: 65;
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+}
+
+.plano-capa[hidden] { display: none; }
+
+.plano-barra {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: calc(var(--seguro-arriba) + .4rem) .6rem .4rem;
+  background: var(--fondo-2);
+  border-bottom: 1px solid var(--borde);
+}
+
+.plano-nombre { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.plano-ayuda {
+  margin: 0;
+  padding: .35rem .8rem;
+  font-size: .8rem;
+  color: var(--texto-tenue);
+  background: var(--fondo-2);
+}
+
+.anadiendo .plano-ayuda { background: var(--acento); color: var(--texto-sobre-acento); font-weight: 600; }
+.anadiendo .plano-marco { cursor: crosshair; }
+
+.plano-marco {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  touch-action: none;
+  background: #5b6577;
+  cursor: grab;
+}
+
+.plano-lienzo {
+  position: absolute;
+  top: 0; left: 0;
+  transform-origin: 0 0;
+  --inversa: 1;
+}
+
+.plano-lienzo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px rgba(0,0,0,.2), 0 10px 40px rgba(0,0,0,.4);
+}
+
+.plano-pines { position: absolute; inset: 0; }
+
+/* El pin no crece con el zoom: se compensa con la escala inversa. */
+.pin {
+  position: absolute;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 .45rem;
+  border: 2px solid #fff;
+  border-radius: 1rem;
+  color: #fff;
+  font: 700 .85rem/1.75rem "Inter", system-ui, sans-serif;
+  text-align: center;
+  transform: translate(-50%, -50%) scale(var(--inversa));
+  box-shadow: 0 2px 8px rgba(0,0,0,.45);
+  cursor: pointer;
+  background: var(--nota-observacion);
+}
+
+.pin.activo { outline: 3px solid var(--texto); outline-offset: 2px; z-index: 2; }
+.pin-fijo { position: static; transform: none; display: inline-block; flex: 0 0 auto; }
+
+.nota-hoja {
+  max-height: 55%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: .7rem .8rem calc(var(--seguro-abajo) + .8rem);
+  background: var(--fondo-2);
+  border-top: 1px solid var(--borde);
+  box-shadow: 0 -8px 30px rgba(0,0,0,.45);
+}
+
+.nota-hoja[hidden] { display: none; }
+.nota-hoja .campo { font-size: 16px; }
+
+.nota-cabecera { display: flex; align-items: center; gap: .55rem; margin-bottom: .6rem; }
+.nota-cabecera .quitar { margin-left: auto; }
+
+.nota-fotos { display: flex; gap: .45rem; overflow-x: auto; margin: .2rem 0 .3rem; }
+.nota-fotos figure { position: relative; margin: 0; flex: 0 0 auto; }
+.nota-fotos img { display: block; width: 6.5rem; height: 4.9rem; object-fit: cover; border-radius: .45rem; cursor: zoom-in; }
+.nota-fotos .quitar { position: absolute; top: .2rem; right: .2rem; min-height: 1.8rem; min-width: 1.8rem; background: rgba(18,24,38,.8); }
+
+.vincular { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0; }
+.vincular[hidden] { display: none; }
+
+.vincular-foto {
+  position: relative;
+  appearance: none;
+  padding: 0;
+  border: 2px solid var(--borde);
+  border-radius: .45rem;
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.vincular-foto img { display: block; width: 4.6rem; height: 3.5rem; object-fit: cover; }
+.vincular-foto span { position: absolute; bottom: .1rem; right: .2rem; font-size: .68rem; font-weight: 700; color: #fff; text-shadow: 0 1px 2px #000; }
+
+.nota-acciones { justify-content: space-between; margin-top: .8rem; }
+
+.pagina-visita .aviso { z-index: 80; }
+
 /* ---------- informe impreso ---------- */
 
 .informe { display: none; }
@@ -275,6 +460,9 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   .informe-fotos figure { margin: 0; break-inside: avoid; }
   .informe-fotos img { width: 100%; max-height: 80mm; object-fit: contain; border: .5pt solid #ddd; }
   .informe-fotos figcaption { font-size: 8.5pt; color: #444; margin-top: 1mm; }
+
+  .informe-plano > img { display: block; width: 100%; max-height: 170mm; object-fit: contain; border: .5pt solid #ccc; margin-bottom: 3mm; }
+  .informe section.informe-plano { break-inside: auto; }
 
   .informe-firma img, .informe-hueco { display: block; height: 28mm; max-width: 80mm; object-fit: contain; }
   .informe-hueco { border-bottom: .5pt solid #999; width: 80mm; }

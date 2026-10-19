@@ -85,7 +85,7 @@ def main():
     metro3 = linea('IFCSIUNIT(*,.VOLUMEUNIT.,$,.CUBIC_METRE.)')
     unidades = linea(f'IFCUNITASSIGNMENT(({metro},{metro2},{metro3}))')
     proyecto = linea(
-        f"IFCPROJECT('{guid(1)}',$,'E04 · caseta de obra',$,$,$,$,({contexto}),{unidades})")
+        f"IFCPROJECT('{guid(1)}',$,'CRD · caseta de obra',$,$,$,$,({contexto}),{unidades})")
 
     sitio_pl = local('$', colocacion())
     solar = linea(

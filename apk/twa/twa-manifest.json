@@ -1,17 +1,17 @@
 {
-  "packageId": "com.grupoaqua.e04visor",
+  "packageId": "do.coordinate.visorobra",
   "host": "USUARIO.github.io",
-  "name": "E04 · Modelo de obra",
-  "launcherName": "E04 3D",
+  "name": "COORDINATE · Visor de obra",
+  "launcherName": "CRD Obra",
   "display": "standalone",
   "orientation": "any",
-  "themeColor": "#12161a",
-  "themeColorDark": "#12161a",
-  "navigationColor": "#12161a",
-  "navigationColorDark": "#12161a",
-  "navigationDividerColor": "#12161a",
-  "navigationDividerColorDark": "#12161a",
-  "backgroundColor": "#eceae4",
+  "themeColor": "#121826",
+  "themeColorDark": "#121826",
+  "navigationColor": "#121826",
+  "navigationColorDark": "#121826",
+  "navigationDividerColor": "#121826",
+  "navigationDividerColorDark": "#121826",
+  "backgroundColor": "#121826",
   "enableNotifications": false,
   "startUrl": "/REPOSITORIO/index.html",
   "iconUrl": "https://USUARIO.github.io/REPOSITORIO/icono-512.png",
@@ -32,6 +32,6 @@
   "minSdkVersion": 23,
   "signingKey": {
     "path": "./android.keystore",
-    "alias": "e04"
+    "alias": "coordinate"
   }
 }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 450 64" width="450" height="64">
+  <text x="0" y="47" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="44" letter-spacing="5" fill="#1b3560">C</text>
+  <g transform="translate(44 6) scale(.81)">
+  <circle cx="32" cy="32" r="19" fill="none" stroke="#1b3560" stroke-width="4"/>
+  <path d="M32 6V58M6 32H58" stroke="#1b3560" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="6" r="4.5" fill="#3d7cc4"/>
+  <circle cx="58" cy="32" r="4.5" fill="#3d7cc4"/>
+  <circle cx="32" cy="58" r="4.5" fill="#3d7cc4"/>
+  <circle cx="6" cy="32" r="4.5" fill="#3d7cc4"/>
+  <circle cx="32" cy="32" r="6.5" fill="#3d7cc4"/>
+  </g>
+  <text x="102" y="47" font-family="Inter, system-ui, sans-serif" font-weight="500" font-size="44" letter-spacing="5" fill="#1b3560">ORDINATE</text>
+</svg>

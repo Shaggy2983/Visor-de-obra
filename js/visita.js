@@ -10,6 +10,8 @@ const $ = (id) => document.getElementById(id);
 const CLIMAS = ['Soleado', 'Nublado', 'Lluvia', 'Viento', 'Niebla', 'Helada', 'Calor'];
 const JORNADAS = ['Normal', 'Parcial', 'Sin actividad'];
 const GRAVEDADES = { leve: 'Leve', media: 'Media', grave: 'Grave' };
+const CONTACTO = 'hola@coordinate.do · coordinate.do · Santo Domingo, RD';
+const LEMA = 'Los problemas se resuelven en el modelo, no en obra.';
 const LADO_FOTO = 1600;       // lado mayor de las fotos guardadas, en píxeles
 const CALIDAD_FOTO = 0.8;
 
@@ -175,7 +177,7 @@ function tarjeta(v) {
     v.trabajos && el('div', { class: 'tarjeta-texto' }, v.trabajos),
     el('div', { class: 'tarjeta-datos' },
       el('span', {}, plural(totalPersonas(v), 'persona', 'personas')),
-      pendientes > 0 && el('span', { class: graves ? 'marca grave' : 'marca' },
+      pendientes > 0 && el('span', { class: graves ? 'pendientes grave' : 'pendientes' },
         plural(pendientes, 'incidencia abierta', 'incidencias abiertas')),
       v.fotos.length > 0 && el('span', {}, plural(v.fotos.length, 'foto', 'fotos')),
       v.clima.length > 0 && el('span', {}, v.clima.join(', '))
@@ -530,6 +532,19 @@ const firma = (() => {
 /* informe para imprimir (o guardar como PDF) y resumen para compartir */
 /* ------------------------------------------------------------------ */
 
+/* Logotipo «C◎ORDINATE» para la cabecera del informe. Es marcado fijo
+   (no hay datos del usuario dentro), por eso puede ir como innerHTML. */
+function logotipo() {
+  const marca = el('span', { class: 'marca', 'aria-label': 'COORDINATE' });
+  marca.innerHTML = 'C<svg viewBox="0 0 64 64" aria-hidden="true">'
+    + '<circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" stroke-width="4"/>'
+    + '<path d="M32 6V58M6 32H58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>'
+    + '<g fill="#62a0e8"><circle cx="32" cy="6" r="4.5"/><circle cx="58" cy="32" r="4.5"/>'
+    + '<circle cx="32" cy="58" r="4.5"/><circle cx="6" cy="32" r="4.5"/><circle cx="32" cy="32" r="6.5"/></g>'
+    + '</svg>ORDINATE';
+  return marca;
+}
+
 function bloque(titulo, texto) {
   if (!texto || !texto.trim()) return null;
   return el('section', {}, el('h2', {}, titulo), el('p', { class: 'parrafo' }, texto));
@@ -543,6 +558,10 @@ async function imprimir() {
 
   // Pasa por el(): los apartados vacíos llegan como null y no deben pintarse.
   nodos.informe.replaceChildren(...el('div', {},
+    el('div', { class: 'informe-banda' },
+      logotipo(),
+      el('span', { class: 'informe-tipo' }, 'coordinate.do')
+    ),
     el('header', {},
       el('h1', {}, 'Parte de visita de obra'),
       el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre'),
@@ -585,6 +604,10 @@ async function imprimir() {
       el('h2', {}, 'Firma'),
       v.firma ? el('img', { src: url(v.firma), alt: 'Firma' }) : el('div', { class: 'informe-hueco' }),
       el('p', {}, v.autor || '')
+    ),
+    el('footer', { class: 'informe-pie' },
+      el('span', {}, LEMA),
+      el('span', {}, CONTACTO)
     )
   ).childNodes);
 
@@ -600,7 +623,7 @@ async function imprimir() {
 
 function resumen(v) {
   const lineas = [
-    `PARTE DE VISITA · ${v.obra || 'Obra'}`,
+    `COORDINATE · PARTE DE VISITA · ${v.obra || 'Obra'}`,
     `${fechaLarga(v.fecha)}${v.hora ? ' · ' + v.hora : ''}`,
     v.autor && `Visita: ${v.autor}`,
     (v.clima.length || v.temperatura) && `Tiempo: ${[v.clima.join(', '), v.temperatura].filter(Boolean).join(' · ')}`,
@@ -615,7 +638,8 @@ function resumen(v) {
     ...v.incidencias.map((i) =>
       `  · [${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? ', resuelta' : ''}] ${i.texto}`),
     v.observaciones && `\nObservaciones:\n${v.observaciones}`,
-    v.fotos.length && `\n${plural(v.fotos.length, 'foto', 'fotos')}`
+    v.fotos.length && `\n${plural(v.fotos.length, 'foto', 'fotos')}`,
+    `\n— COORDINATE · ${CONTACTO}`
   ];
   return lineas.filter(Boolean).join('\n');
 }

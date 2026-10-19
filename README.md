@@ -1,4 +1,7 @@
-# Visor de obra E04
+# COORDINATE · Visor de obra
+
+Herramienta de campo de **COORDINATE**, coordinación BIM y gestión de
+datos de proyectos. *Los problemas se resuelven en el modelo, no en obra.*
 
 Visor de modelos IFC pensado para llevarlo a pie de obra en el móvil:
 abre el archivo desde el propio teléfono, funciona sin cobertura y permite
@@ -50,6 +53,23 @@ instalado) está el parte de visita diaria de obra:
 
 Las visitas sólo viven en el teléfono donde se escriben: no hay servidor.
 Por eso conviene exportar la copia de vez en cuando.
+
+## Marca
+
+La interfaz y el informe impreso siguen la marca v2 de COORDINATE:
+
+- **Paleta Acero**, declarada como variables `--color-*` al principio de
+  `css/estilos.css`. Los impresos usan fondo `#eef1f6`, acento `#3d7cc4`
+  y bandas `#1b3560`.
+- **Inter**, copiada en `vendor/inter/` para que funcione sin conexión.
+- **Logotipo «C◎ORDINATE»** con la mira de nodos haciendo de O. Va dentro
+  del HTML para que use Inter; los archivos sueltos están en `marca/`.
+
+Los SVG de `marca/` son una **reconstrucción provisional** del logotipo.
+Si tienes los oficiales (`02_Marca/Logo/`), cópialos encima con el mismo
+nombre. Si el símbolo cambia, cambia también su copia dentro de
+`index.html`, `visita.html` y `js/visita.js` (función `logotipo`), y vuelve
+a generar los iconos con `herramientas/iconos.py`.
 
 ## Realidad aumentada: qué hace falta
 
@@ -112,7 +132,8 @@ Para la ruta Capacitor, el zip que pide ese documento se prepara con:
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
 | `js/partes.js` | Las visitas, guardadas en IndexedDB |
 | `sw.js` | Service worker: la app entera cabe en el teléfono |
-| `vendor/` | three.js y web-ifc, copiados aquí para no depender de un CDN |
+| `marca/` | Logotipos y favicon de COORDINATE |
+| `vendor/` | three.js, web-ifc e Inter, copiados aquí para no depender de un CDN |
 | `apk/` | Recetas para empaquetar como APK (TWA y Capacitor) |
 | `herramientas/` | Guiones auxiliares |
 | `ejemplo.ifc` | Caseta de obra de dos plantas, para probar sin modelo real |
@@ -121,7 +142,7 @@ Para la ruta Capacitor, el zip que pide ese documento se prepara con:
 
     python3 herramientas/iconos.py       # regenera icono-192.png e icono-512.png
     python3 herramientas/ejemplo.py      # regenera ejemplo.ifc
-    sh herramientas/empaquetar.sh        # arma visor-obra-E04.zip con app/
+    sh herramientas/empaquetar.sh        # arma visor-obra-CRD.zip con app/
 
 ## Cómo está hecho por dentro
 
@@ -151,8 +172,9 @@ elementos es reescribir ese buffer dejando fuera los rangos que no tocan.
 
 ## Licencias
 
-El código de este repositorio es del proyecto. En `vendor/` viajan dos
+El código de este repositorio es del proyecto. En `vendor/` viajan tres
 librerías de terceros con sus licencias al lado:
 
 - [three.js](https://threejs.org) — MIT (`vendor/three/LICENSE.txt`)
 - [web-ifc](https://github.com/ThatOpen/engine_web-ifc) — MPL-2.0 (`vendor/web-ifc/LICENSE.md`)
+- [Inter](https://rsms.me/inter/) — SIL Open Font License 1.1 (`vendor/inter/LICENSE.txt`)

@@ -1,13 +1,13 @@
 {
-  "name": "E04 · Modelo de obra",
-  "short_name": "E04 3D",
-  "description": "Visor IFC de campo con realidad aumentada",
+  "name": "COORDINATE · Visor de obra",
+  "short_name": "CRD Obra",
+  "description": "COORDINATE — visor IFC de campo y parte de visita diaria",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#eceae4",
-  "theme_color": "#12161a",
+  "background_color": "#121826",
+  "theme_color": "#121826",
   "shortcuts": [
     { "name": "Visita diaria", "short_name": "Visita", "url": "./visita.html", "icons": [{ "src": "icono-192.png", "sizes": "192x192" }] },
     { "name": "Modelo 3D", "short_name": "Modelo", "url": "./index.html", "icons": [{ "src": "icono-192.png", "sizes": "192x192" }] }

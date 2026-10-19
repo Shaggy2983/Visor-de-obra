@@ -1,4 +1,4 @@
-# Generar el APK — E04 3D
+# Generar el APK — CRD Obra
 
 Dos rutas. Elige una.
 
@@ -52,7 +52,7 @@ Salida: `app-release-signed.apk`.
 Sin este paso el APK muestra una barra con la URL arriba. Obtén la
 huella de tu clave:
 
-    keytool -list -v -keystore android.keystore -alias e04
+    keytool -list -v -keystore android.keystore -alias coordinate
 
 Copia la línea `SHA256:` completa (con los dos puntos) dentro de
 `twa/.well-known/assetlinks.json`, y sube ese archivo al repositorio
@@ -76,7 +76,7 @@ Guárdalos fuera del repositorio, en el Drive del proyecto.
 
 ### B.1 Prepara la carpeta
 
-Descomprime `visor-obra-E04.zip` de modo que quede una carpeta `app/`.
+Descomprime `visor-obra-CRD.zip` de modo que quede una carpeta `app/`.
 Junto a ella coloca `montar-android.bat` y `capacitor.config.json`.
 
 Si quieres el modelo dentro del APK, copia tu archivo como

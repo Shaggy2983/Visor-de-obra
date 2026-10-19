@@ -13,7 +13,7 @@
 
 .barra-solida {
   position: sticky;
-  background: rgba(18,22,26,.97);
+  background: rgba(18,24,38,.97);
   border-bottom: 1px solid var(--borde);
 }
 
@@ -80,8 +80,8 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   color: var(--texto-tenue);
 }
 
-.marca { color: var(--acento); }
-.marca.grave { color: #ff8a80; font-weight: 600; }
+.pendientes { color: var(--acento); }
+.pendientes.grave { color: #ff8a80; font-weight: 600; }
 
 .copia { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--borde); }
 
@@ -122,7 +122,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   cursor: pointer;
 }
 
-.chip.activo { background: var(--acento); border-color: var(--acento-oscuro); color: #1a1206; font-weight: 600; }
+.chip.activo { background: var(--acento); border-color: var(--acento-oscuro); color: var(--texto-sobre-acento); font-weight: 600; }
 
 .filas-edicion { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .5rem; }
 
@@ -181,7 +181,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   position: absolute;
   top: .3rem; right: .3rem;
   min-height: 2rem; min-width: 2rem;
-  background: rgba(18,22,26,.8);
+  background: rgba(18,24,38,.8);
 }
 
 .firma {
@@ -189,7 +189,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   width: 100%;
   height: 9rem;
   border-radius: .5rem;
-  background: #f4f2ec;
+  background: var(--color-light-bg);
   touch-action: none;
 }
 
@@ -224,10 +224,31 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
   .pagina-visita body > *:not(.informe) { display: none !important; }
 
-  .informe { display: block; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  /* Línea de impresos de la marca: fondo #eef1f6, acento #3d7cc4,
+     bandas #1b3560. Los fondos se fuerzan para que salgan en el PDF. */
+  .informe {
+    display: block;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: #121826;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 
-  .informe h1 { margin: 0; font-size: 17pt; }
-  .informe-obra { margin: .1rem 0 .6rem; font-size: 13pt; font-weight: 600; color: #8a5a1c; }
+  .informe-banda {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 0 5mm;
+    padding: 3.5mm 5mm;
+    background: #1b3560;
+    color: #fff;
+  }
+
+  .informe-banda .marca { color: #fff; font-size: 13pt; }
+  .informe-tipo { font-size: 8pt; letter-spacing: .16em; text-transform: uppercase; color: #bcd6f3; }
+
+  .informe h1 { margin: 0; font-size: 17pt; font-weight: 600; color: #1b3560; }
+  .informe-obra { margin: .1rem 0 .6rem; font-size: 13pt; font-weight: 600; color: #3d7cc4; }
 
   .informe h2 {
     margin: 1.1rem 0 .35rem;
@@ -235,7 +256,8 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
     font-size: 9pt;
     letter-spacing: .08em;
     text-transform: uppercase;
-    border-bottom: 1.5pt solid #f0a04b;
+    color: #1b3560;
+    border-bottom: 1.5pt solid #3d7cc4;
   }
 
   .informe section { break-inside: avoid-page; }
@@ -243,7 +265,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
   .informe table { width: 100%; border-collapse: collapse; }
   .informe th, .informe td { text-align: left; vertical-align: top; padding: .25rem .4rem; border-bottom: .5pt solid #ccc; }
-  .informe thead th { font-size: 8.5pt; color: #555; }
+  .informe thead th { font-size: 8.5pt; color: #1b3560; background: #eef1f6; }
   .informe-datos th { width: 28%; color: #555; font-weight: 500; }
   .informe-datos td { text-transform: none; }
   .informe .num { text-align: right; width: 3rem; }
@@ -257,4 +279,16 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   .informe-firma img, .informe-hueco { display: block; height: 28mm; max-width: 80mm; object-fit: contain; }
   .informe-hueco { border-bottom: .5pt solid #999; width: 80mm; }
   .informe-firma p { margin: .2rem 0 0; }
+
+  .informe-pie {
+    display: flex;
+    justify-content: space-between;
+    gap: 4mm;
+    margin-top: 8mm;
+    padding: 2.5mm 4mm;
+    background: #eef1f6;
+    border-top: 1.5pt solid #1b3560;
+    font-size: 7.5pt;
+    color: #22436f;
+  }
 }

@@ -1,59 +1,52 @@
 #!/usr/bin/env python3
-"""Genera los iconos de la aplicación. Ejecutar desde la raíz del repositorio:
+"""Genera los iconos de la aplicación con el símbolo de COORDINATE (la mira
+de nodos de marca/logo-simbolo-claro.svg) sobre el fondo de la paleta
+Acero. Ejecutar desde la raíz del repositorio:
 
     python3 herramientas/iconos.py
 """
 from PIL import Image, ImageDraw
-import math
 import pathlib
 
-FONDO = (18, 22, 26)
-CARA_ALTA = (240, 160, 75)
-CARA_DERECHA = (184, 117, 47)
-CARA_IZQUIERDA = (122, 76, 30)
-MARCO = (236, 234, 228)
+FONDO = (18, 24, 38)        # --color-bg
+TRAZO = (233, 238, 245)     # --color-text
+NODO = (98, 160, 232)       # --color-accent
 
 LADO = 512
-CENTRO = LADO / 2
-RADIO = 112
-MARGEN = 0.25 * LADO
-BRAZO = 0.10 * LADO
-GROSOR = 12
+# El símbolo se dibuja sobre una rejilla de 64 unidades, como el SVG. Ocupa
+# el 60 % del icono para quedar dentro de la zona segura de los "maskable".
+ESCALA = 0.60 * LADO / 64
+ORIGEN = (LADO - 64 * ESCALA) / 2
+SUPER = 4                   # dibujar a 4x y reducir: bordes suaves
 
 
-def cubo(dibujo):
-    c = math.cos(math.radians(30)) * RADIO
-    s = 0.5 * RADIO
-    arriba = (CENTRO, CENTRO - RADIO)
-    ard = (CENTRO + c, CENTRO - s)
-    abd = (CENTRO + c, CENTRO + s)
-    abajo = (CENTRO, CENTRO + RADIO)
-    abi = (CENTRO - c, CENTRO + s)
-    ari = (CENTRO - c, CENTRO - s)
-    medio = (CENTRO, CENTRO)
-    dibujo.polygon([arriba, ard, medio, ari], fill=CARA_ALTA)
-    dibujo.polygon([ard, abd, abajo, medio], fill=CARA_DERECHA)
-    dibujo.polygon([ari, medio, abajo, abi], fill=CARA_IZQUIERDA)
+def p(x, y, s):
+    return ((ORIGEN + x * ESCALA) * s, (ORIGEN + y * ESCALA) * s)
 
 
-def esquinas(dibujo):
-    """Cuatro corchetes de visor, dentro de la zona segura del icono."""
-    for x in (MARGEN, LADO - MARGEN):
-        for y in (MARGEN, LADO - MARGEN):
-            sx = 1 if x < CENTRO else -1
-            sy = 1 if y < CENTRO else -1
-            dibujo.line([(x, y), (x + sx * BRAZO, y)], fill=MARCO, width=GROSOR)
-            dibujo.line([(x, y), (x, y + sy * BRAZO)], fill=MARCO, width=GROSOR)
+def circulo(dibujo, cx, cy, r, s, **estilo):
+    x, y = p(cx, cy, s)
+    r = r * ESCALA * s
+    dibujo.ellipse([x - r, y - r, x + r, y + r], **estilo)
 
 
 def main():
     raiz = pathlib.Path(__file__).resolve().parent.parent
-    lienzo = Image.new('RGB', (LADO, LADO), FONDO)
+    s = SUPER
+    lienzo = Image.new('RGB', (LADO * s, LADO * s), FONDO)
     dibujo = ImageDraw.Draw(lienzo)
-    cubo(dibujo)
-    esquinas(dibujo)
-    lienzo.save(raiz / 'icono-512.png')
-    lienzo.resize((192, 192), Image.LANCZOS).save(raiz / 'icono-192.png')
+
+    circulo(dibujo, 32, 32, 19, s, outline=TRAZO, width=round(4 * ESCALA * s))
+    grosor = round(3 * ESCALA * s)
+    dibujo.line([p(32, 6, s), p(32, 58, s)], fill=TRAZO, width=grosor)
+    dibujo.line([p(6, 32, s), p(58, 32, s)], fill=TRAZO, width=grosor)
+    for cx, cy in ((32, 6), (58, 32), (32, 58), (6, 32)):
+        circulo(dibujo, cx, cy, 4.5, s, fill=NODO)
+    circulo(dibujo, 32, 32, 6.5, s, fill=NODO)
+
+    grande = lienzo.resize((LADO, LADO), Image.LANCZOS)
+    grande.save(raiz / 'icono-512.png')
+    grande.resize((192, 192), Image.LANCZOS).save(raiz / 'icono-192.png')
     print('icono-512.png e icono-192.png generados')
 
 

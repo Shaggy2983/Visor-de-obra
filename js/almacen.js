@@ -1,7 +1,7 @@
 /* Guarda el último IFC abierto dentro del teléfono (IndexedDB), para que
    la app arranque con el modelo puesto aunque no haya cobertura. */
 
-const BASE = 'visor-obra-e04';
+const BASE = 'visor-obra-e04';   // heredado; cambiarlo olvidaría el modelo guardado
 const TABLA = 'modelos';
 const CLAVE = 'ultimo';
 

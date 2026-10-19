@@ -2,7 +2,7 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'e04-v2';
+const VERSION = 'crd-v3';
 const PIEZAS = [
   './',
   './index.html',
@@ -24,6 +24,8 @@ const PIEZAS = [
   './vendor/web-ifc/web-ifc-api.js',
   './vendor/web-ifc/web-ifc.wasm',
   './ejemplo.ifc',
+  './vendor/inter/inter-latin-wght-normal.woff2',
+  './marca/favicon.svg',
   './icono-192.png',
   './icono-512.png'
 ];

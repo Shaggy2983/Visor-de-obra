@@ -3,6 +3,8 @@
    siga ahí aunque no haya cobertura. Va en su propia base para no tocar la
    del modelo IFC. */
 
+// Nombre heredado de la primera versión: cambiarlo dejaría huérfanas las
+// visitas ya guardadas en los teléfonos.
 const BASE = 'visitas-obra-e04';
 const TABLA = 'visitas';
 

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es" class="pagina-visita">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>E04 · Visita diaria</title>
+<meta name="description" content="Parte de visita diaria de obra, sin cobertura">
+<meta name="theme-color" content="#12161a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icono-192.png">
+<link rel="apple-touch-icon" href="./icono-192.png">
+<link rel="stylesheet" href="./css/estilos.css">
+<link rel="stylesheet" href="./css/visita.css">
+</head>
+<body>
+
+<header class="barra-superior barra-solida">
+  <h1 class="titulo">E04 · Visitas</h1>
+  <div class="acciones">
+    <a href="./index.html" class="boton">Modelo 3D</a>
+    <button id="btn-nueva" class="boton boton-destacado">Nueva visita</button>
+  </div>
+</header>
+
+<!-- ---------- lista de visitas ---------- -->
+
+<main id="vista-lista" class="contenido">
+  <input type="search" id="buscar" class="campo" placeholder="Buscar por obra, trabajos, incidencias…" autocomplete="off">
+  <div id="lista" class="tarjetas"></div>
+  <p id="lista-vacia" class="vacio" hidden>Todavía no hay visitas. Pulsa <strong>Nueva visita</strong>
+     para empezar el parte de hoy. Se guarda en el teléfono según escribes, aunque no haya señal.</p>
+
+  <div class="grupo copia">
+    <h2>Copia de seguridad</h2>
+    <p class="pie">Las visitas viven en este teléfono. Exporta una copia de vez en cuando
+       para pasarla a otro equipo o guardarla en la nube.</p>
+    <div class="fila-botones">
+      <button id="btn-exportar" class="boton">Exportar copia</button>
+      <button id="btn-importar" class="boton">Importar copia</button>
+    </div>
+    <input type="file" id="entrada-copia" accept=".json,application/json" hidden>
+  </div>
+</main>
+
+<!-- ---------- ficha de una visita ---------- -->
+
+<main id="vista-ficha" class="contenido" hidden>
+  <div class="ficha-barra">
+    <a href="#" class="enlace">← Visitas</a>
+    <span id="estado-guardado" class="pie"></span>
+  </div>
+
+  <form id="ficha" autocomplete="off" onsubmit="return false">
+
+    <section class="grupo">
+      <h2>Datos de la visita</h2>
+      <div class="dos">
+        <label>Fecha<input type="date" class="campo" data-campo="fecha" required></label>
+        <label>Hora<input type="time" class="campo" data-campo="hora"></label>
+      </div>
+      <label>Obra<input type="text" class="campo" data-campo="obra" placeholder="Nombre o código de la obra"></label>
+      <label>Visita realizada por<input type="text" class="campo" data-campo="autor" placeholder="Nombre y cargo"></label>
+    </section>
+
+    <section class="grupo">
+      <h2>Tiempo y jornada</h2>
+      <div id="climas" class="chips" role="group" aria-label="Tiempo"></div>
+      <label>Temperatura<input type="text" class="campo" data-campo="temperatura" inputmode="decimal" placeholder="p. ej. 8 / 17 °C"></label>
+      <div id="jornadas" class="chips" role="radiogroup" aria-label="Jornada"></div>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Personal en obra</h2>
+        <span id="total-personal" class="pie"></span>
+      </div>
+      <div id="personal" class="filas-edicion"></div>
+      <button type="button" id="btn-personal" class="boton">+ Añadir empresa u oficio</button>
+    </section>
+
+    <section class="grupo">
+      <h2>Trabajos realizados</h2>
+      <textarea class="campo" data-campo="trabajos" rows="5" placeholder="Qué se ha hecho hoy y dónde (planta, eje, zona)…"></textarea>
+    </section>
+
+    <section class="grupo">
+      <h2>Maquinaria y medios</h2>
+      <textarea class="campo" data-campo="maquinaria" rows="2" placeholder="Grúa, plataformas, andamios…"></textarea>
+      <h2>Materiales recibidos</h2>
+      <textarea class="campo" data-campo="materiales" rows="2" placeholder="Hormigón, acero, albaranes…"></textarea>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Incidencias</h2>
+        <span id="total-incidencias" class="pie"></span>
+      </div>
+      <div id="incidencias" class="filas-edicion"></div>
+      <button type="button" id="btn-incidencia" class="boton">+ Añadir incidencia</button>
+      <p class="pie">Las que queden sin resolver pasan solas a la siguiente visita.</p>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Fotos</h2>
+        <span id="total-fotos" class="pie"></span>
+      </div>
+      <div id="fotos" class="fotos"></div>
+      <div class="fila-botones">
+        <button type="button" id="btn-camara" class="boton">Hacer foto</button>
+        <button type="button" id="btn-galeria" class="boton">De la galería</button>
+      </div>
+      <input type="file" id="entrada-camara" accept="image/*" capture="environment" hidden>
+      <input type="file" id="entrada-galeria" accept="image/*" multiple hidden>
+    </section>
+
+    <section class="grupo">
+      <h2>Observaciones e instrucciones</h2>
+      <textarea class="campo" data-campo="observaciones" rows="4" placeholder="Órdenes dadas, acuerdos, próximos pasos…"></textarea>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Firma</h2>
+        <button type="button" id="btn-borrar-firma" class="enlace">Borrar firma</button>
+      </div>
+      <canvas id="firma" class="firma"></canvas>
+      <p class="pie">Firma con el dedo dentro del recuadro.</p>
+    </section>
+
+    <section class="grupo acciones-ficha">
+      <button type="button" id="btn-informe" class="boton boton-destacado grande">Informe en PDF</button>
+      <button type="button" id="btn-compartir" class="boton grande">Compartir resumen</button>
+      <button type="button" id="btn-borrar" class="boton boton-peligro grande">Borrar esta visita</button>
+    </section>
+  </form>
+</main>
+
+<div id="foto-grande" class="foto-grande" hidden><img alt=""></div>
+<div id="aviso" class="aviso" hidden></div>
+
+<!-- Lo que sale al imprimir: se rellena justo antes de abrir el diálogo. -->
+<article id="informe" class="informe"></article>
+
+<script type="module" src="./js/visita.js"></script>
+</body>
+</html>

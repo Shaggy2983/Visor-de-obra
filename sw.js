@@ -2,17 +2,21 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'e04-v1';
+const VERSION = 'e04-v2';
 const PIEZAS = [
   './',
   './index.html',
+  './visita.html',
   './manifest.webmanifest',
   './css/estilos.css',
+  './css/visita.css',
   './js/app.js',
   './js/visor.js',
   './js/ar.js',
   './js/interfaz.js',
   './js/almacen.js',
+  './js/partes.js',
+  './js/visita.js',
   './js/ifc-worker.js',
   './vendor/three/three.module.min.js',
   './vendor/three/three.core.min.js',

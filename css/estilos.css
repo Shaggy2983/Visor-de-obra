@@ -101,6 +101,13 @@ body { touch-action: none; }
   white-space: nowrap;
 }
 
+a.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .boton:active { background: var(--fondo-2); }
 .boton[disabled] { opacity: .4; cursor: default; }
 

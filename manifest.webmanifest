@@ -8,6 +8,10 @@
   "orientation": "any",
   "background_color": "#eceae4",
   "theme_color": "#12161a",
+  "shortcuts": [
+    { "name": "Visita diaria", "short_name": "Visita", "url": "./visita.html", "icons": [{ "src": "icono-192.png", "sizes": "192x192" }] },
+    { "name": "Modelo 3D", "short_name": "Modelo", "url": "./index.html", "icons": [{ "src": "icono-192.png", "sizes": "192x192" }] }
+  ],
   "icons": [
     { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }

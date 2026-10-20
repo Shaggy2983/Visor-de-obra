@@ -58,7 +58,11 @@ INFORMES
 
 EQUIPO (opcional)
 • Crea tu cuenta, comparte una obra e invita a tu equipo como
-  administrador, editor o solo lectura.
+  administrador, editor, solo lectura o contratista.
+• Equipos de trabajo: crea el equipo una vez y dale acceso a varias
+  obras de un toque.
+• El contratista sólo ve los repasos que le asignas, sube la foto del
+  arreglo y los marca como corregidos.
 • Visitas, punch list, planos y fotos se sincronizan entre teléfonos;
   sin señal sigues trabajando y se sincroniza al volver la cobertura.
 

@@ -135,10 +135,21 @@ la lista de visitas sale **Cuenta y equipo**:
   invitaciones).
 - **Compartir una obra**: lo que en el teléfono lleva ese nombre de obra
   (visitas, repasos del punch list, planos, fotos y firmas) sube a la nube.
-- **Invitar** por correo con un papel: *Administrador* (gestiona el
-  equipo), *Editor* (escribe) o *Solo lectura*. La persona ve la
-  invitación al entrar con ese correo; la app ofrece mandarle el aviso
-  por WhatsApp o correo.
+- **Invitar** por correo con un papel: *Administrador* (gestiona la
+  obra), *Editor* (escribe), *Solo lectura* o *Contratista*. La persona
+  ve la invitación al entrar con ese correo; la app ofrece mandarle el
+  aviso por WhatsApp o correo.
+- **Equipos de trabajo** reutilizables («Oficina técnica», «Cuadrilla
+  de acabados», «Contratista eléctrico»): se crean una vez, se invita a
+  sus miembros y se vinculan a las obras con un papel. Quien entra en el
+  equipo después entra solo en sus obras al sincronizar; quien sale (o
+  es quitado) deja de estar en ellas. Para vincular hay que administrar
+  la obra y el equipo.
+- **Contratista**: en una obra compartida, cada repaso del punch list se
+  puede **asignar** a un contratista. Él sólo ve sus repasos, en «Mis
+  repasos asignados»: la foto del defecto, sube la del arreglo y lo marca
+  como corregido. No ve visitas ni planos y no puede cerrar el repaso:
+  eso lo hace quien verifica en obra.
 - **Sincronización** automática (al guardar, al volver la señal y cada
   dos minutos) y sin señal sigue funcionando todo en el teléfono. Si dos
   personas cambian lo mismo, gana el último que guardó.
@@ -325,7 +336,8 @@ esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 | `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
 | `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |
 | `js/equipo.js` | Cuenta, obras compartidas y sincronización con Firebase |
-| `js/equipo-ui.js` | Interfaz de cuenta y equipo |
+| `js/equipo-ui.js` | Interfaz de cuenta, obras compartidas y equipos de trabajo |
+| `js/mis-repasos.js` | «Mis repasos asignados», la vista del contratista |
 | `js/firebase-app.js` | Carga del SDK de Firebase (o de los emuladores) |
 | `js/firebase-config.js` | Datos del proyecto de Firebase |
 | `firestore.rules`, `storage.rules` | Reglas de seguridad de la base de datos y de los archivos |

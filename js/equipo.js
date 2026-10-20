@@ -17,13 +17,23 @@
 
    En la nube cada registro es un documento con sus datos en JSON (las
    coordenadas de los dibujos son listas de listas, que Firestore no
-   admite), su versión y si está borrado. */
+   admite), su versión y si está borrado. Los repasos llevan además, a la
+   vista de las reglas, a quién están asignados y su estado.
+
+   Equipos de trabajo: un grupo de personas reutilizable que se vincula a
+   obras con un papel. Al vincularlo, sus miembros entran en la obra;
+   quien entra después en el equipo se añade solo a sus obras al
+   sincronizar, y quien sale deja de estar en ellas.
+
+   Contratista: papel de obra que sólo ve y corrige los repasos que tiene
+   asignados (foto de después y «corregido»); no los cierra. */
 
 import { cargarFirebase, configurado } from './firebase-app.js';
 import * as partes from './partes.js';
 import { mismaObra, ahora } from './utiles.js';
 
-export const ROLES = { admin: 'Administrador', editor: 'Editor', lector: 'Solo lectura' };
+export const ROLES = { admin: 'Administrador', editor: 'Editor', lector: 'Solo lectura', contratista: 'Contratista' };
+export const PAPELES_EQUIPO = { admin: 'Administrador', miembro: 'Miembro' };
 const ESCRIBEN = ['admin', 'editor'];
 
 // Los planos primero: las notas de las visitas apuntan a ellos.
@@ -34,6 +44,7 @@ const TIPOS = {
 };
 
 const version = (r) => r.modificada || r.modificado || r.creado || 0;
+const estadoRepaso = (r) => (r.cerrado ? 'cerrado' : r.corregido ? 'corregido' : 'pendiente');
 const minusculas = (c) => (c || '').trim().toLowerCase();
 const extension = (blob) => (/png/.test(blob.type) ? 'png' : 'jpg');
 const tipoImagen = (blob) => (blob.type && blob.type.startsWith('image/') ? blob.type : 'image/jpeg');
@@ -100,6 +111,8 @@ export class Equipo extends EventTarget {
     this.listo = false;         // ya se sabe si hay sesión
     this.obras = [];
     this.invitaciones = [];
+    this.equipos = [];
+    this.invitacionesEquipo = [];
     this.estado = { fase: 'apagado', texto: '' };
     this.sincronizando = false;
     this.otraVez = false;
@@ -131,6 +144,8 @@ export class Equipo extends EventTarget {
       } else {
         this.obras = [];
         this.invitaciones = [];
+        this.equipos = [];
+        this.invitacionesEquipo = [];
         this.ponerEstado('fuera', '');
       }
       this.avisar();
@@ -240,9 +255,22 @@ export class Equipo extends EventTarget {
       e.obras = bloquean.map((o) => o.nombre);
       throw e;
     }
+    const equiposBloquean = this.equipos.filter((e) => e.miembros[uid] === 'admin'
+      && Object.keys(e.miembros).length > 1
+      && Object.values(e.miembros).filter((r) => r === 'admin').length === 1);
+    if (equiposBloquean.length) {
+      const e = new Error('Administras equipos con más gente');
+      e.code = 'crd/admin-con-equipo';
+      e.obras = equiposBloquean.map((x) => `equipo ${x.nombre}`);
+      throw e;
+    }
     for (const o of this.obras) {
       if (Object.keys(o.miembros).length === 1) await this.borrarObra(o);
       else await this.salirDeObra(o);
+    }
+    for (const e of this.equipos) {
+      if (Object.keys(e.miembros).length === 1) await this.borrarEquipo(e);
+      else await this.salirDeEquipo(e);
     }
     await fb.deleteDoc(fb.doc(db, 'usuarios', uid));
     await fb.deleteUser(this.usuario);
@@ -259,11 +287,26 @@ export class Equipo extends EventTarget {
     this.obras = mias.docs.map((d) => ({ id: d.id, ...d.data() }))
       .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     this.invitaciones = [];
+    const colEquipos = fb.collection(db, 'equipos');
+    const equipos = await fb.getDocs(fb.query(colEquipos, fb.where('miembrosLista', 'array-contains', this.usuario.uid)));
+    this.equipos = equipos.docs.map((d) => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    this.invitacionesEquipo = [];
     if (this.verificado) {
       const inv = await fb.getDocs(fb.query(col, fb.where('invitadosLista', 'array-contains', this.correo)));
       this.invitaciones = inv.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const invE = await fb.getDocs(fb.query(colEquipos, fb.where('invitadosLista', 'array-contains', this.correo)));
+      this.invitacionesEquipo = invE.docs.map((d) => ({ id: d.id, ...d.data() }));
     }
     this.avisar();
+  }
+
+  /* Miembros de una obra con papel de contratista, para asignarles repasos. */
+  contratistas(obraId) {
+    const o = obraId && this.obras.find((x) => x.id === obraId);
+    if (!o) return [];
+    return Object.entries(o.miembros).filter(([, r]) => r === 'contratista')
+      .map(([id]) => ({ uid: id, nombre: (o.personas && o.personas[id] && o.personas[id].nombre) || 'Contratista' }));
   }
 
   rolEn(obraId) {
@@ -275,8 +318,8 @@ export class Equipo extends EventTarget {
     return { nombre: this.nombre, correo: this.correo };
   }
 
-  ref(obra) {
-    return this.f.fb.doc(this.f.db, 'obras', obra.id || obra);
+  ref(obra, coleccion = 'obras') {
+    return this.f.fb.doc(this.f.db, coleccion, obra.id || obra);
   }
 
   async crearObra(nombre) {
@@ -299,71 +342,225 @@ export class Equipo extends EventTarget {
     return ref.id;
   }
 
-  async invitar(obra, correo, rol) {
+  /* Lo mismo sirve para obras y para equipos («coleccion»). */
+
+  async invitar(grupo, correo, rol, coleccion = 'obras') {
     const { fb } = this.f;
     const c = minusculas(correo);
-    if (Object.values(obra.personas || {}).some((p) => p.correo === c)) {
+    if (Object.values(grupo.personas || {}).some((p) => p.correo === c)) {
       const e = new Error('Ya es miembro');
       e.code = 'crd/ya-miembro';
       throw e;
     }
-    await fb.updateDoc(this.ref(obra), new fb.FieldPath('invitaciones', c), rol,
+    await fb.updateDoc(this.ref(grupo, coleccion), new fb.FieldPath('invitaciones', c), rol,
       'invitadosLista', fb.arrayUnion(c), 'modificada', Date.now());
     await this.refrescarObras();
   }
 
-  async quitarInvitacion(obra, correo) {
+  async quitarInvitacion(grupo, correo, coleccion = 'obras') {
     const { fb } = this.f;
-    await fb.updateDoc(this.ref(obra), new fb.FieldPath('invitaciones', correo), fb.deleteField(),
+    await fb.updateDoc(this.ref(grupo, coleccion), new fb.FieldPath('invitaciones', correo), fb.deleteField(),
       'invitadosLista', fb.arrayRemove(correo), 'modificada', Date.now());
     await this.refrescarObras();
   }
 
-  async cambiarRol(obra, uid, rol) {
+  async cambiarRol(grupo, uid, rol, coleccion = 'obras') {
     const { fb } = this.f;
-    await fb.updateDoc(this.ref(obra), new fb.FieldPath('miembros', uid), rol, 'modificada', Date.now());
+    await fb.updateDoc(this.ref(grupo, coleccion), new fb.FieldPath('miembros', uid), rol, 'modificada', Date.now());
     await this.refrescarObras();
   }
 
-  async quitarMiembro(obra, uid) {
+  async quitarMiembro(grupo, uid, coleccion = 'obras') {
     const { fb } = this.f;
-    await fb.updateDoc(this.ref(obra), new fb.FieldPath('miembros', uid), fb.deleteField(),
+    await fb.updateDoc(this.ref(grupo, coleccion), new fb.FieldPath('miembros', uid), fb.deleteField(),
       'miembrosLista', fb.arrayRemove(uid), new fb.FieldPath('personas', uid), fb.deleteField(),
       'modificada', Date.now());
+    // Quien sale de un equipo sale también de las obras a las que entró por él.
+    if (coleccion === 'equipos') await this.quitarDeObrasDelEquipo(grupo, uid);
     await this.refrescarObras();
   }
 
-  async aceptar(obra) {
+  async aceptar(grupo, coleccion = 'obras') {
     const { fb } = this.f;
     const uid = this.usuario.uid;
     const c = this.correo;
-    await fb.updateDoc(this.ref(obra),
-      new fb.FieldPath('miembros', uid), obra.invitaciones[c],
+    await fb.updateDoc(this.ref(grupo, coleccion),
+      new fb.FieldPath('miembros', uid), grupo.invitaciones[c],
       'miembrosLista', fb.arrayUnion(uid),
       new fb.FieldPath('invitaciones', c), fb.deleteField(),
       'invitadosLista', fb.arrayRemove(c),
       new fb.FieldPath('personas', uid), this.ficha(),
       'modificada', Date.now());
     await this.refrescarObras();
+    if (coleccion === 'equipos') await this.reconciliar();
     this.programar(0);
   }
 
-  async rechazar(obra) {
+  async rechazar(grupo, coleccion = 'obras') {
     const { fb } = this.f;
     const c = this.correo;
-    await fb.updateDoc(this.ref(obra), new fb.FieldPath('invitaciones', c), fb.deleteField(),
+    await fb.updateDoc(this.ref(grupo, coleccion), new fb.FieldPath('invitaciones', c), fb.deleteField(),
       'invitadosLista', fb.arrayRemove(c), 'modificada', Date.now());
     await this.refrescarObras();
   }
 
   async salirDeObra(obra) {
-    const { fb } = this.f;
-    const uid = this.usuario.uid;
-    await fb.updateDoc(this.ref(obra), new fb.FieldPath('miembros', uid), fb.deleteField(),
-      'miembrosLista', fb.arrayRemove(uid), new fb.FieldPath('personas', uid), fb.deleteField(),
-      'modificada', Date.now());
+    await this.irse(obra, 'obras');
     await this.soltarLocales(obra.id);
     await this.refrescarObras();
+  }
+
+  async irse(grupo, coleccion) {
+    const { fb } = this.f;
+    const uid = this.usuario.uid;
+    await fb.updateDoc(this.ref(grupo, coleccion), new fb.FieldPath('miembros', uid), fb.deleteField(),
+      'miembrosLista', fb.arrayRemove(uid), new fb.FieldPath('personas', uid), fb.deleteField(),
+      'modificada', Date.now());
+  }
+
+  /* --------------------------------------------------------------- */
+  /* equipos de trabajo                                               */
+  /* --------------------------------------------------------------- */
+
+  async crearEquipo(nombre) {
+    const { fb, db } = this.f;
+    const uid = this.usuario.uid;
+    const ref = fb.doc(fb.collection(db, 'equipos'));
+    await fb.setDoc(ref, {
+      nombre: nombre.trim(),
+      creador: uid,
+      miembros: { [uid]: 'admin' },
+      miembrosLista: [uid],
+      invitaciones: {},
+      invitadosLista: [],
+      personas: { [uid]: this.ficha() },
+      obras: {},
+      creada: fb.serverTimestamp(),
+      modificada: Date.now()
+    });
+    await this.refrescarObras();
+    return ref.id;
+  }
+
+  async salirDeEquipo(equipo) {
+    const uid = this.usuario.uid;
+    await this.irse(equipo, 'equipos');
+    for (const obraId of Object.keys(equipo.obras || {})) {
+      const o = this.obras.find((x) => x.id === obraId);
+      if (o && ((o.porEquipo || {})[equipo.id] || []).includes(uid) && o.miembros[uid] !== 'admin') {
+        await this.irse(o, 'obras').catch(() => {});
+      }
+    }
+    await this.refrescarObras();
+  }
+
+  /* Al borrar el equipo, sus miembros salen de las obras a las que
+     entraron por él. */
+  async borrarEquipo(equipo) {
+    const { fb } = this.f;
+    for (const id of Object.keys(equipo.miembros)) await this.quitarDeObrasDelEquipo(equipo, id);
+    for (const obraId of Object.keys(equipo.obras || {})) {
+      const o = this.obras.find((x) => x.id === obraId);
+      if (o && o.miembros[this.usuario.uid] === 'admin') {
+        await fb.updateDoc(this.ref(o), new fb.FieldPath('equipos', equipo.id), fb.deleteField(),
+          new fb.FieldPath('porEquipo', equipo.id), fb.deleteField(), 'modificada', Date.now()).catch(() => {});
+      }
+    }
+    await fb.deleteDoc(this.ref(equipo, 'equipos'));
+    await this.refrescarObras();
+  }
+
+  /* Como administrador del equipo: saca a alguien de sus obras (sólo de
+     aquellas a las que entró por el equipo; las reglas lo comprueban). */
+  async quitarDeObrasDelEquipo(equipo, uid) {
+    const { fb } = this.f;
+    for (const obraId of Object.keys(equipo.obras || {})) {
+      await fb.updateDoc(this.ref(obraId),
+        new fb.FieldPath('miembros', uid), fb.deleteField(),
+        'miembrosLista', fb.arrayRemove(uid),
+        new fb.FieldPath('personas', uid), fb.deleteField(),
+        new fb.FieldPath('porEquipo', equipo.id), fb.arrayRemove(uid),
+        'ultimoEquipo', equipo.id,
+        'modificada', Date.now()).catch(() => {});
+    }
+  }
+
+  /* Vincula un equipo a una obra con un papel: hace falta administrar las
+     dos. Los miembros actuales entran ya; los futuros, al sincronizar. */
+  async vincularEquipo(obra, equipo, papel) {
+    const { fb } = this.f;
+    const nuevos = Object.keys(equipo.miembros).filter((id) => !(id in obra.miembros));
+    const cambios = [
+      new fb.FieldPath('equipos', equipo.id), papel,
+      new fb.FieldPath('porEquipo', equipo.id), nuevos,
+      'ultimoEquipo', equipo.id,
+      'modificada', Date.now()
+    ];
+    if (nuevos.length) cambios.push('miembrosLista', fb.arrayUnion(...nuevos));
+    for (const id of nuevos) {
+      cambios.push(new fb.FieldPath('miembros', id), papel);
+      if (equipo.personas && equipo.personas[id]) cambios.push(new fb.FieldPath('personas', id), equipo.personas[id]);
+    }
+    await fb.updateDoc(this.ref(obra), ...cambios);
+    await fb.updateDoc(this.ref(equipo, 'equipos'), new fb.FieldPath('obras', obra.id),
+      { nombre: obra.nombre, papel }, 'modificada', Date.now());
+    await this.refrescarObras();
+  }
+
+  async desvincularEquipo(obra, equipoId) {
+    const { fb } = this.f;
+    const salen = ((obra.porEquipo || {})[equipoId] || []).filter((id) => obra.miembros[id] && obra.miembros[id] !== 'admin');
+    const cambios = [
+      new fb.FieldPath('equipos', equipoId), fb.deleteField(),
+      new fb.FieldPath('porEquipo', equipoId), fb.deleteField(),
+      'modificada', Date.now()
+    ];
+    if (salen.length) cambios.push('miembrosLista', fb.arrayRemove(...salen));
+    for (const id of salen) cambios.push(new fb.FieldPath('miembros', id), fb.deleteField(), new fb.FieldPath('personas', id), fb.deleteField());
+    await fb.updateDoc(this.ref(obra), ...cambios);
+    const equipo = this.equipos.find((e) => e.id === equipoId);
+    if (equipo && equipo.miembros[this.usuario.uid] === 'admin') {
+      await fb.updateDoc(this.ref(equipo, 'equipos'), new fb.FieldPath('obras', obra.id), fb.deleteField(),
+        'modificada', Date.now()).catch(() => {});
+    }
+    await this.refrescarObras();
+  }
+
+  /* Pone al día las obras por equipos: entra en las obras de mis equipos
+     donde aún no estoy y sale de aquellas a las que entré por un equipo
+     del que ya no soy miembro. */
+  async reconciliar() {
+    const { fb } = this.f;
+    const uid = this.usuario.uid;
+    let cambio = false;
+    const mias = new Set(this.obras.map((o) => o.id));
+    for (const eq of this.equipos) {
+      for (const [obraId, info] of Object.entries(eq.obras || {})) {
+        if (mias.has(obraId)) continue;
+        try {
+          await fb.updateDoc(this.ref(obraId),
+            new fb.FieldPath('miembros', uid), info.papel,
+            'miembrosLista', fb.arrayUnion(uid),
+            new fb.FieldPath('porEquipo', eq.id), fb.arrayUnion(uid),
+            new fb.FieldPath('personas', uid), this.ficha(),
+            'ultimoEquipo', eq.id,
+            'modificada', Date.now());
+          mias.add(obraId);
+          cambio = true;
+        } catch (e) { /* la obra ya no está vinculada a ese equipo */ }
+      }
+    }
+    const misEquipos = new Set(this.equipos.map((e) => e.id));
+    for (const o of this.obras) {
+      if (o.miembros[uid] === 'admin') continue;
+      const porEquipos = Object.entries(o.porEquipo || {}).filter(([, lista]) => lista.includes(uid)).map(([eid]) => eid);
+      if (porEquipos.length && porEquipos.every((eid) => !misEquipos.has(eid))) {
+        await this.irse(o, 'obras').catch(() => {});
+        await this.soltarLocales(o.id);
+        cambio = true;
+      }
+    }
+    if (cambio) await this.refrescarObras();
   }
 
   /* Borra la obra de la nube con todo lo que tiene. Lo que hay en este
@@ -409,10 +606,16 @@ export class Equipo extends EventTarget {
     const cambiados = new Set();
     try {
       await this.refrescarObras();
+      await this.reconciliar();
       await this.asignarObras(cambiados);
       await this.subirBajas();
       const uid = this.usuario.uid;
       for (const obra of this.obras) {
+        if (obra.miembros[uid] === 'contratista') {
+          await this.subirAsignados(obra);
+          await this.bajarAsignados(obra, cambiados);
+          continue;
+        }
         for (const tipo of Object.keys(TIPOS)) {
           if (ESCRIBEN.includes(obra.miembros[uid])) await this.subir(obra, tipo);
           await this.bajar(obra, tipo, cambiados);
@@ -460,10 +663,10 @@ export class Equipo extends EventTarget {
     }
   }
 
-  async subir(obra, tipo) {
+  async subir(obra, tipo, filtro = () => true) {
     const { fb, db, storage } = this.f;
     for (const r of await TIPOS[tipo].listar()) {
-      if (r.obraId !== obra.id) continue;
+      if (r.obraId !== obra.id || !filtro(r)) continue;
       const v = version(r);
       if (v <= await partes.versionSincronizada(tipo, r.id)) continue;
       const { datos, archivos } = await separar(tipo, r, obra.id);
@@ -472,11 +675,43 @@ export class Equipo extends EventTarget {
         await fb.uploadBytes(fb.ref(storage, a.ruta), a.blob, { contentType: tipoImagen(a.blob) });
         await partes.anotarSubido(a.ruta);
       }
-      await fb.setDoc(fb.doc(db, 'obras', obra.id, tipo, r.id), {
+      const documento = {
         datos: JSON.stringify(datos), version: v, borrado: false,
         autor: this.usuario.uid, actualizado: fb.serverTimestamp()
-      });
+      };
+      // A la vista de las reglas: a quién está asignado y en qué estado.
+      if (tipo === 'repasos') Object.assign(documento, { asignado: r.asignado || null, estado: estadoRepaso(r) });
+      await fb.setDoc(fb.doc(db, 'obras', obra.id, tipo, r.id), documento);
       await partes.anotarSincronizada(tipo, r.id, v);
+    }
+  }
+
+  /* El contratista sube sólo sus repasos sin cerrar (las reglas no le
+     dejan otra cosa). */
+  subirAsignados(obra) {
+    const uid = this.usuario.uid;
+    return this.subir(obra, 'repasos', (r) => r.asignado === uid && !r.cerrado);
+  }
+
+  /* …y baja sólo los suyos: no puede consultar el resto. */
+  async bajarAsignados(obra, cambiados) {
+    const { fb, db, storage } = this.f;
+    const T = TIPOS.repasos;
+    const res = await fb.getDocs(fb.query(fb.collection(db, 'obras', obra.id, 'repasos'),
+      fb.where('asignado', '==', this.usuario.uid)));
+    const bajarArchivo = async (ruta) => {
+      const blob = await fb.getBlob(fb.ref(storage, ruta));
+      await partes.anotarSubido(ruta);
+      return blob;
+    };
+    for (const d of res.docs) {
+      const x = d.data();
+      const local = await T.leer(d.id);
+      if (x.borrado || (local && version(local) >= x.version)) continue;
+      const r = await juntar('repasos', JSON.parse(x.datos), local, bajarArchivo);
+      await T.guardar(r, { callado: true });
+      await partes.anotarSincronizada('repasos', d.id, x.version);
+      cambiados.add(d.id);
     }
   }
 

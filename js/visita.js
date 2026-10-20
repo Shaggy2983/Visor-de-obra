@@ -22,6 +22,7 @@ import { crearNube } from './nube.js';
 import { avisoPendiente } from './cuentas.js';
 import { equipo } from './equipo.js';
 import { iniciarEquipoUI } from './equipo-ui.js';
+import { crearMisRepasos } from './mis-repasos.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -183,6 +184,7 @@ async function mostrarLista() {
   liberarUrls();
   liberarUrlsPlanos();
   punch.liberar();
+  misRepasos.pintar();
   nube.pintarCuentas(nodos.cuentas);
   nodos.vistaFicha.hidden = true;
   nodos.vistaLista.hidden = false;
@@ -590,6 +592,19 @@ const punch = crearPunchList({
   avisar: (texto, ms) => avisar(nodos.aviso, texto, ms),
   ampliar: (url) => ampliar(url),
   alGuardar: (texto) => { nodos.estadoGuardado.textContent = texto; },
+  ladoFoto: LADO_FOTO,
+  calidadFoto: CALIDAD_FOTO,
+  contratistas: (v) => equipo.contratistas(v.obraId)
+});
+
+const misRepasos = crearMisRepasos({
+  grupo: $('grupo-mis-repasos'),
+  contenedor: $('mis-repasos'),
+  entradaCamara: $('entrada-mis-camara'),
+  entradaGaleria: $('entrada-mis-galeria'),
+  uid: () => (equipo.usuario ? equipo.usuario.uid : null),
+  avisar: (texto, ms) => avisar(nodos.aviso, texto, ms),
+  ampliar: (url) => ampliar(url),
   ladoFoto: LADO_FOTO,
   calidadFoto: CALIDAD_FOTO
 });
@@ -1197,6 +1212,7 @@ addEventListener('crd-remoto', async (ev) => {
 });
 equipo.addEventListener('cambio', () => {
   if (actual) nodos.avisoLectura.hidden = equipo.rolEn(actual.obraId) !== 'lector';
+  else misRepasos.pintar();
 });
 
 // Mensaje de la vuelta de Google o Microsoft (cuenta vinculada o error).

@@ -3,7 +3,7 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, FieldPath, deleteField, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { ref, uploadBytes, getBytes } from 'firebase/storage';
+import { ref, uploadBytes, getBytes, deleteObject } from 'firebase/storage';
 const R = new URL('../', import.meta.url).pathname;
 const env = await initializeTestEnvironment({
   projectId: 'demo-coordinate',
@@ -49,6 +49,67 @@ await prueba('usuario propio', assertSucceeds(setDoc(doc(dA, 'usuarios/ana'), { 
 await prueba('usuario ajeno', assertFails(getDoc(doc(dX, 'usuarios/ana'))));
 await prueba('extraño no borra obra', assertFails(deleteDoc(doc(dX, 'obras/o1'))));
 await prueba('ana borra obra', assertSucceeds(deleteDoc(doc(dA, 'obras/o1'))));
+
+// --- equipos de trabajo ---
+const C = env.authenticatedContext('carla', { email: 'carla@obra.do', email_verified: true });
+const D = env.authenticatedContext('dan', { email: 'dan@obra.do', email_verified: true });
+const dC = C.firestore(), dD = D.firestore();
+const grupo = (nombre, creador, extra = {}) => ({ nombre, creador, miembros: { [creador]: 'admin' }, miembrosLista: [creador], invitaciones: {}, invitadosLista: [], personas: {}, modificada: 1, ...extra });
+const aceptar = (bd, ruta, quien, correo, papel) => updateDoc(doc(bd, ruta), new FieldPath('miembros', quien), papel, 'miembrosLista', arrayUnion(quien),
+  new FieldPath('invitaciones', correo), deleteField(), 'invitadosLista', arrayRemove(correo), new FieldPath('personas', quien), { nombre: quien, correo });
+await prueba('crear equipo', assertSucceeds(setDoc(doc(dA, 'equipos/e1'), grupo('Oficina técnica', 'ana'))));
+await prueba('equipo con papel raro', assertFails(setDoc(doc(dA, 'equipos/e9'), grupo('X', 'ana', { miembros: { ana: 'editor' } }))));
+await prueba('extraño no lee equipo', assertFails(getDoc(doc(dX, 'equipos/e1'))));
+await prueba('invitar a carla al equipo', assertSucceeds(updateDoc(doc(dA, 'equipos/e1'), new FieldPath('invitaciones', 'carla@obra.do'), 'miembro', 'invitadosLista', arrayUnion('carla@obra.do'))));
+await prueba('carla acepta el equipo', assertSucceeds(aceptar(dC, 'equipos/e1', 'carla', 'carla@obra.do', 'miembro')));
+await prueba('crear obra o2', assertSucceeds(setDoc(doc(dA, 'obras/o2'), grupo('Torre B', 'ana', { equipos: {}, porEquipo: {} }))));
+await prueba('ana vincula el equipo a la obra', assertSucceeds(updateDoc(doc(dA, 'obras/o2'), new FieldPath('equipos', 'e1'), 'editor',
+  new FieldPath('porEquipo', 'e1'), ['carla'], new FieldPath('miembros', 'carla'), 'editor', 'miembrosLista', arrayUnion('carla'), 'ultimoEquipo', 'e1')));
+await prueba('ana apunta la obra en el equipo', assertSucceeds(updateDoc(doc(dA, 'equipos/e1'), new FieldPath('obras', 'o2'), { nombre: 'Torre B', papel: 'editor' })));
+await prueba('invitar a dan al equipo', assertSucceeds(updateDoc(doc(dA, 'equipos/e1'), new FieldPath('invitaciones', 'dan@obra.do'), 'miembro', 'invitadosLista', arrayUnion('dan@obra.do'))));
+const unirse = (bd, quien, obra, eid, papel, lista) => updateDoc(doc(bd, `obras/${obra}`), new FieldPath('miembros', quien), papel, 'miembrosLista', arrayUnion(quien),
+  new FieldPath('porEquipo', eid), lista, new FieldPath('personas', quien), { nombre: quien }, 'ultimoEquipo', eid);
+await prueba('dan no se une antes de entrar al equipo', assertFails(unirse(dD, 'dan', 'o2', 'e1', 'editor', ['carla', 'dan'])));
+await prueba('dan acepta el equipo', assertSucceeds(aceptar(dD, 'equipos/e1', 'dan', 'dan@obra.do', 'miembro')));
+await prueba('dan no se une como admin', assertFails(unirse(dD, 'dan', 'o2', 'e1', 'admin', ['carla', 'dan'])));
+await prueba('dan se une a la obra por el equipo', assertSucceeds(unirse(dD, 'dan', 'o2', 'e1', 'editor', ['carla', 'dan'])));
+await prueba('dan lee la obra', assertSucceeds(getDoc(doc(dD, 'obras/o2'))));
+await prueba('extraño no se une por el equipo', assertFails(unirse(dX, 'extra', 'o2', 'e1', 'editor', ['carla', 'dan', 'extra'])));
+await prueba('crear obra o3 sin equipo', assertSucceeds(setDoc(doc(dA, 'obras/o3'), grupo('Torre C', 'ana'))));
+await prueba('dan no se une a obra no vinculada', assertFails(unirse(dD, 'dan', 'o3', 'e1', 'editor', ['dan'])));
+// carla administra un equipo e2 vinculado a una obra que no administra
+await prueba('carla crea equipo e2', assertSucceeds(setDoc(doc(dC, 'equipos/e2'), grupo('Cuadrilla', 'carla'))));
+await prueba('carla invita a dan a e2', assertSucceeds(updateDoc(doc(dC, 'equipos/e2'), new FieldPath('invitaciones', 'dan@obra.do'), 'miembro', 'invitadosLista', arrayUnion('dan@obra.do'))));
+await prueba('dan acepta e2', assertSucceeds(aceptar(dD, 'equipos/e2', 'dan', 'dan@obra.do', 'miembro')));
+await prueba('ana vincula e2 a o3', assertSucceeds(updateDoc(doc(dA, 'obras/o3'), new FieldPath('equipos', 'e2'), 'lector', new FieldPath('porEquipo', 'e2'), [], 'ultimoEquipo', 'e2')));
+await prueba('dan se une a o3 por e2', assertSucceeds(unirse(dD, 'dan', 'o3', 'e2', 'lector', ['dan'])));
+await prueba('carla no quita a ana (no entró por su equipo)', assertFails(updateDoc(doc(dC, 'obras/o3'), new FieldPath('miembros', 'ana'), deleteField(), 'miembrosLista', arrayRemove('ana'), 'ultimoEquipo', 'e2')));
+await prueba('carla quita a dan de o3 por e2', assertSucceeds(updateDoc(doc(dC, 'obras/o3'), new FieldPath('miembros', 'dan'), deleteField(), 'miembrosLista', arrayRemove('dan'),
+  new FieldPath('personas', 'dan'), deleteField(), new FieldPath('porEquipo', 'e2'), [], 'ultimoEquipo', 'e2')));
+await prueba('miembro del equipo no lo gestiona', assertFails(updateDoc(doc(dD, 'equipos/e1'), new FieldPath('invitaciones', 'x@x.do'), 'miembro', 'invitadosLista', arrayUnion('x@x.do'))));
+await prueba('dan sale del equipo e1', assertSucceeds(updateDoc(doc(dD, 'equipos/e1'), new FieldPath('miembros', 'dan'), deleteField(), 'miembrosLista', arrayRemove('dan'), new FieldPath('personas', 'dan'), deleteField())));
+
+// --- contratista ---
+const P = env.authenticatedContext('pepe', { email: 'pepe@obra.do', email_verified: true });
+const dP = P.firestore();
+await prueba('ana pone a pepe de contratista', assertSucceeds(updateDoc(doc(dA, 'obras/o2'), new FieldPath('miembros', 'pepe'), 'contratista', 'miembrosLista', arrayUnion('pepe'))));
+await prueba('ana escribe repaso de pepe', assertSucceeds(setDoc(doc(dA, 'obras/o2/repasos/r1'), { datos: '{}', version: 1, asignado: 'pepe', estado: 'pendiente', borrado: false })));
+await prueba('ana escribe repaso de otro', assertSucceeds(setDoc(doc(dA, 'obras/o2/repasos/r2'), { datos: '{}', version: 1, asignado: 'otro', estado: 'pendiente', borrado: false })));
+await prueba('ana escribe visita', assertSucceeds(setDoc(doc(dA, 'obras/o2/visitas/v1'), { datos: '{}', version: 1, borrado: false })));
+await prueba('pepe lista sus repasos', assertSucceeds(getDocs(query(collection(dP, 'obras/o2/repasos'), where('asignado', '==', 'pepe')))));
+await prueba('pepe no lista todos', assertFails(getDocs(collection(dP, 'obras/o2/repasos'))));
+await prueba('pepe no lee repaso ajeno', assertFails(getDoc(doc(dP, 'obras/o2/repasos/r2'))));
+await prueba('pepe no lee visitas', assertFails(getDoc(doc(dP, 'obras/o2/visitas/v1'))));
+await prueba('pepe marca corregido', assertSucceeds(setDoc(doc(dP, 'obras/o2/repasos/r1'), { datos: '{"x":1}', version: 2, asignado: 'pepe', estado: 'corregido', borrado: false })));
+await prueba('pepe no cierra', assertFails(setDoc(doc(dP, 'obras/o2/repasos/r1'), { datos: '{}', version: 3, asignado: 'pepe', estado: 'cerrado', borrado: false })));
+await prueba('pepe no reasigna', assertFails(setDoc(doc(dP, 'obras/o2/repasos/r1'), { datos: '{}', version: 3, asignado: 'otro', estado: 'corregido', borrado: false })));
+await prueba('pepe no borra', assertFails(deleteDoc(doc(dP, 'obras/o2/repasos/r1'))));
+await prueba('pepe no crea', assertFails(setDoc(doc(dP, 'obras/o2/repasos/r9'), { datos: '{}', version: 1, asignado: 'pepe', estado: 'pendiente', borrado: false })));
+await prueba('ana cierra el repaso', assertSucceeds(setDoc(doc(dA, 'obras/o2/repasos/r1'), { datos: '{}', version: 4, asignado: 'pepe', estado: 'cerrado', borrado: false })));
+await prueba('pepe no toca un repaso cerrado', assertFails(setDoc(doc(dP, 'obras/o2/repasos/r1'), { datos: '{}', version: 5, asignado: 'pepe', estado: 'corregido', borrado: false })));
+await prueba('pepe sube foto', assertSucceeds(uploadBytes(ref(P.storage(), 'obras/o2/archivos/despues.jpg'), png, { contentType: 'image/jpeg' })));
+await prueba('pepe no borra fotos', assertFails(deleteObject(ref(P.storage(), 'obras/o2/archivos/despues.jpg'))));
+
 console.log(`reglas: ${ok} bien, ${mal} mal`);
 await env.cleanup();
 process.exit(mal ? 1 : 0);

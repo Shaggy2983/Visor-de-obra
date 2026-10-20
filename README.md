@@ -193,18 +193,20 @@ realidad aumentada es lo importante, hay que ir por la ruta TWA descrita en
 Vale cualquier alojamiento estático servido por **HTTPS** (la cámara y el
 service worker no funcionan por HTTP).
 
-En este repositorio ya está puesto: cada empujón a `main` dispara
-[`.github/workflows/pages.yml`](.github/workflows/pages.yml), que activa
-GitHub Pages si hiciera falta y publica la raíz del repositorio en
+En este repositorio ya está puesto: GitHub Pages sirve la rama
+`gh-pages`, y cada empujón a `main` dispara
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml), que copia
+`main` en `gh-pages`. Un par de minutos después está publicada en
 
     https://shaggy2983.github.io/Visor-de-obra/
 
 Ábrela en el móvil y, en el menú de Chrome, **Añadir a pantalla de inicio**.
-A partir de ahí arranca como una aplicación y funciona sin cobertura.
+A partir de ahí arranca como una aplicación y funciona sin cobertura. Tras
+publicar una versión nueva, el teléfono la recoge en la siguiente apertura.
 
-Si el flujo falla al activar Pages —algunos repositorios no dejan que un
-workflow lo haga—, basta con entrar una vez a **Settings → Pages** y elegir
-como origen **GitHub Actions**. Después vuelve a funcionar solo.
+`gh-pages` es un espejo de `main`: no se edita a mano, se sobrescribe en
+cada publicación. En **Settings → Pages** el origen debe ser
+**Deploy from a branch**, rama `gh-pages`, carpeta `/ (root)`.
 
 ## Incluir un modelo dentro de la app
 

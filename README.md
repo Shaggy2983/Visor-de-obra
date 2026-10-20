@@ -212,10 +212,17 @@ Copia tu archivo como **`modelo.ifc`** en la raíz del repositorio. Al
 arrancar, si no hay ningún modelo guardado en el teléfono, la app lo carga
 sola. Si no existe, no pasa nada: se abre la portada para elegir archivo.
 
-## Generar el APK
+## Publicar en Google Play
 
-Las instrucciones completas están en [`apk/LEEME-APK.md`](apk/LEEME-APK.md).
-Para la ruta Capacitor, el zip que pide ese documento se prepara con:
+La app Android está en `android/` (una Trusted Web Activity que abre la
+app publicada) y la compila GitHub con el flujo
+[`.github/workflows/android.yml`](.github/workflows/android.yml): sale el
+`.aab` para Play y un `.apk` para probar. La guía completa, con la lista
+de lo que falta, está en [`apk/LEEME-APK.md`](apk/LEEME-APK.md); los
+textos y gráficos de la ficha, en [`tienda/`](tienda).
+
+Las instrucciones de la vía alternativa (Capacitor) siguen al final de
+esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 
     sh herramientas/empaquetar.sh
 
@@ -245,7 +252,10 @@ Para la ruta Capacitor, el zip que pide ese documento se prepara con:
 | `sw.js` | Service worker: la app entera cabe en el teléfono |
 | `marca/` | Logotipos y favicon de COORDINATE |
 | `vendor/` | three.js, web-ifc, pdf.js e Inter, copiados aquí para no depender de un CDN |
-| `apk/` | Recetas para empaquetar como APK (TWA y Capacitor) |
+| `android/` | La aplicación Android (TWA) que se publica en Google Play |
+| `apk/` | Guía para publicar en Play y la vía alternativa con Capacitor |
+| `tienda/` | Textos y gráficos de la ficha de Google Play |
+| `privacidad.html` | Política de privacidad |
 | `herramientas/` | Guiones auxiliares |
 | `ejemplo.ifc` | Caseta de obra de dos plantas, para probar sin modelo real |
 

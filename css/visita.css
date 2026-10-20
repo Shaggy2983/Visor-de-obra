@@ -544,6 +544,9 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 .copias { display: flex; flex-direction: column; gap: .4rem; }
 .copia-fila { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .45rem 0; border-bottom: 1px solid var(--borde); font-size: .86rem; overflow-wrap: anywhere; }
 
+.legal-pie { margin-top: 2rem; text-align: center; }
+.legal-pie a { color: var(--seleccion); }
+
 .pagina-visita .aviso { z-index: 80; }
 
 /* ---------- informe impreso ---------- */

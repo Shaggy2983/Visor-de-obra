@@ -196,10 +196,18 @@
     <section class="grupo">
       <div class="grupo-cabecera">
         <h2>Firma</h2>
-        <button type="button" id="btn-borrar-firma" class="enlace">Borrar firma</button>
+        <button type="button" id="btn-borrar-firma" class="enlace boton-peligro-texto" hidden>Borrar firma</button>
       </div>
-      <canvas id="firma" class="firma"></canvas>
-      <p class="pie">Firma con el dedo dentro del recuadro.</p>
+      <!-- Bloqueada hasta pulsar «Firmar»: así un roce al desplazar la
+           pantalla no deja trazos. -->
+      <div id="firma-caja" class="firma-caja bloqueada">
+        <canvas id="firma" class="firma"></canvas>
+        <button type="button" id="btn-firmar" class="boton boton-destacado firma-firmar">✍ Firmar</button>
+      </div>
+      <div class="fila-botones">
+        <button type="button" id="btn-firma-listo" class="boton boton-destacado" hidden>Listo, bloquear la firma</button>
+      </div>
+      <p id="firma-ayuda" class="pie"></p>
     </section>
 
     <section class="grupo acciones-ficha">

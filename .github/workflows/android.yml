@@ -7,8 +7,9 @@
 #
 # Firma: si el repositorio tiene los secretos ANDROID_KEYSTORE_BASE64,
 # ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS y ANDROID_KEY_PASSWORD, los
-# dos salen firmados con esa clave de subida. Sin ellos se compilan igual,
-# pero sin firmar: sirven para comprobar que todo compila, no para Play.
+# dos salen firmados con esa clave de subida («-firmado»). Sin ellos se
+# firman con una clave de depuración («-prueba»): el APK se instala para
+# probar, pero Play no los acepta.
 # Cómo crear la clave y los secretos: apk/LEEME-APK.md.
 
 name: Compilar app Android
@@ -57,7 +58,7 @@ jobs:
             echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/subida.jks" >> "$GITHUB_ENV"
             echo "Se firmará con la clave de subida."
           else
-            echo "::warning::No hay clave de firma en los secretos: se compila sin firmar (no vale para Play)."
+            echo "::warning::No hay clave de subida en los secretos: se firma con la de depuración (vale para probar, no para Play)."
           fi
 
       - name: Compilar
@@ -73,7 +74,7 @@ jobs:
         run: |
           version=$(grep '^versionName=' gradle.properties | cut -d= -f2)
           codigo=${VERSION_CODE:-$GITHUB_RUN_NUMBER}
-          firma=$([ -n "$ANDROID_KEYSTORE_PATH" ] && echo firmado || echo sin-firmar)
+          firma=$([ -n "$ANDROID_KEYSTORE_PATH" ] && echo firmado || echo prueba)
           nombre="coordinate-obra-${version}-${codigo}-${firma}"
           mkdir -p "$RUNNER_TEMP/salida"
           cp app/build/outputs/bundle/release/*.aab "$RUNNER_TEMP/salida/${nombre}.aab"

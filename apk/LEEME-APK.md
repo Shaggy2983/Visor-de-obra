@@ -80,7 +80,9 @@ Cada cambio en `android/` compila solo. Para hacerlo a mano: pestaña
 **Actions → Compilar app Android → Run workflow**. Al terminar, en la
 ejecución, sección **Artifacts**, se descarga un zip con el `.aab` y el
 `.apk`. Con los secretos puestos, el nombre termina en `-firmado` y el
-registro del paso «Huella de la clave» muestra su huella SHA-256.
+registro del paso «Huella de la clave» muestra su huella SHA-256. Sin
+ellos termina en `-prueba`: va firmado con una clave de depuración, que
+sirve para instalar el `.apk` y probar, pero Play no la acepta.
 
 El número de versión interno sube solo (es el número de ejecución), que
 es lo que Play exige en cada subida. El visible está en

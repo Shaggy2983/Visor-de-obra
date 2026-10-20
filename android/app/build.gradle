@@ -6,8 +6,9 @@ def host = providers.gradleProperty('twaHost').get()
 def ruta = providers.gradleProperty('twaRuta').get()
 def codigo = (System.getenv('VERSION_CODE') ?: System.getenv('GITHUB_RUN_NUMBER') ?: '1') as Integer
 
-// La firma de publicación sale de variables de entorno (secretos de GitHub);
-// sin ellas se compila igual, pero sin firmar para Play.
+// La firma de publicación sale de variables de entorno (secretos de GitHub).
+// Sin ellas se firma con la clave de depuración: el APK se puede instalar
+// para probar, pero Play lo rechaza.
 def almacen = System.getenv('ANDROID_KEYSTORE_PATH')
 
 android {
@@ -42,7 +43,7 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-            if (almacen) signingConfig signingConfigs.publicacion
+            signingConfig almacen ? signingConfigs.publicacion : signingConfigs.debug
         }
     }
 

@@ -9,7 +9,7 @@ echo.
 echo [1/5] Comprobando que exista la carpeta app...
 if not exist "app\index.html" (
   echo ERROR: no encuentro app\index.html
-  echo Descomprime visor-obra-E04.zip aqui, de modo que quede
+  echo Descomprime visor-obra-CRD.zip aqui, de modo que quede
   echo una carpeta "app" junto a este script.
   pause
   exit /b 1
@@ -21,7 +21,7 @@ call npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capaci
 if errorlevel 1 goto fallo
 
 echo [3/5] Inicializando el proyecto...
-call npx cap init "E04 3D" com.grupoaqua.e04visor --web-dir=app
+call npx cap init "CRD Obra" com.coordinate.visorobra --web-dir=app
 copy /Y capacitor.config.json capacitor.config.json >nul 2>&1
 
 echo [4/5] Agregando la plataforma Android...

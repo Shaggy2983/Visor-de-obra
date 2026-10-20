@@ -1,6 +1,6 @@
 {
-  "appId": "com.grupoaqua.e04visor",
-  "appName": "E04 3D",
+  "appId": "com.coordinate.visorobra",
+  "appName": "CRD Obra",
   "webDir": "app",
   "bundledWebRuntime": false,
   "android": {
@@ -14,7 +14,7 @@
   "plugins": {
     "SplashScreen": {
       "launchShowDuration": 800,
-      "backgroundColor": "#12161a",
+      "backgroundColor": "#121826",
       "androidSplashResourceName": "splash",
       "showSpinner": false
     }

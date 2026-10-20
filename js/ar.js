@@ -35,7 +35,7 @@ export class RealidadAumentada {
 
     this.reticula = new THREE.Mesh(
       new THREE.RingGeometry(0.09, 0.11, 32).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: 0xf0a04b, side: THREE.DoubleSide })
+      new THREE.MeshBasicMaterial({ color: 0x62a0e8, side: THREE.DoubleSide })
     );
     this.reticula.matrixAutoUpdate = false;
     this.reticula.visible = false;

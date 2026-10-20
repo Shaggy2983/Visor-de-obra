@@ -1,17 +1,42 @@
-/* Visor de obra E04 — hoja de estilos única.
+/* COORDINATE · Visor de obra — hoja de estilos común.
    Pensada para teléfono en obra: contraste alto, botones grandes,
-   nada que dependa de un puntero fino. */
+   nada que dependa de un puntero fino. Colores: paleta Acero de la
+   marca v2; tipografía Inter, copiada en vendor/ para ir sin conexión. */
+
+@font-face {
+  font-family: "Inter";
+  src: url("../vendor/inter/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
-  --fondo: #12161a;
-  --fondo-2: #1b2127;
-  --fondo-3: #242c34;
-  --borde: #333d47;
-  --texto: #eceae4;
-  --texto-tenue: #9aa5b1;
-  --acento: #f0a04b;
-  --acento-oscuro: #b8752f;
-  --seleccion: #4ec9f0;
+  /* paleta Acero */
+  --color-bg: #121826;
+  --color-surface: #1c2433;
+  --color-text: #e9eef5;
+  --color-text-2: #c9d3e2;
+  --color-accent: #62a0e8;
+  --color-accent-300: #bcd6f3;
+  --color-accent-400: #8ebdf0;
+  --color-accent-600: #3d7cc4;
+  --color-accent-700: #2d5c95;
+  --color-accent-800: #22436f;
+  --color-accent-900: #192a44;
+  --color-section: #1b3560;
+  --color-light-bg: #eef1f6;
+
+  --fondo: var(--color-bg);
+  --fondo-2: var(--color-surface);
+  --fondo-3: #263147;
+  --borde: #34425b;
+  --texto: var(--color-text);
+  --texto-tenue: #9dafc6;
+  --acento: var(--color-accent);
+  --acento-oscuro: var(--color-accent-600);
+  --texto-sobre-acento: #0c1628;
+  --seleccion: var(--color-accent-400);
   --alto-barra: 3.25rem;
   --seguro-arriba: env(safe-area-inset-top, 0px);
   --seguro-abajo: env(safe-area-inset-bottom, 0px);
@@ -25,7 +50,7 @@ html, body {
   overflow: hidden;
   background: var(--fondo);
   color: var(--texto);
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 15px/1.45 "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-text-size-adjust: 100%;
   overscroll-behavior: none;
 }
@@ -56,10 +81,12 @@ body { touch-action: none; }
   align-items: center;
   gap: .5rem;
   padding: calc(var(--seguro-arriba) + .4rem) .6rem .4rem;
-  background: linear-gradient(to bottom, rgba(18,22,26,.96), rgba(18,22,26,.75) 70%, transparent);
+  background: linear-gradient(to bottom, rgba(18,24,38,.96), rgba(18,24,38,.75) 70%, transparent);
 }
 
 .titulo {
+  display: flex;
+  align-items: center;
   margin: 0;
   font-size: .95rem;
   font-weight: 600;
@@ -80,10 +107,41 @@ body { touch-action: none; }
   justify-content: space-around;
   gap: .25rem;
   padding: .35rem .4rem calc(var(--seguro-abajo) + .35rem);
-  background: rgba(18,22,26,.92);
+  background: rgba(18,24,38,.92);
   border-top: 1px solid var(--borde);
   backdrop-filter: blur(6px);
 }
+
+/* ---------- marca ---------- */
+
+/* Logotipo «C◎ORDINATE»: el símbolo de mira de nodos hace de O. */
+.marca {
+  display: inline-flex;
+  align-items: center;
+  font-family: "Inter", system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: .12em;
+  white-space: nowrap;
+  color: var(--texto);
+}
+
+.marca svg { width: .92em; height: .92em; margin: 0 .1em 0 .02em; flex: 0 0 auto; }
+
+.titulo .marca { font-size: .9rem; }
+
+.titulo-seccion {
+  margin-left: .55rem;
+  padding-left: .55rem;
+  border-left: 1px solid var(--borde);
+  color: var(--texto-tenue);
+  font-weight: 500;
+  letter-spacing: .06em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.lema { font-size: .8rem !important; letter-spacing: .04em; color: var(--color-accent-300) !important; }
 
 /* ---------- botones ---------- */
 
@@ -101,13 +159,20 @@ body { touch-action: none; }
   white-space: nowrap;
 }
 
+a.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .boton:active { background: var(--fondo-2); }
 .boton[disabled] { opacity: .4; cursor: default; }
 
 .boton-destacado {
   background: var(--acento);
   border-color: var(--acento-oscuro);
-  color: #1a1206;
+  color: var(--texto-sobre-acento);
   font-weight: 600;
 }
 
@@ -230,7 +295,7 @@ body { touch-action: none; }
   align-items: center;
   gap: .6rem;
   padding: .55rem .3rem;
-  border-bottom: 1px solid rgba(51,61,71,.5);
+  border-bottom: 1px solid rgba(52,66,91,.5);
   cursor: pointer;
 }
 
@@ -287,10 +352,10 @@ body { touch-action: none; }
   padding: .28rem 0;
   font-size: .84rem;
   overflow-wrap: anywhere;
-  border-bottom: 1px solid rgba(51,61,71,.45);
+  border-bottom: 1px solid rgba(52,66,91,.45);
 }
 
-.propiedades dt { border-bottom: 1px solid rgba(51,61,71,.45); }
+.propiedades dt { border-bottom: 1px solid rgba(52,66,91,.45); }
 
 /* ---------- portada, carga, avisos ---------- */
 
@@ -302,7 +367,7 @@ body { touch-action: none; }
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: radial-gradient(120% 90% at 50% 0%, #1e2630, #0d1114);
+  background: radial-gradient(120% 90% at 50% 0%, var(--color-section), #0c101a 70%);
 }
 
 .portada[hidden] { display: none; }
@@ -313,7 +378,8 @@ body { touch-action: none; }
   text-align: center;
 }
 
-.portada-caja h2 { margin: 0 0 .5rem; font-size: 1.4rem; }
+.portada-caja h2 { margin: 0 0 .2rem; font-size: 1.6rem; display: flex; justify-content: center; }
+.portada-caja .subtitulo { margin: 0 0 1rem; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-tenue); }
 .portada-caja p { color: var(--texto-tenue); font-size: .92rem; }
 .portada-caja .boton { margin-top: 1rem; }
 
@@ -325,7 +391,7 @@ body { touch-action: none; }
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(13,17,20,.88);
+  background: rgba(12,16,26,.88);
 }
 
 .cargando[hidden] { display: none; }
@@ -386,13 +452,13 @@ body { touch-action: none; }
   margin: 0;
   padding: .5rem .7rem;
   border-radius: .5rem;
-  background: rgba(18,22,26,.78);
+  background: rgba(18,24,38,.78);
   font-size: .85rem;
 }
 
 .ar-inferior { display: flex; flex-direction: column; gap: .5rem; align-items: center; }
 .ar-escalas, .ar-controles { display: flex; gap: .4rem; flex-wrap: wrap; justify-content: center; }
-.ar-escala.activa { background: var(--acento); border-color: var(--acento-oscuro); color: #1a1206; font-weight: 600; }
+.ar-escala.activa { background: var(--acento); border-color: var(--acento-oscuro); color: var(--texto-sobre-acento); font-weight: 600; }
 
 .ar-ficha {
   pointer-events: auto;
@@ -402,7 +468,7 @@ body { touch-action: none; }
   margin: .5rem 0;
   padding: .7rem .8rem;
   border-radius: .6rem;
-  background: rgba(18,22,26,.9);
+  background: rgba(18,24,38,.9);
   border: 1px solid var(--borde);
   font-size: .85rem;
 }
@@ -421,4 +487,11 @@ body { touch-action: none; }
     border-right: 1px solid var(--borde);
   }
   .titulo { font-size: 1.05rem; }
+}
+
+/* En el teléfono la cabecera no da para el logotipo entero y el nombre de
+   la sección: queda sólo el símbolo, que ya identifica la marca. */
+@media (max-width: 520px) {
+  .titulo .marca { font-size: 0; }
+  .titulo .marca svg { width: 1.6rem; height: 1.6rem; margin: 0; }
 }

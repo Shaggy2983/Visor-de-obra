@@ -1,5 +1,5 @@
 #!/bin/sh
-# Prepara visor-obra-E04.zip: la aplicación dentro de una carpeta "app/",
+# Prepara visor-obra-CRD.zip: la aplicación dentro de una carpeta "app/",
 # que es lo que espera montar-android.bat para la ruta Capacitor.
 #
 # Uso, desde la raíz del repositorio:
@@ -12,14 +12,14 @@
 set -eu
 
 raiz=$(cd "$(dirname "$0")/.." && pwd)
-salida="$raiz/visor-obra-E04.zip"
+salida="$raiz/visor-obra-CRD.zip"
 temporal=$(mktemp -d)
 destino="$temporal/app"
 
 mkdir -p "$destino"
 cd "$raiz"
 
-for pieza in index.html manifest.webmanifest sw.js css js vendor \
+for pieza in index.html visita.html oauth.html manifest.webmanifest sw.js css js vendor marca \
              icono-192.png icono-512.png ejemplo.ifc modelo.ifc; do
   [ -e "$pieza" ] && cp -R "$pieza" "$destino/"
 done

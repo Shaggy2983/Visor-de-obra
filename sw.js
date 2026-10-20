@@ -2,17 +2,31 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'e04-v1';
+const VERSION = 'crd-v7';
 const PIEZAS = [
   './',
   './index.html',
+  './visita.html',
+  './oauth.html',
+  './privacidad.html',
   './manifest.webmanifest',
   './css/estilos.css',
+  './css/visita.css',
   './js/app.js',
   './js/visor.js',
   './js/ar.js',
   './js/interfaz.js',
   './js/almacen.js',
+  './js/partes.js',
+  './js/visita.js',
+  './js/utiles.js',
+  './js/planos.js',
+  './js/informe-interactivo.js',
+  './js/cuentas.js',
+  './js/cuentas-config.js',
+  './js/nube.js',
+  './vendor/pdfjs/pdf.min.mjs',
+  './vendor/pdfjs/pdf.worker.min.mjs',
   './js/ifc-worker.js',
   './vendor/three/three.module.min.js',
   './vendor/three/three.core.min.js',
@@ -20,6 +34,8 @@ const PIEZAS = [
   './vendor/web-ifc/web-ifc-api.js',
   './vendor/web-ifc/web-ifc.wasm',
   './ejemplo.ifc',
+  './vendor/inter/inter-latin-wght-normal.woff2',
+  './marca/favicon.svg',
   './icono-192.png',
   './icono-512.png'
 ];

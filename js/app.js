@@ -11,7 +11,7 @@ const $ = (id) => document.getElementById(id);
 
 const nodos = {
   lienzo: $('lienzo'),
-  titulo: document.querySelector('.titulo'),
+  titulo: document.querySelector('.titulo-seccion'),
   abrir: $('btn-abrir'),
   abrir2: $('btn-abrir-2'),
   ejemplo: $('btn-ejemplo'),

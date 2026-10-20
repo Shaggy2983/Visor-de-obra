@@ -1,98 +1,211 @@
-# Generar el APK — E04 3D
+# Publicar en Google Play — COORDINATE · Obra
 
-Dos rutas. Elige una.
+La aplicación Android está en [`android/`](../android): una **Trusted Web
+Activity (TWA)**, la vía que Google recomienda para publicar una app web
+en Play. Por dentro es Chrome a pantalla completa abriendo la app
+publicada, así que la cámara, la realidad aumentada, el trabajo sin
+cobertura y el inicio de sesión con Google o Microsoft funcionan igual
+que en el navegador. Abre directamente la **visita diaria**; el visor 3D
+queda a un toque.
 
-| | TWA (carpeta `twa/`) | Capacitor (carpeta `capacitor/`) |
-|---|---|---|
-| Necesita la app publicada en HTTPS | Sí | No |
-| Realidad aumentada | Funciona | Probablemente no |
-| Arranca sin señal | Tras la primera apertura | Desde la instalación |
-| Herramientas | Bubblewrap o PWABuilder | Android Studio |
-| Actualizar el modelo | Subes el `.ifc` al servidor | Recompilar el APK |
+No hace falta instalar Android Studio: **GitHub compila la app** con el
+flujo [`.github/workflows/android.yml`](../.github/workflows/android.yml)
+y deja dos archivos para descargar:
 
-Si el AR importa, ve por TWA. Si necesitas que todo viva dentro del
-APK y el AR es prescindible, ve por Capacitor.
+| Archivo | Para qué |
+|---|---|
+| `coordinate-obra-….aab` | El que se sube a Google Play |
+| `coordinate-obra-….apk` | Para instalar a mano en un teléfono y probar |
 
----
+## Lista de lo que falta
 
-## RUTA A — TWA
-
-### A.1 Publica primero
-
-La app debe estar accesible en `https://USUARIO.github.io/REPOSITORIO/`
-antes de compilar nada. Comprueba que abre en el móvil.
-
-### A.2 Camino corto: PWABuilder
-
-1. Entra a **pwabuilder.com**
-2. Pega la URL de tu GitHub Pages
-3. **Package for stores** → Android → **Generate**
-4. Descargas un ZIP con el APK firmado y el `assetlinks.json` ya
-   relleno con la huella correcta
-
-Es la vía más rápida y no instala nada en tu máquina.
-
-### A.3 Camino con Bubblewrap
-
-Requiere JDK 17. Bubblewrap descarga el SDK de Android solo.
-
-    npm install -g @bubblewrap/cli
-    bubblewrap init --manifest https://USUARIO.github.io/REPOSITORIO/manifest.webmanifest
-
-Responde las preguntas. Luego reemplaza el `twa-manifest.json` generado
-por el de esta carpeta, cambiando `USUARIO` y `REPOSITORIO` por los
-tuyos. Después:
-
-    bubblewrap build
-
-Salida: `app-release-signed.apk`.
-
-### A.4 Quitar la barra de direcciones
-
-Sin este paso el APK muestra una barra con la URL arriba. Obtén la
-huella de tu clave:
-
-    keytool -list -v -keystore android.keystore -alias e04
-
-Copia la línea `SHA256:` completa (con los dos puntos) dentro de
-`twa/.well-known/assetlinks.json`, y sube ese archivo al repositorio
-respetando la ruta:
-
-    REPOSITORIO/.well-known/assetlinks.json
-
-GitHub Pages ignora carpetas que empiezan con guion bajo, pero
-`.well-known` sí la sirve. Verifica que abra en el navegador antes de
-distribuir el APK.
-
-### A.5 Guarda el keystore
-
-`android.keystore` y su contraseña son irreemplazables. Si los pierdes
-no podrás publicar actualizaciones del mismo paquete nunca más.
-Guárdalos fuera del repositorio, en el Drive del proyecto.
+| # | Paso | Quién | Estado |
+|---|---|---|---|
+| 1 | Publicar la web (fusionar el PR en `main`) | Tú | Pendiente |
+| 2 | Crear la clave de subida y guardarla en GitHub | Tú | Pendiente |
+| 3 | Compilar el `.aab` en GitHub | Automático | Listo |
+| 4 | Cuenta de desarrollador de Google Play | Tú | Pendiente |
+| 5 | Ficha de la tienda (textos, gráficos, política de privacidad) | Preparado en [`tienda/`](../tienda) | Listo |
+| 6 | Verificar el dominio (quitar la barra de direcciones) | Tú | Pendiente |
+| 7 | ID de cliente de Google y Microsoft (correo y nube) | Tú | Pendiente |
 
 ---
 
-## RUTA B — Capacitor
+## 1. Publicar la web
 
-### B.1 Prepara la carpeta
+La app Android abre `https://shaggy2983.github.io/Visor-de-obra/visita.html`.
+Hasta que los cambios lleguen a `main`, esa dirección sirve la versión
+antigua. Fusiona el PR en GitHub; el flujo de Pages publica solo en un
+par de minutos. Comprueba en el móvil que abre la visita diaria.
 
-Descomprime `visor-obra-E04.zip` de modo que quede una carpeta `app/`.
+Después, cualquier cambio en la web llega a los teléfonos **sin subir
+otra versión a Play**: la app siempre abre la web publicada. Sólo hace
+falta recompilar si cambian el nombre, el icono o la dirección.
+
+## 2. Clave de subida
+
+Play exige que el `.aab` vaya firmado con una **clave de subida**. Se
+crea una vez, en tu ordenador, con `keytool` (viene con Java o con
+Android Studio; en Windows también vale instalar *Temurin JDK 17*):
+
+    keytool -genkeypair -v -keystore subida-coordinate.jks -alias coordinate -keyalg RSA -keysize 2048 -validity 10000
+
+Pide una contraseña y unos datos (nombre, organización, país: `DO`).
+
+Pásala a texto para guardarla en GitHub:
+
+- Windows (PowerShell):
+  `[Convert]::ToBase64String([IO.File]::ReadAllBytes("subida-coordinate.jks")) | Set-Clipboard`
+- macOS / Linux: `base64 -w0 subida-coordinate.jks`
+
+En GitHub: **Settings → Secrets and variables → Actions → New
+repository secret**, crea estos cuatro:
+
+| Secreto | Valor |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | El texto en base64 de la clave |
+| `ANDROID_KEYSTORE_PASSWORD` | La contraseña del almacén |
+| `ANDROID_KEY_ALIAS` | `coordinate` |
+| `ANDROID_KEY_PASSWORD` | La contraseña de la clave (la misma si no pusiste otra) |
+
+Guarda `subida-coordinate.jks` y sus contraseñas **fuera del
+repositorio** (gestor de contraseñas o el Drive del proyecto). Con la
+firma de apps de Google Play activada (la opción por defecto), si se
+pierde la clave de subida se puede pedir a Google que la cambie; aun así,
+no la pierdas.
+
+## 3. Compilar
+
+Cada cambio en `android/` compila solo. Para hacerlo a mano: pestaña
+**Actions → Compilar app Android → Run workflow**. Al terminar, en la
+ejecución, sección **Artifacts**, se descarga un zip con el `.aab` y el
+`.apk`. Con los secretos puestos, el nombre termina en `-firmado` y el
+registro del paso «Huella de la clave» muestra su huella SHA-256. Sin
+ellos termina en `-prueba`: va firmado con una clave de depuración, que
+sirve para instalar el `.apk` y probar, pero Play no la acepta.
+
+El número de versión interno sube solo (es el número de ejecución), que
+es lo que Play exige en cada subida. El visible está en
+`android/gradle.properties` (`versionName`).
+
+Para probar antes de Play, instala el `.apk` en un teléfono (Android
+pedirá permitir «instalar aplicaciones desconocidas»).
+
+## 4. Cuenta de Google Play
+
+En **play.google.com/console**: pago único de 25 USD y verificación de
+identidad.
+
+- **Cuenta personal** (creada después de noviembre de 2023): antes de
+  publicar para todo el mundo, Google exige una **prueba cerrada con al
+  menos 12 personas durante 14 días seguidos**. Conviene empezarla cuanto
+  antes con gente de obra.
+- **Cuenta de organización** (a nombre de COORDINATE): no tiene esa
+  espera, pero pide un número **D-U-N-S** de la empresa.
+
+Luego: **Crear aplicación** → nombre «COORDINATE · Visita de obra»,
+idioma español, aplicación, gratuita. Sube el `.aab` primero a
+**Prueba interna** y prueba que instala.
+
+## 5. Ficha de la tienda
+
+Todo está en [`tienda/`](../tienda):
+
+- `ficha.md`: nombre, descripciones corta y completa, categoría, y las
+  respuestas sugeridas para **Seguridad de los datos**, **Clasificación
+  de contenido** y **Acceso a la app**.
+- `grafico-destacado-1024x500.png` y `captura-*.png` (1080×1920).
+- Icono de 512×512: `icono-512.png` en la raíz.
+- Política de privacidad: `https://shaggy2983.github.io/Visor-de-obra/privacidad.html`
+  (archivo `privacidad.html`, revísala antes de publicar).
+
+## 6. Verificar el dominio
+
+Sin este paso la app funciona, pero muestra arriba una **barra con la
+dirección**, como una pestaña del navegador. Para quitarla, Android
+comprueba un archivo `assetlinks.json` en la **raíz del dominio**:
+
+    https://shaggy2983.github.io/.well-known/assetlinks.json
+
+Ojo: en la raíz del dominio, no dentro de `/Visor-de-obra/`. Por eso no
+vale el que hay en este repositorio. Dos maneras:
+
+**a) Repositorio de usuario.** Crea en GitHub un repositorio llamado
+exactamente `shaggy2983.github.io` con el archivo
+`.well-known/assetlinks.json` y un `.nojekyll` vacío en la raíz. GitHub
+lo publica en la raíz del dominio.
+
+**b) Dominio propio** (recomendado si tienes `coordinate.do`): por
+ejemplo `obra.coordinate.do` apuntando a GitHub Pages
+(*Settings → Pages → Custom domain*). Entonces la raíz del dominio es
+este repositorio y basta su `.well-known/assetlinks.json`. Hay que
+cambiar `twaHost` y `twaRuta` en `android/gradle.properties`
+(`obra.coordinate.do` y `/`), recompilar, y registrar la nueva URI de
+redirección en Google y Microsoft. También facilita el paso 7.
+
+El contenido del archivo lleva **dos huellas SHA-256**: la de la clave de
+subida (sale en el registro de la compilación) y la de la **clave de
+firma de Google Play** (Play Console → *Prueba y lanzamiento →
+Configuración → Integridad de la app → Firma de apps*):
+
+```json
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.coordinate.visorobra",
+    "sha256_cert_fingerprints": [
+      "HUELLA:DE:LA:CLAVE:DE:FIRMA:DE:PLAY",
+      "HUELLA:DE:LA:CLAVE:DE:SUBIDA"
+    ]
+  }
+}]
+```
+
+Play Console también tiene un generador en *Vinculación de recursos
+digitales*.
+
+## 7. Correo y nube en la app publicada
+
+Los pasos de registro están en el README («Cuentas de correo y
+almacenamiento»). Para una app pública hay un paso más con Google:
+`gmail.send` es un permiso sensible y, para salir del modo de prueba
+(100 usuarios), Google pide **verificar la app**: dominio propio
+verificado, página de inicio, la política de privacidad y un vídeo
+corto del uso del permiso. Mientras tanto, la opción de Gmail funciona
+para los usuarios de prueba que añadas; Microsoft no pide nada parecido
+para cuentas personales.
+
+---
+
+## Apéndice — APK con todo dentro (Capacitor)
+
+Sólo si hace falta que la app funcione **sin haber abierto nunca la web**
+y la realidad aumentada no importa. En el WebView de Capacitor no hay
+WebXR y Google no permite iniciar sesión, así que **no hay correo ni
+nube**. Para Play es mejor la TWA.
+
+### Pasos
+
+#### B.1 Prepara la carpeta
+
+Descomprime `visor-obra-CRD.zip` de modo que quede una carpeta `app/`.
 Junto a ella coloca `montar-android.bat` y `capacitor.config.json`.
 
 Si quieres el modelo dentro del APK, copia tu archivo como
 `app/modelo.ifc` antes de compilar.
 
-### B.2 Ejecuta
+#### B.2 Ejecuta
 
 Doble clic en `montar-android.bat`. Monta todo el proyecto Android.
 
-### B.3 Ajusta el manifiesto
+#### B.3 Ajusta el manifiesto
 
 Aplica lo que indica `permisos-AndroidManifest.txt` sobre
 `android\app\src\main\AndroidManifest.xml`. Sin el permiso de cámara la
 app no podrá usar AR aunque el WebView lo permitiera.
 
-### B.4 Compila
+#### B.4 Compila
 
     npx cap open android
 
@@ -106,7 +219,7 @@ Ese APK es de depuración: sirve para instalar en los equipos de obra
 por WhatsApp o USB, pero no para Play Store. Para una versión firmada:
 **Build → Generate Signed Bundle / APK**.
 
-### B.5 Tras cualquier cambio en `app/`
+#### B.5 Tras cualquier cambio en `app/`
 
     npx cap sync android
 

@@ -12,7 +12,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 
-const COLOR_SELECCION = 0x4ec9f0;
+const COLOR_SELECCION = 0x8ebdf0;   // acento 400 de la paleta Acero
 
 export class Visor {
   constructor(lienzo) {
@@ -29,7 +29,7 @@ export class Visor {
     this.render.xr.enabled = true;
 
     this.escena = new THREE.Scene();
-    this.escena.background = new THREE.Color(0x1b2127);
+    this.escena.background = new THREE.Color(0x1c2433);
 
     this.camara = new THREE.PerspectiveCamera(60, 1, 0.05, 3000);
     this.camara.position.set(12, 10, 12);
@@ -69,7 +69,7 @@ export class Visor {
 
     this.materialResalte = new THREE.MeshLambertMaterial({
       color: COLOR_SELECCION,
-      emissive: 0x0d3a45,
+      emissive: 0x22436f,
       side: THREE.DoubleSide,
       polygonOffset: true,
       polygonOffsetFactor: -2,
@@ -185,7 +185,7 @@ export class Visor {
 
     const paso = Math.pow(10, Math.round(Math.log10(tamano / 10)));
     const lado = Math.ceil((tamano * 2) / paso) * paso;
-    this.rejilla = new THREE.GridHelper(lado, Math.min(lado / paso, 200), 0x3a4652, 0x2a333c);
+    this.rejilla = new THREE.GridHelper(lado, Math.min(lado / paso, 200), 0x3a4a66, 0x263147);
     this.rejilla.material.transparent = true;
     this.rejilla.material.opacity = 0.5;
     this.escena.add(this.rejilla);
@@ -384,7 +384,7 @@ export class Visor {
   }
 
   modoAR(encendido) {
-    this.escena.background = encendido ? null : new THREE.Color(0x1b2127);
+    this.escena.background = encendido ? null : new THREE.Color(0x1c2433);
     if (this.rejilla) this.rejilla.visible = !encendido;
     this.controles.enabled = !encendido;
     if (encendido) this.cortar(null);

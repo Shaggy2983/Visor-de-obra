@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
-<title>E04 · Modelo de obra</title>
-<meta name="description" content="Visor IFC de campo con realidad aumentada">
-<meta name="theme-color" content="#12161a">
+<title>COORDINATE · Visor de obra</title>
+<meta name="description" content="COORDINATE — visor IFC de campo con realidad aumentada">
+<meta name="theme-color" content="#121826">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./icono-192.png">
+<link rel="icon" href="./marca/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./icono-192.png" sizes="192x192">
 <link rel="apple-touch-icon" href="./icono-192.png">
+<link rel="preload" href="./vendor/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="./css/estilos.css">
 <script type="importmap">
 {
@@ -29,8 +31,9 @@
 </div>
 
 <header class="barra-superior">
-  <h1 class="titulo">E04 · Modelo</h1>
+  <h1 class="titulo"><span class="marca" aria-label="COORDINATE">C<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" stroke-width="4"/><path d="M32 6V58M6 32H58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><g fill="var(--color-accent)"><circle cx="32" cy="6" r="4.5"/><circle cx="58" cy="32" r="4.5"/><circle cx="32" cy="58" r="4.5"/><circle cx="6" cy="32" r="4.5"/><circle cx="32" cy="32" r="6.5"/></g></svg>ORDINATE</span><span class="titulo-seccion">Modelo</span></h1>
   <div class="acciones">
+    <a href="./visita.html" class="boton" title="Parte de visita diaria">Visita</a>
     <button id="btn-abrir" class="boton" title="Abrir un archivo IFC del teléfono">Abrir IFC</button>
     <button id="btn-ar" class="boton boton-destacado" disabled>Ver en obra</button>
   </div>
@@ -94,11 +97,14 @@
 
 <div id="portada" class="portada">
   <div class="portada-caja">
-    <h2>Visor de obra E04</h2>
+    <h2><span class="marca" aria-label="COORDINATE">C<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" stroke-width="4"/><path d="M32 6V58M6 32H58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><g fill="var(--color-accent)"><circle cx="32" cy="6" r="4.5"/><circle cx="58" cy="32" r="4.5"/><circle cx="32" cy="58" r="4.5"/><circle cx="6" cy="32" r="4.5"/><circle cx="32" cy="32" r="6.5"/></g></svg>ORDINATE</span></h2>
+    <p class="subtitulo">Visor de obra</p>
+    <p class="lema">Los problemas se resuelven en el modelo, no en obra.</p>
     <p id="portada-texto">Abre un archivo IFC para empezar. Queda guardado en el teléfono
        y la próxima vez se abre solo, aunque no haya señal.</p>
     <button id="btn-abrir-2" class="boton boton-destacado grande">Abrir archivo IFC</button>
     <button id="btn-ejemplo" class="enlace">o ver un modelo de ejemplo</button>
+    <a href="./visita.html" class="boton grande">Parte de visita diaria</a>
     <p class="pie" id="estado-ar">Comprobando la realidad aumentada…</p>
   </div>
 </div>

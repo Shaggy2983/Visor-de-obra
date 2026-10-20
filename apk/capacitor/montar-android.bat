@@ -21,7 +21,7 @@ call npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capaci
 if errorlevel 1 goto fallo
 
 echo [3/5] Inicializando el proyecto...
-call npx cap init "CRD Obra" com.coordinate.visorobra --web-dir=app
+call npx cap init "CRD Obra" com.coordinate.bitacora --web-dir=app
 copy /Y capacitor.config.json capacitor.config.json >nul 2>&1
 
 echo [4/5] Agregando la plataforma Android...

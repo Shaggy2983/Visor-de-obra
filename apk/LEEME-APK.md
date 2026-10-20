@@ -160,7 +160,7 @@ Configuración → Integridad de la app → Firma de apps*):
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target": {
     "namespace": "android_app",
-    "package_name": "com.coordinate.visorobra",
+    "package_name": "com.coordinate.bitacora",
     "sha256_cert_fingerprints": [
       "HUELLA:DE:LA:CLAVE:DE:FIRMA:DE:PLAY",
       "HUELLA:DE:LA:CLAVE:DE:SUBIDA"

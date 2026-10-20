@@ -45,6 +45,8 @@
     <button class="pestana activa" data-hoja="hoja-filtros" role="tab">Filtros</button>
     <button class="pestana" data-hoja="hoja-buscar" role="tab">Buscar</button>
     <button class="pestana" data-hoja="hoja-propiedades" role="tab">Propiedades</button>
+    <button class="pestana" data-hoja="hoja-cortes" role="tab">Cortes</button>
+    <button class="pestana" data-hoja="hoja-vista" role="tab">Vista</button>
     <button id="btn-cerrar-panel" class="pestana pestana-cerrar" title="Cerrar panel">✕</button>
   </div>
 
@@ -63,14 +65,7 @@
       </div>
       <div id="lista-categorias" class="lista"></div>
     </div>
-    <div class="grupo">
-      <div class="grupo-cabecera">
-        <h2>Corte horizontal</h2>
-        <button class="enlace" id="btn-corte-apagar">Quitar</button>
-      </div>
-      <input type="range" id="corte" min="0" max="1000" value="1000" class="deslizador">
-      <p class="pie" id="corte-texto">Sin corte</p>
-    </div>
+    <p class="pie">◐ pone una categoría en transparente sin ocultarla.</p>
   </section>
 
   <section id="hoja-buscar" class="hoja">
@@ -79,17 +74,98 @@
   </section>
 
   <section id="hoja-propiedades" class="hoja">
+    <input type="search" id="filtro-propiedades" class="campo" placeholder="Filtrar propiedades…" autocomplete="off" hidden>
     <div id="propiedades" class="propiedades">
       <p class="vacio">Toca un elemento del modelo para ver sus datos.</p>
     </div>
   </section>
+
+  <section id="hoja-cortes" class="hoja">
+    <div id="cortes-tipos" class="chips" role="group" aria-label="Tipo de corte"></div>
+    <div id="cortes-controles" class="cortes-controles"></div>
+    <label class="fila"><input type="checkbox" id="corte-relleno" checked><span class="fila-texto">Rellenar lo cortado</span></label>
+    <label class="fila"><input type="checkbox" id="corte-ver-plano" checked><span class="fila-texto">Ver el plano de corte</span></label>
+  </section>
+
+  <section id="hoja-vista" class="hoja">
+    <div class="grupo">
+      <h2>Fondo</h2>
+      <div id="fondos" class="fondos" role="radiogroup" aria-label="Fondo"></div>
+    </div>
+    <div class="grupo">
+      <h2>Vistas</h2>
+      <div class="vistas">
+        <button class="boton" data-vista="iso">3D</button>
+        <button class="boton" data-vista="superior">Planta</button>
+        <button class="boton" data-vista="frente">Frente</button>
+        <button class="boton" data-vista="detras">Detrás</button>
+        <button class="boton" data-vista="izquierda">Izquierda</button>
+        <button class="boton" data-vista="derecha">Derecha</button>
+      </div>
+    </div>
+    <div class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Transparencia del modelo</h2>
+        <span id="transparencia-texto" class="pie">Opaco</span>
+      </div>
+      <input type="range" id="transparencia" min="0" max="90" value="0" class="deslizador">
+      <div class="grupo-cabecera">
+        <span id="transparentes-texto" class="pie"></span>
+        <button class="enlace" id="btn-quitar-transparencias" hidden>Quitar transparencias</button>
+      </div>
+    </div>
+    <div class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Luz</h2>
+        <span id="luz-texto" class="pie"></span>
+      </div>
+      <input type="range" id="luz" min="60" max="160" value="105" class="deslizador">
+      <label class="fila"><input type="checkbox" id="ver-aristas"><span class="fila-texto">Aristas (contornos de las piezas)</span></label>
+      <label class="fila"><input type="checkbox" id="ver-rejilla" checked><span class="fila-texto">Rejilla del suelo</span></label>
+    </div>
+  </section>
 </aside>
+
+<!-- Ficha del elemento tocado, con lo que se puede hacer con él. -->
+<section id="ficha-elemento" class="ficha-elemento" hidden>
+  <div class="ficha-cabecera">
+    <div class="ficha-titulos">
+      <span id="ficha-clase" class="ficha-clase"></span>
+      <strong id="ficha-nombre" class="ficha-nombre"></strong>
+    </div>
+    <button id="ficha-cerrar" class="boton-icono ficha-cerrar" title="Quitar selección" aria-label="Quitar selección"><span>✕</span></button>
+  </div>
+  <p id="ficha-datos" class="ficha-datos"></p>
+  <div class="ficha-acciones">
+    <button id="btn-propiedades" class="boton">Propiedades</button>
+    <button id="btn-aislar" class="boton">Aislar</button>
+    <button id="btn-ocultar" class="boton">Ocultar</button>
+    <button id="btn-transparentar" class="boton">Transparentar</button>
+    <button id="btn-rayos" class="boton" title="Todo transparente menos este elemento">Rayos X</button>
+  </div>
+</section>
+
+<!-- Medir -->
+<div id="barra-medir" class="barra-medir" hidden>
+  <div class="barra-medir-fila">
+    <button class="boton activo" data-medir="distancia">Distancia</button>
+    <button class="boton" data-medir="area">Área</button>
+    <button class="boton" data-accion="cerrar" hidden>Cerrar área</button>
+    <span class="separador"></span>
+    <button class="boton" data-accion="deshacer" title="Deshacer el último punto">↶</button>
+    <button class="boton" data-accion="borrar">Borrar</button>
+    <button class="boton boton-destacado" data-accion="listo">Listo</button>
+  </div>
+  <p id="medir-ayuda" class="medir-ayuda"></p>
+</div>
+<div id="capa-medidas" class="capa-medidas" hidden></div>
 
 <nav class="barra-inferior">
   <button id="btn-panel" class="boton-icono" disabled><span>☰</span>Panel</button>
   <button id="btn-encuadrar" class="boton-icono" disabled><span>⛶</span>Encuadrar</button>
-  <button id="btn-aislar" class="boton-icono" disabled><span>◎</span>Aislar</button>
-  <button id="btn-ocultar" class="boton-icono" disabled><span>◌</span>Ocultar</button>
+  <button id="btn-medir" class="boton-icono" disabled><span>↔</span>Medir</button>
+  <button id="btn-cortes" class="boton-icono" disabled><span>◧</span>Cortes</button>
+  <button id="btn-vista" class="boton-icono" disabled><span>◩</span>Vista</button>
   <button id="btn-todo" class="boton-icono" disabled><span>⟳</span>Todo</button>
 </nav>
 

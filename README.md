@@ -15,10 +15,19 @@ IFC se lee dentro del navegador y se queda en el teléfono.
 - **Abre archivos IFC** desde el teléfono, o el que venga incluido en la app.
   El último abierto queda guardado y aparece solo la próxima vez.
 - **Vista 3D** con giro, desplazamiento y encuadre automático.
-- **Toca un elemento** y salen sus datos: atributos, conjuntos de
-  propiedades (`Pset_…`), mediciones y materiales.
+- **Toca un elemento** y sale su ficha (categoría, nombre, planta y
+  medidas); desde ella, todas sus propiedades: atributos, conjuntos
+  (`Pset_…`), mediciones, materiales y caja envolvente, plegables, con
+  filtro y tocando un valor se copia.
+- **Medir** distancias (con las componentes horizontal y vertical) y
+  áreas; los puntos se pegan a esquinas y bordes.
+- **Cortes**: planta, alzados en X y en Z, paralelo a una cara que se
+  toque y caja de sección, con relleno de color en lo cortado.
+- **Transparencias**: de todo el modelo, por categoría, por elemento y
+  «rayos X» (todo transparente menos lo seleccionado).
+- **Vista**: seis fondos (Acero, Azul noche, Cielo, Gris claro, Blanco y
+  Negro), luz, aristas, rejilla y vistas rápidas (planta, frente, lados).
 - **Filtros por planta y por categoría**, con el número de piezas de cada una.
-- **Corte horizontal** con un deslizador, para mirar dentro como en un plano.
 - **Aislar y ocultar** lo seleccionado.
 - **Buscador** por nombre, categoría o GUID.
 - **Ver en obra**: abre la cámara, busca el suelo y ancla el modelo ahí, a
@@ -251,6 +260,8 @@ esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 | `js/interfaz.js` | Nombres de clases IFC en castellano y piezas de interfaz |
 | `js/almacen.js` | El último modelo, guardado en IndexedDB |
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
+| `js/medir.js` | Medir distancias y áreas sobre el modelo |
+| `js/cortes.js` | Cortes: planta, alzados, por cara y caja de sección |
 | `js/partes.js` | Las visitas, los planos y los repasos, guardados en IndexedDB |
 | `js/repasos.js` | Punch list: repasos de terminaciones con fotos de antes y después |
 | `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom, dibujo y notas |

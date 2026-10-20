@@ -69,7 +69,8 @@ export function nombreDeClase(tipo) {
 
 /* --------------------------------------------------------------- */
 
-export function fila({ etiqueta, cuenta, marcada, alCambiar }) {
+/* alTransparentar (opcional) añade un botón ◐ para ver la fila en transparente. */
+export function fila({ etiqueta, cuenta, marcada, alCambiar, transparente, alTransparentar }) {
   const div = document.createElement('label');
   div.className = 'fila';
 
@@ -89,6 +90,21 @@ export function fila({ etiqueta, cuenta, marcada, alCambiar }) {
     n.className = 'fila-cuenta';
     n.textContent = cuenta;
     div.append(n);
+  }
+  if (alTransparentar) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = transparente ? 'fila-tenue activo' : 'fila-tenue';
+    b.textContent = '◐';
+    b.title = transparente ? 'Volver a opaco' : 'Ver en transparente';
+    b.setAttribute('aria-pressed', String(!!transparente));
+    b.setAttribute('aria-label', `${etiqueta}: transparente`);
+    b.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      alTransparentar(!b.classList.contains('activo'));
+    });
+    div.append(b);
   }
   return div;
 }
@@ -111,7 +127,10 @@ export function filaResultado({ etiqueta, detalle, alTocar }) {
   return div;
 }
 
-export function pintarPropiedades(contenedor, grupos) {
+/* Cada conjunto es plegable; filtro deja sólo las filas que lo contienen
+   (en el nombre del conjunto, la propiedad o el valor). Tocar un valor
+   lo copia. */
+export function pintarPropiedades(contenedor, grupos, { filtro = '', alCopiar } = {}) {
   contenedor.textContent = '';
   if (!grupos || !grupos.length) {
     const p = document.createElement('p');
@@ -120,18 +139,44 @@ export function pintarPropiedades(contenedor, grupos) {
     contenedor.append(p);
     return;
   }
+  const buscado = filtro.trim().toLowerCase();
+  let pintados = 0;
   for (const grupo of grupos) {
-    const h = document.createElement('h3');
+    const entero = buscado && grupo.titulo.toLowerCase().includes(buscado);
+    const filas = buscado && !entero
+      ? grupo.filas.filter(([c, v]) => `${c} ${v}`.toLowerCase().includes(buscado))
+      : grupo.filas;
+    if (!filas.length) continue;
+    pintados++;
+    const pliegue = document.createElement('details');
+    pliegue.open = true;
+    const h = document.createElement('summary');
     h.textContent = grupo.titulo;
+    const n = document.createElement('span');
+    n.className = 'propiedades-cuenta';
+    n.textContent = filas.length;
+    h.append(n);
     const dl = document.createElement('dl');
-    for (const [clave, valor] of grupo.filas) {
+    for (const [clave, valor] of filas) {
       const dt = document.createElement('dt');
       dt.textContent = clave;
       const dd = document.createElement('dd');
       dd.textContent = valor;
+      if (alCopiar && valor) {
+        dd.tabIndex = 0;
+        dd.title = 'Tocar para copiar';
+        dd.addEventListener('click', () => alCopiar(valor));
+      }
       dl.append(dt, dd);
     }
-    contenedor.append(h, dl);
+    pliegue.append(h, dl);
+    contenedor.append(pliegue);
+  }
+  if (!pintados) {
+    const p = document.createElement('p');
+    p.className = 'vacio';
+    p.textContent = 'Ninguna propiedad coincide.';
+    contenedor.append(p);
   }
 }
 

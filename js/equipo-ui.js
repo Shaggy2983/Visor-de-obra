@@ -3,7 +3,7 @@
    y estado de la sincronización. La lógica está en equipo.js. */
 
 import { el, plural } from './utiles.js';
-import { equipo, ROLES } from './equipo.js';
+import { equipo, ROLES, PAPELES_EQUIPO } from './equipo.js';
 
 const URL_APP = 'https://shaggy2983.github.io/Visor-de-obra/visita.html';
 
@@ -167,10 +167,9 @@ export function iniciarEquipoUI(opciones) {
 
   /* --- gestionar una obra compartida --- */
 
-  function selectorRol(actual, alCambiar, conAdmin = true) {
+  function selectorRol(actual, alCambiar, papeles = ROLES) {
     return el('select', { class: 'campo selector-rol', onchange: (ev) => alCambiar(ev.target.value) },
-      ...Object.entries(ROLES).filter(([k]) => conAdmin || k !== 'admin')
-        .map(([k, t]) => el('option', { value: k, selected: k === actual }, t)));
+      ...Object.entries(papeles).map(([k, t]) => el('option', { value: k, selected: k === actual }, t)));
   }
 
   function dialogoObra(obra) {
@@ -184,13 +183,17 @@ export function iniciarEquipoUI(opciones) {
     const miembros = Object.entries(obra.miembros).sort((a, b) =>
       (a[1] === 'admin' ? -1 : 0) - (b[1] === 'admin' ? -1 : 0));
 
+    // Por qué equipo entró cada uno, si entró por un equipo.
+    const nombreEquipo = (eid) => (equipo.equipos.find((e) => e.id === eid) || {}).nombre || 'un equipo';
+    const entradaPor = (id) => Object.entries(obra.porEquipo || {}).filter(([, lista]) => lista.includes(id)).map(([eid]) => nombreEquipo(eid));
     const filasMiembros = miembros.map(([id, rol]) => {
       const p = personas[id] || {};
       const yo = id === uid;
+      const por = entradaPor(id);
       return el('div', { class: 'miembro' },
         el('div', { class: 'miembro-datos' },
           el('strong', {}, (p.nombre || 'Sin nombre') + (yo ? ' (tú)' : '')),
-          el('span', { class: 'pie' }, p.correo || '')),
+          el('span', { class: 'pie' }, [p.correo, por.length && `por ${por.join(', ')}`].filter(Boolean).join(' · '))),
         soyAdmin && !yo
           ? selectorRol(rol, (nuevo) => con(null, '', async () => { await equipo.cambiarRol(obra, id, nuevo); rehacer(); }))
           : el('span', { class: 'miembro-rol' }, ROLES[rol] || rol),
@@ -218,7 +221,7 @@ export function iniciarEquipoUI(opciones) {
 
     abrir(obra.nombre,
       el('p', { class: 'pie' }, `Tu papel: ${ROLES[obra.miembros[uid]]}. `,
-        'Administrador gestiona el equipo; Editor escribe visitas, repasos y planos; Solo lectura los ve.'),
+        'Administrador gestiona la obra; Editor escribe visitas, repasos y planos; Solo lectura los ve; Contratista sólo ve y corrige los repasos que se le asignan.'),
       el('h3', { class: 'dialogo-sub' }, `Equipo (${plural(miembros.length, 'persona', 'personas')})`),
       ...filasMiembros,
       ...pendientes,
@@ -239,6 +242,7 @@ export function iniciarEquipoUI(opciones) {
         el('label', {}, 'Papel', selectorRol(rolNuevo, (r) => { rolNuevo = r; })),
         el('p', { class: 'pie' }, 'Verá la invitación al entrar en la app con ese correo.'),
         invitar),
+      soyAdmin && seccionEquiposDeObra(obra, rehacer),
       el('div', { class: 'fila-botones acciones-obra' },
         !soyAdmin && el('button', {
           type: 'button', class: 'boton boton-peligro',
@@ -257,9 +261,151 @@ export function iniciarEquipoUI(opciones) {
     );
   }
 
+  /* Equipos vinculados a una obra (para su administrador): verlos,
+     desvincularlos y vincular uno de los equipos que administra. */
+  function seccionEquiposDeObra(obra, rehacer) {
+    const uid = equipo.usuario.uid;
+    const vinculados = Object.entries(obra.equipos || {});
+    const nombreEquipo = (id) => (equipo.equipos.find((e) => e.id === id) || {}).nombre || 'Equipo';
+    const disponibles = equipo.equipos.filter((e) => e.miembros[uid] === 'admin' && !(e.id in (obra.equipos || {})));
+    const papelesObra = { editor: ROLES.editor, lector: ROLES.lector, contratista: ROLES.contratista };
+    let elegido = disponibles[0] && disponibles[0].id;
+    let papel = 'editor';
+    const vincular = el('button', { type: 'button', class: 'boton' }, 'Vincular');
+    vincular.addEventListener('click', () => con(vincular, 'Vinculando…', async () => {
+      const eq = equipo.equipos.find((e) => e.id === elegido);
+      if (!eq) return;
+      await equipo.vincularEquipo(obra, eq, papel);
+      rehacer();
+    }));
+    return el('div', { class: 'equipos-obra' },
+      el('h3', { class: 'dialogo-sub' }, 'Equipos de trabajo'),
+      ...vinculados.map(([id, p]) => el('div', { class: 'miembro' },
+        el('div', { class: 'miembro-datos' },
+          el('strong', {}, nombreEquipo(id)),
+          el('span', { class: 'pie' }, `${plural(((obra.porEquipo || {})[id] || []).length, 'persona', 'personas')} por este equipo`)),
+        el('span', { class: 'miembro-rol' }, ROLES[p] || p),
+        el('button', {
+          type: 'button', class: 'boton quitar', title: 'Desvincular equipo', 'aria-label': `Desvincular ${nombreEquipo(id)}`,
+          onclick: () => {
+            if (!confirm(`¿Desvincular «${nombreEquipo(id)}»? Quienes entraron por ese equipo dejan la obra.`)) return;
+            con(null, '', async () => { await equipo.desvincularEquipo(obra, id); rehacer(); });
+          }
+        }, '✕'))),
+      disponibles.length
+        ? el('div', { class: 'vincular-equipo' },
+          el('label', {}, 'Equipo', el('select', { class: 'campo', onchange: (ev) => { elegido = ev.target.value; } },
+            ...disponibles.map((e) => el('option', { value: e.id }, e.nombre)))),
+          el('label', {}, 'Papel en la obra', selectorRol(papel, (r) => { papel = r; }, papelesObra)),
+          vincular)
+        : el('p', { class: 'pie' }, vinculados.length
+          ? 'No administras más equipos que vincular.'
+          : 'Crea un equipo de trabajo (en «Cuenta y equipo») para dar acceso a varias personas de una vez.'));
+  }
+
+  /* --- equipos de trabajo --- */
+
+  function dialogoCrearEquipo() {
+    const nombre = campo('Nombre del equipo', { required: true, maxlength: 120, placeholder: 'p. ej. Oficina técnica, Cuadrilla de acabados' });
+    const boton = el('button', { type: 'submit', class: 'boton boton-destacado' }, 'Crear equipo');
+    abrir('Nuevo equipo de trabajo',
+      el('p', { class: 'pie' }, 'Un equipo es un grupo de personas que puedes vincular a varias obras de una vez, con el papel que elijas en cada una. Quien entre o salga del equipo entra o sale de todas sus obras.'),
+      el('form', {
+        class: 'dialogo-formulario',
+        onsubmit: (ev) => {
+          ev.preventDefault();
+          con(boton, 'Creando…', async () => {
+            const id = await equipo.crearEquipo(nombre.querySelector('input').value);
+            const eq = equipo.equipos.find((e) => e.id === id);
+            if (eq) dialogoEquipo(eq); else dialogo.close();
+          });
+        }
+      }, nombre, boton));
+  }
+
+  function dialogoEquipo(eq) {
+    const uid = equipo.usuario.uid;
+    const soyAdmin = eq.miembros[uid] === 'admin';
+    const rehacer = () => {
+      const fresco = equipo.equipos.find((e) => e.id === eq.id);
+      if (fresco) dialogoEquipo(fresco); else dialogo.close();
+    };
+    const personas = eq.personas || {};
+    const miembros = Object.entries(eq.miembros).sort((a, b) => (a[1] === 'admin' ? -1 : 0) - (b[1] === 'admin' ? -1 : 0));
+    const obras = Object.entries(eq.obras || {});
+    let papelNuevo = 'miembro';
+    const correo = campo('Correo de la persona', { type: 'email', required: true });
+    const invitar = el('button', { type: 'submit', class: 'boton boton-destacado' }, 'Invitar');
+    abrir(eq.nombre,
+      el('p', { class: 'pie' }, `Tu papel: ${PAPELES_EQUIPO[eq.miembros[uid]]}.`),
+      el('h3', { class: 'dialogo-sub' }, `Miembros (${miembros.length})`),
+      ...miembros.map(([id, papel]) => {
+        const p = personas[id] || {};
+        const yo = id === uid;
+        return el('div', { class: 'miembro' },
+          el('div', { class: 'miembro-datos' },
+            el('strong', {}, (p.nombre || 'Sin nombre') + (yo ? ' (tú)' : '')),
+            el('span', { class: 'pie' }, p.correo || '')),
+          soyAdmin && !yo
+            ? selectorRol(papel, (nuevo) => con(null, '', async () => { await equipo.cambiarRol(eq, id, nuevo, 'equipos'); rehacer(); }), PAPELES_EQUIPO)
+            : el('span', { class: 'miembro-rol' }, PAPELES_EQUIPO[papel] || papel),
+          soyAdmin && !yo && el('button', {
+            type: 'button', class: 'boton quitar', title: 'Quitar del equipo', 'aria-label': `Quitar a ${p.nombre || id}`,
+            onclick: () => {
+              if (!confirm(`¿Quitar a ${p.nombre || p.correo || 'esta persona'} del equipo? Sale también de las obras a las que entró por él.`)) return;
+              con(null, '', async () => { await equipo.quitarMiembro(eq, id, 'equipos'); rehacer(); });
+            }
+          }, '✕'));
+      }),
+      ...Object.entries(eq.invitaciones || {}).map(([c, papel]) => el('div', { class: 'miembro' },
+        el('div', { class: 'miembro-datos' }, el('strong', {}, c), el('span', { class: 'pie' }, 'Invitación pendiente')),
+        el('span', { class: 'miembro-rol' }, PAPELES_EQUIPO[papel] || papel),
+        soyAdmin && el('button', {
+          type: 'button', class: 'boton quitar', title: 'Cancelar invitación', 'aria-label': `Cancelar invitación de ${c}`,
+          onclick: () => con(null, '', async () => { await equipo.quitarInvitacion(eq, c, 'equipos'); rehacer(); })
+        }, '✕'))),
+      soyAdmin && el('form', {
+        class: 'dialogo-formulario invitar',
+        onsubmit: (ev) => {
+          ev.preventDefault();
+          const c = correo.querySelector('input').value.trim().toLowerCase();
+          con(invitar, 'Invitando…', async () => {
+            await equipo.invitar(eq, c, papelNuevo, 'equipos');
+            rehacer();
+            ofrecerAviso(`equipo «${eq.nombre}»`, c);
+          });
+        }
+      },
+        el('h3', { class: 'dialogo-sub' }, 'Invitar'),
+        correo,
+        el('label', {}, 'Papel', selectorRol(papelNuevo, (r) => { papelNuevo = r; }, PAPELES_EQUIPO)),
+        invitar),
+      el('h3', { class: 'dialogo-sub' }, 'Obras del equipo'),
+      obras.length
+        ? el('ul', { class: 'obras-equipo' }, ...obras.map(([, o]) => el('li', {}, o.nombre, el('span', { class: 'pie' }, ` · ${ROLES[o.papel] || o.papel}`))))
+        : el('p', { class: 'pie' }, 'Todavía no está vinculado a ninguna obra. Vincúlalo desde la obra (Obras compartidas → la obra → Equipos de trabajo).'),
+      el('div', { class: 'fila-botones acciones-obra' },
+        !soyAdmin && el('button', {
+          type: 'button', class: 'boton boton-peligro',
+          onclick: (ev) => {
+            if (!confirm(`¿Salir del equipo «${eq.nombre}»? Sales también de las obras a las que entraste por él.`)) return;
+            con(ev.target, 'Saliendo…', async () => { await equipo.salirDeEquipo(eq); dialogo.close(); avisar('Has salido del equipo.'); });
+          }
+        }, 'Salir del equipo'),
+        soyAdmin && el('button', {
+          type: 'button', class: 'boton boton-peligro',
+          onclick: (ev) => {
+            if (!confirm(`¿Borrar el equipo «${eq.nombre}»? Sus miembros dejan las obras a las que entraron por él.`)) return;
+            con(ev.target, 'Borrando…', async () => { await equipo.borrarEquipo(eq); dialogo.close(); avisar('Equipo borrado.'); });
+          }
+        }, 'Borrar equipo'))
+    );
+  }
+
   /* La invitación no manda correo: se avisa a la persona por donde se quiera. */
   function ofrecerAviso(nombreObra, correo) {
-    const texto = `Te he invitado a la obra «${nombreObra}» en COORDINATE · Obra. Entra en ${URL_APP} con tu cuenta ${correo} y acepta la invitación.`;
+    const destino = /^equipo /.test(nombreObra) ? `al ${nombreObra}` : `a la obra «${nombreObra}»`;
+    const texto = `Te he invitado ${destino} en COORDINATE · Obra. Entra en ${URL_APP} con tu cuenta ${correo} y acepta la invitación.`;
     const aviso = el('div', { class: 'aviso-invitacion' },
       el('p', {}, `Invitación creada para ${correo}. Avísale:`),
       el('button', {
@@ -351,6 +497,17 @@ export function iniciarEquipoUI(opciones) {
             type: 'button', class: 'boton',
             onclick: (ev) => con(ev.target, 'Rechazando…', () => equipo.rechazar(o))
           }, 'Rechazar')))),
+      ...equipo.invitacionesEquipo.map((e) => el('div', { class: 'invitacion' },
+        el('p', {}, 'Te invitan al equipo ', el('strong', {}, e.nombre), '.'),
+        el('div', { class: 'fila-botones' },
+          el('button', {
+            type: 'button', class: 'boton boton-destacado',
+            onclick: (ev) => con(ev.target, 'Aceptando…', async () => { await equipo.aceptar(e, 'equipos'); avisar(`Ya estás en el equipo «${e.nombre}».`, 4000); })
+          }, 'Aceptar'),
+          el('button', {
+            type: 'button', class: 'boton',
+            onclick: (ev) => con(ev.target, 'Rechazando…', () => equipo.rechazar(e, 'equipos'))
+          }, 'Rechazar')))),
       el('h3', { class: 'equipo-sub' }, 'Obras compartidas'),
       equipo.obras.length
         ? el('div', { class: 'obras-compartidas' }, ...equipo.obras.map((o) => el('button', {
@@ -362,6 +519,17 @@ export function iniciarEquipoUI(opciones) {
         : el('p', { class: 'pie' }, 'Todavía no compartes ninguna obra.'),
       el('div', { class: 'fila-botones' },
         el('button', { type: 'button', class: 'boton', onclick: dialogoCompartir }, '+ Compartir una obra')),
+      el('h3', { class: 'equipo-sub' }, 'Equipos de trabajo'),
+      equipo.equipos.length
+        ? el('div', { class: 'obras-compartidas' }, ...equipo.equipos.map((e) => el('button', {
+          type: 'button', class: 'obra-compartida', onclick: () => dialogoEquipo(e)
+        },
+          el('span', { class: 'obra-nombre' }, e.nombre),
+          el('span', { class: 'pie' }, `${PAPELES_EQUIPO[e.miembros[u.uid]]} · ${plural(Object.keys(e.miembros).length, 'persona', 'personas')} · `
+            + plural(Object.keys(e.obras || {}).length, 'obra', 'obras')))))
+        : el('p', { class: 'pie' }, 'Agrupa a quienes trabajan juntos y dales acceso a varias obras de una vez.'),
+      el('div', { class: 'fila-botones' },
+        el('button', { type: 'button', class: 'boton', onclick: dialogoCrearEquipo }, '+ Crear un equipo')),
       el('div', { class: 'fila-botones cuenta-pie' },
         el('button', { type: 'button', class: 'enlace', onclick: () => equipo.salir() }, 'Cerrar sesión'),
         el('button', { type: 'button', class: 'enlace boton-peligro-texto', onclick: (ev) => borrarCuenta(ev.target) }, 'Borrar mi cuenta'))

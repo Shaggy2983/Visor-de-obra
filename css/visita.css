@@ -706,6 +706,19 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
 .compartida { color: var(--color-accent-300); }
 
+.equipos-obra { margin-top: .4rem; }
+.vincular-equipo { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; align-items: end; margin-top: .4rem; }
+.vincular-equipo .campo { margin: 0; }
+.vincular-equipo .boton { grid-column: 1 / -1; justify-self: start; }
+.obras-equipo { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+.repaso-asignado { color: var(--color-accent-300) !important; }
+
+.mi-repaso { padding: .55rem .65rem; }
+.mi-repaso-cabecera { display: flex; align-items: center; gap: .55rem; }
+.mi-repaso-texto { margin: .45rem 0 .2rem; }
+.mi-repaso-sub { margin: .5rem 0 .2rem; font-size: .7rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--texto-tenue); }
+.mi-repaso .prioridad { color: #ff8a80; }
+
 .aviso-lectura {
   margin: 0 0 .6rem;
   padding: .5rem .7rem;

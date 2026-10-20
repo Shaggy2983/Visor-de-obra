@@ -2,7 +2,7 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'crd-v12';
+const VERSION = 'crd-v13';
 const PIEZAS = [
   './',
   './index.html',
@@ -30,6 +30,7 @@ const PIEZAS = [
   './js/firebase-app.js',
   './js/equipo.js',
   './js/equipo-ui.js',
+  './js/mis-repasos.js',
   './vendor/firebase/firebase.js',
   './js/informe-interactivo.js',
   './js/cuentas.js',

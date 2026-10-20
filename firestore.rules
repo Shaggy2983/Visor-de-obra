@@ -4,17 +4,30 @@ rules_version = '2';
 //
 //   usuarios/{uid}                 ficha de cada usuario (sólo la ve él)
 //   obras/{obra}                   obra compartida: nombre, miembros con su
-//                                  rol e invitaciones pendientes por correo
+//                                  papel, invitaciones pendientes por correo
+//                                  y equipos vinculados
 //   obras/{obra}/visitas|repasos|planos/{id}
 //                                  lo que se sincroniza de cada obra
+//   equipos/{equipo}               equipo de trabajo reutilizable: miembros,
+//                                  invitaciones y las obras a las que está
+//                                  vinculado
 //
-// «personas» guarda el nombre y el correo de cada miembro, para la lista
-// del equipo; cada uno sólo puede tocar su propia ficha.
+// Papeles en una obra: admin (gestiona la obra y su equipo), editor
+// (escribe visitas, repasos y planos), lector (sólo ve) y contratista (sólo
+// ve y corrige los repasos del punch list asignados a él, sin cerrarlos).
+// Papeles en un equipo: admin (gestiona el equipo) y miembro.
 //
-// Roles: admin (gestiona la obra y su equipo), editor (escribe visitas,
-// repasos y planos) y lector (sólo ve). Cada mapa de roles va acompañado
-// de una lista con sus claves (miembrosLista, invitadosLista) porque las
-// consultas «obras donde estoy» sólo pueden hacerse sobre listas.
+// Cada mapa de papeles va acompañado de una lista con sus claves
+// (miembrosLista, invitadosLista) porque las consultas «donde estoy» sólo
+// pueden hacerse sobre listas. «personas» guarda el nombre y el correo de
+// cada miembro, para la lista del equipo; cada uno sólo toca su ficha.
+//
+// Vincular un equipo a una obra (lo hace quien administra los dos) apunta
+// el papel del equipo en obra.equipos y a sus miembros en la obra; quien
+// entra después en el equipo se añade él mismo a sus obras, y el
+// administrador del equipo puede quitar de ellas a quien sale del equipo.
+// obra.porEquipo[equipo] lista quién está en la obra por cada equipo, y
+// «ultimoEquipo» dice a las reglas de qué equipo se trata en cada cambio.
 
 service cloud.firestore {
   match /databases/{base}/documents {
@@ -26,90 +39,163 @@ service cloud.firestore {
     // ese correo es suyo (Google lo da por verificado; con contraseña hay
     // que pulsar el enlace del correo de verificación).
     function verificado() { return request.auth.token.email_verified == true; }
-    function roles() { return ['admin', 'editor', 'lector']; }
+    function papelesObra() { return ['admin', 'editor', 'lector', 'contratista']; }
+    function papelesEquipo() { return ['admin', 'miembro']; }
+
+    function cambian(a, d) { return d.diff(a).affectedKeys(); }
+
+    // Un grupo (obra o equipo) siempre coherente y con un administrador.
+    function grupoBienFormado(d, papeles) {
+      return d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 120
+        && d.miembros is map && d.invitaciones is map
+        && d.miembrosLista.toSet() == d.miembros.keys().toSet()
+        && d.invitadosLista.toSet() == d.invitaciones.keys().toSet()
+        && d.miembros.values().hasOnly(papeles)
+        && d.invitaciones.values().hasOnly(papeles)
+        && d.miembros.values().hasAny(['admin']);
+    }
+
+    function soloMiFicha(a, d) {
+      return d.get('personas', {}).diff(a.get('personas', {})).affectedKeys().hasOnly([uid()]);
+    }
+
+    // El invitado se añade con el papel de su invitación y la gasta.
+    function aceptaInvitacion(a, d) {
+      let c = correo();
+      return verificado()
+        && c in a.invitaciones
+        && cambian(a, d).hasOnly(['miembros', 'miembrosLista', 'invitaciones', 'invitadosLista', 'personas', 'modificada'])
+        && soloMiFicha(a, d)
+        && d.miembros.diff(a.miembros).affectedKeys().hasOnly([uid()])
+        && d.miembros[uid()] == a.invitaciones[c]
+        && d.invitaciones.diff(a.invitaciones).affectedKeys().hasOnly([c])
+        && !(c in d.invitaciones);
+    }
+
+    // El invitado rechaza: sólo quita su propia invitación.
+    function rechazaInvitacion(a, d) {
+      let c = correo();
+      return verificado()
+        && c in a.invitaciones
+        && cambian(a, d).hasOnly(['invitaciones', 'invitadosLista', 'modificada'])
+        && d.invitaciones.diff(a.invitaciones).affectedKeys().hasOnly([c])
+        && !(c in d.invitaciones);
+    }
+
+    // Un miembro que no administra se va.
+    function seVa(a, d) {
+      return uid() in a.miembros
+        && a.miembros[uid()] != 'admin'
+        && cambian(a, d).hasOnly(['miembros', 'miembrosLista', 'personas', 'modificada'])
+        && soloMiFicha(a, d)
+        && d.miembros.diff(a.miembros).affectedKeys().hasOnly([uid()])
+        && !(uid() in d.miembros);
+    }
+
+    function lee(a) {
+      return uid() in a.miembrosLista || (verificado() && correo() in a.invitadosLista);
+    }
 
     match /usuarios/{usuario} {
       allow read, write: if firmado() && uid() == usuario;
     }
 
+    match /equipos/{equipo} {
+      allow read: if firmado() && lee(resource.data);
+
+      allow create: if firmado()
+        && request.resource.data.creador == uid()
+        && request.resource.data.miembros.keys() == [uid()]
+        && request.resource.data.miembros.get(uid(), '') == 'admin'
+        && grupoBienFormado(request.resource.data, papelesEquipo());
+
+      allow update: if firmado()
+        && grupoBienFormado(request.resource.data, papelesEquipo())
+        && request.resource.data.creador == resource.data.creador
+        && (resource.data.miembros.get(uid(), '') == 'admin'
+            || aceptaInvitacion(resource.data, request.resource.data)
+            || rechazaInvitacion(resource.data, request.resource.data)
+            || seVa(resource.data, request.resource.data));
+
+      allow delete: if firmado() && resource.data.miembros.get(uid(), '') == 'admin';
+    }
+
     match /obras/{obra} {
       function antes() { return resource.data; }
       function despues() { return request.resource.data; }
-      function cambian() { return despues().diff(antes()).affectedKeys(); }
 
-      function bienFormada(d) {
-        return d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 120
-          && d.miembros is map && d.invitaciones is map
-          && d.miembrosLista.toSet() == d.miembros.keys().toSet()
-          && d.invitadosLista.toSet() == d.invitaciones.keys().toSet()
-          && d.miembros.values().hasOnly(roles())
-          && d.invitaciones.values().hasOnly(roles())
-          // Siempre queda al menos un administrador.
-          && d.miembros.values().hasAny(['admin']);
+      function porEquipoAntes(eid) { return antes().get('porEquipo', {}).get(eid, []); }
+      function porEquipoCambia(eid) {
+        return despues().get('porEquipo', {}).diff(antes().get('porEquipo', {})).affectedKeys().hasOnly([eid]);
       }
 
-      function soyAdmin() { return antes().miembros[uid()] == 'admin'; }
-
-      // Sólo cambia la ficha de quien escribe en «personas».
-      function soloMiFicha() {
-        return despues().get('personas', {}).diff(antes().get('personas', {})).affectedKeys().hasOnly([uid()]);
-      }
-
-      // El invitado se añade con el rol de su invitación y la gasta.
-      function aceptaInvitacion() {
-        let c = correo();
-        return verificado()
-          && c in antes().invitaciones
-          && cambian().hasOnly(['miembros', 'miembrosLista', 'invitaciones', 'invitadosLista', 'personas', 'modificada'])
-          && soloMiFicha()
+      // Quien está en un equipo vinculado se añade a la obra con el papel
+      // que la obra da a ese equipo.
+      function seUnePorEquipo() {
+        let eid = despues().ultimoEquipo;
+        return !(uid() in antes().miembros)
+          && eid in antes().get('equipos', {})
+          && uid() in get(/databases/$(base)/documents/equipos/$(eid)).data.miembrosLista
+          && cambian(antes(), despues()).hasOnly(['miembros', 'miembrosLista', 'personas', 'porEquipo', 'ultimoEquipo', 'modificada'])
+          && soloMiFicha(antes(), despues())
           && despues().miembros.diff(antes().miembros).affectedKeys().hasOnly([uid()])
-          && despues().miembros[uid()] == antes().invitaciones[c]
-          && despues().invitaciones.diff(antes().invitaciones).affectedKeys().hasOnly([c])
-          && !(c in despues().invitaciones);
+          && despues().miembros[uid()] == antes().equipos[eid]
+          && porEquipoCambia(eid)
+          && despues().porEquipo[eid].toSet() == porEquipoAntes(eid).toSet().union([uid()].toSet());
       }
 
-      // El invitado rechaza: sólo quita su propia invitación.
-      function rechazaInvitacion() {
-        let c = correo();
-        return verificado()
-          && c in antes().invitaciones
-          && cambian().hasOnly(['invitaciones', 'invitadosLista', 'modificada'])
-          && despues().invitaciones.diff(antes().invitaciones).affectedKeys().hasOnly([c])
-          && !(c in despues().invitaciones);
+      // Quien administra un equipo vinculado quita de la obra a quienes
+      // entraron por ese equipo (porque han salido de él).
+      function quitaPorEquipo() {
+        let eid = despues().ultimoEquipo;
+        let quitados = despues().miembros.diff(antes().miembros).removedKeys();
+        return get(/databases/$(base)/documents/equipos/$(eid)).data.miembros.get(uid(), '') == 'admin'
+          && cambian(antes(), despues()).hasOnly(['miembros', 'miembrosLista', 'personas', 'porEquipo', 'ultimoEquipo', 'modificada'])
+          && despues().miembros.diff(antes().miembros).addedKeys().size() == 0
+          && despues().miembros.diff(antes().miembros).changedKeys().size() == 0
+          && quitados.difference(porEquipoAntes(eid).toSet()).size() == 0
+          && despues().get('personas', {}).diff(antes().get('personas', {})).affectedKeys().difference(quitados).size() == 0
+          && porEquipoCambia(eid);
       }
 
-      // Un miembro que no administra se va de la obra.
-      function seVa() {
-        return uid() in antes().miembros
-          && antes().miembros[uid()] != 'admin'
-          && cambian().hasOnly(['miembros', 'miembrosLista', 'personas', 'modificada'])
-          && soloMiFicha()
-          && despues().miembros.diff(antes().miembros).affectedKeys().hasOnly([uid()])
-          && !(uid() in despues().miembros);
-      }
-
-      allow read: if firmado() && (uid() in antes().miembrosLista
-        || (verificado() && correo() in antes().invitadosLista));
+      allow read: if firmado() && lee(antes());
 
       allow create: if firmado()
         && despues().creador == uid()
         && despues().miembros.keys() == [uid()]
         && despues().miembros[uid()] == 'admin'
-        && bienFormada(despues());
+        && grupoBienFormado(despues(), papelesObra());
 
-      allow update: if firmado() && bienFormada(despues())
+      allow update: if firmado() && grupoBienFormado(despues(), papelesObra())
         && despues().creador == antes().creador
-        && (soyAdmin() || aceptaInvitacion() || rechazaInvitacion() || seVa());
+        && (antes().miembros.get(uid(), '') == 'admin'
+            || aceptaInvitacion(antes(), despues())
+            || rechazaInvitacion(antes(), despues())
+            || seVa(antes(), despues())
+            || seUnePorEquipo()
+            || quitaPorEquipo());
 
-      allow delete: if firmado() && soyAdmin();
+      allow delete: if firmado() && antes().miembros.get(uid(), '') == 'admin';
 
       // Visitas, repasos y planos de la obra.
       match /{coleccion}/{id} {
-        function obraDoc() { return get(/databases/$(base)/documents/obras/$(obra)).data; }
-        allow read: if firmado() && uid() in obraDoc().miembrosLista;
-        allow write: if firmado()
-          && coleccion in ['visitas', 'repasos', 'planos']
-          && obraDoc().miembros[uid()] in ['admin', 'editor'];
+        function papel() { return get(/databases/$(base)/documents/obras/$(obra)).data.miembros.get(uid(), ''); }
+        function esMiRepaso() {
+          return coleccion == 'repasos' && papel() == 'contratista' && resource.data.asignado == uid();
+        }
+
+        allow read: if firmado()
+          && (papel() in ['admin', 'editor', 'lector'] || esMiRepaso());
+
+        // El contratista sólo corrige sus repasos: no los crea, no los
+        // borra, no los reasigna y no los cierra (eso es de quien verifica).
+        allow write: if firmado() && coleccion in ['visitas', 'repasos', 'planos']
+          && (papel() in ['admin', 'editor']
+              || (esMiRepaso()
+                  && request.resource.data.asignado == uid()
+                  && request.resource.data.borrado == false
+                  && resource.data.estado != 'cerrado'
+                  && request.resource.data.estado in ['pendiente', 'corregido']));
       }
     }
   }

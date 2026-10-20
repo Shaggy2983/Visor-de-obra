@@ -72,7 +72,9 @@ export function historial(r, fecha) {
 }
 
 /* La sección del punch list en la ficha de la visita. */
-export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, ladoFoto, calidadFoto }) {
+/* contratistas(visita) → [{uid, nombre}]: quienes tienen papel de
+   contratista en la obra compartida de la visita (vacío si no lo es). */
+export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, ladoFoto, calidadFoto, contratistas = () => [] }) {
   let todos = [];
   let filtro = 'abiertos';
   const desplegados = new Set();
@@ -292,7 +294,8 @@ export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, lado
         el('span', { class: 'repaso-num' }, String(r.numero)),
         el('span', { class: 'repaso-textos' },
           el('strong', {}, [r.zona, CATEGORIAS[r.categoria]].filter(Boolean).join(' · ') || 'Sin zona'),
-          el('span', {}, r.texto || 'Sin descripción')),
+          el('span', {}, r.texto || 'Sin descripción'),
+          r.asignado && el('span', { class: 'repaso-asignado' }, `→ ${r.asignadoNombre || 'Contratista'}`)),
         miniatura(antes[antes.length - 1], 'antes'),
         miniatura(despues[despues.length - 1], 'despues'),
         el('span', { class: 'repaso-estado' }, ESTADOS[estado])
@@ -343,6 +346,7 @@ export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, lado
           class: 'campo', onchange: (ev) => { r.prioridad = ev.target.value; cambiado(r); pintar(); }
         }, ...opciones(PRIORIDADES, r.prioridad)))
       ),
+      asignacion(r, v),
       filaFotos(r, 'antes', 'Antes (defecto)', antes),
       filaFotos(r, 'despues', 'Después (corregido)', despues),
       el('div', { class: 'repaso-pie' },
@@ -353,6 +357,29 @@ export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, lado
         }, 'Borrar repaso')
       )
     );
+  }
+
+  /* En una obra compartida, el repaso se puede asignar a un contratista:
+     lo verá en su teléfono, subirá la foto de después y lo marcará como
+     corregido. */
+  function asignacion(r, v) {
+    const lista = contratistas(v);
+    if (!lista.length && !r.asignado) return null;
+    const opciones = [{ uid: '', nombre: 'Nadie' }, ...lista];
+    if (r.asignado && !lista.some((c) => c.uid === r.asignado)) {
+      opciones.push({ uid: r.asignado, nombre: r.asignadoNombre || 'Contratista' });
+    }
+    return campo('Asignado a (contratista)', el('select', {
+      class: 'campo',
+      onchange: (ev) => {
+        const elegido = opciones.find((c) => c.uid === ev.target.value);
+        r.asignado = elegido && elegido.uid ? elegido.uid : null;
+        r.asignadoNombre = r.asignado ? elegido.nombre : null;
+        if (r.asignado && !r.responsable) r.responsable = elegido.nombre;
+        cambiado(r);
+        pintar();
+      }
+    }, ...opciones.map((c) => el('option', { value: c.uid, selected: (r.asignado || '') === c.uid }, c.nombre))));
   }
 
   function filaFotos(r, fase, titulo, fotos) {

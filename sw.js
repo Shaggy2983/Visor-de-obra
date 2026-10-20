@@ -2,7 +2,7 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'crd-v15';
+const VERSION = 'crd-v16';
 const PIEZAS = [
   './',
   './index.html',
@@ -55,7 +55,10 @@ self.addEventListener('install', (ev) => {
   ev.waitUntil((async () => {
     const cacheado = await caches.open(VERSION);
     // Una pieza que falle no debe tumbar la instalación entera.
-    await Promise.all(PIEZAS.map((p) => cacheado.add(p).catch(() => {})));
+    // cache: 'reload' salta la caché HTTP del navegador: sin eso, justo
+    // después de publicar se guardaba la copia anterior de algún archivo.
+    await Promise.all(PIEZAS.map((p) =>
+      cacheado.add(new Request(p, { cache: 'reload' })).catch(() => {})));
     self.skipWaiting();
   })());
 });

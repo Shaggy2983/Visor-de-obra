@@ -18,7 +18,7 @@ de publicar: tú respondes ante Google por lo que se declara.
 
 ## Descripción breve (máx. 80)
 
-Partes de obra diarios con planos, notas, fotos e informes. Funciona sin señal.
+Partes de obra, punch list con fotos, planos con notas y visor BIM. Sin señal.
 
 ## Descripción completa
 
@@ -41,6 +41,15 @@ PLANOS CON NOTAS
 • Añade tonos de pintura (color, marca, código y acabado) y enlaces a
   fichas técnicas o referencias.
 
+PUNCH LIST DE TERMINACIONES
+• Cada repaso con número, zona, tipo (pintura, pañete, cerámica,
+  carpintería…), qué corregir, responsable y prioridad.
+• Foto del defecto (antes) y del arreglo (después); al poner la de
+  después pasa a «corregido», y lo cierras al verificarlo.
+• Los repasos abiertos siguen de visita en visita, y cada informe los
+  muestra como estaban ese día.
+• Punch list en PDF para pasárselo a los contratistas.
+
 INFORMES
 • Informe en PDF con los planos marcados, la tabla de notas y las fotos.
 • Informe interactivo: un solo archivo que se abre en cualquier
@@ -52,9 +61,15 @@ CORREO Y NUBE (opcional)
   OneDrive) para enviar el parte por correo, guardar el informe en la
   nube por obra y hacer copias de seguridad.
 
-MODELO 3D
-• Visor de modelos IFC con filtros por planta y categoría, corte y
-  propiedades de cada elemento.
+MODELO 3D (IFC)
+• Toca un elemento y ve todas sus propiedades: Psets, cantidades,
+  materiales y medidas.
+• Mide distancias y áreas, con imán a esquinas y bordes.
+• Cortes en planta, alzados, por cara y caja de sección.
+• Colorea el modelo por cualquier propiedad, con leyenda.
+• Transparencias, rayos X, aislar y ocultar; seis fondos, luz, aristas
+  y vistas rápidas.
+• Filtros por planta y categoría y buscador.
 • Realidad aumentada para ver el modelo a escala real en el terreno
   (en teléfonos compatibles con ARCore).
 

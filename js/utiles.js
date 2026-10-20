@@ -16,6 +16,9 @@ export function el(etiqueta, atributos = {}, ...hijos) {
   return nodo;
 }
 
+/* Dos nombres de obra son la misma obra aunque cambien mayúsculas o espacios. */
+export const mismaObra = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+
 export function nuevoId() {
   if (crypto.randomUUID) return crypto.randomUUID();
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 10);

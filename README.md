@@ -38,6 +38,14 @@ instalado) está el parte de visita diaria de obra:
 - **Incidencias** con gravedad (leve, media, grave). Las que no se marcan
   como resueltas **pasan solas a la visita siguiente**, con la fecha en que
   se abrieron.
+- **Punch list de terminaciones**: cada repaso lleva número, zona, tipo
+  (pintura, pañete, cerámica, carpintería…), qué corregir, responsable,
+  prioridad y fotos de **antes** y **después**. Pasa de *pendiente* a
+  *corregido* (al poner la foto de después) y a *cerrado* al verificarlo.
+  Los repasos son de la obra: los abiertos siguen en las visitas
+  siguientes, y cada informe los enseña como estaban ese día. Sale en el
+  informe de la visita, en el interactivo y en un **PDF propio** para los
+  contratistas.
 - **Fotos** con la cámara o desde la galería, con pie. Se reducen a
   1600 px antes de guardarlas para que quepan muchas en el teléfono.
 - **Firma** con el dedo.
@@ -243,7 +251,8 @@ esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 | `js/interfaz.js` | Nombres de clases IFC en castellano y piezas de interfaz |
 | `js/almacen.js` | El último modelo, guardado en IndexedDB |
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
-| `js/partes.js` | Las visitas y los planos, guardados en IndexedDB |
+| `js/partes.js` | Las visitas, los planos y los repasos, guardados en IndexedDB |
+| `js/repasos.js` | Punch list: repasos de terminaciones con fotos de antes y después |
 | `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom, dibujo y notas |
 | `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
 | `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |

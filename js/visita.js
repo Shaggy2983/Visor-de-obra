@@ -1,19 +1,23 @@
 /* Visita diaria de obra: lista de partes, ficha de cada visita, planos
-   con notas y fotos, informe para imprimir en PDF, informe interactivo y
-   copia de seguridad. Todo se queda en el teléfono y se guarda según se
+   con notas y fotos, punch list de repasos, informe para imprimir en PDF,
+   informe interactivo y copia de seguridad. Todo se queda en el teléfono y se guarda según se
    escribe. */
 
 import {
   listarVisitas, leerVisita, guardarVisita, borrarVisita,
-  listarPlanos, leerPlano, guardarPlano, borrarPlano
+  listarPlanos, leerPlano, guardarPlano, borrarPlano,
+  listarRepasos, leerRepaso, guardarRepaso
 } from './partes.js';
 import { avisar } from './interfaz.js';
 import {
   el, nuevoId, dos, hoy, ahora, fechaLarga, plural, decodificar, reducirImagen,
-  aDatos, deDatos, descargar, enlaceSeguro
+  aDatos, deDatos, descargar, enlaceSeguro, mismaObra
 } from './utiles.js';
 import { leerArchivoPlano, crearVisorPlano, componerPlano, TIPOS_NOTA } from './planos.js';
 import { generarInformeInteractivo } from './informe-interactivo.js';
+import {
+  crearPunchList, estadoEn, fotosEn, cuentaEstados, historial, CATEGORIAS, ESTADOS
+} from './repasos.js';
 import { crearNube } from './nube.js';
 import { avisoPendiente } from './cuentas.js';
 
@@ -69,6 +73,14 @@ const nodos = {
   correo: $('btn-correo'),
   nube: $('btn-nube'),
   copiaNube: $('btn-copia-nube'),
+  repasos: $('repasos'),
+  totalRepasos: $('total-repasos'),
+  filtrosRepasos: $('filtros-repasos'),
+  repaso: $('btn-repaso'),
+  repasoFoto: $('btn-repaso-foto'),
+  punchPdf: $('btn-punch-pdf'),
+  entradaRepasoCamara: $('entrada-repaso-camara'),
+  entradaRepasoGaleria: $('entrada-repaso-galeria'),
   fotoGrande: $('foto-grande'),
   aviso: $('aviso')
 };
@@ -93,8 +105,6 @@ function normalizar(v) {
   for (const f of v.fotos) if (f.nota === undefined) f.nota = null;
   return v;
 }
-
-const mismaObra = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
 
 function totalPersonas(v) {
   return v.personal.reduce((s, p) => s + (Number(p.numero) || 0), 0);
@@ -169,6 +179,7 @@ async function mostrarLista() {
   actual = null;
   liberarUrls();
   liberarUrlsPlanos();
+  punch.liberar();
   nube.pintarCuentas(nodos.cuentas);
   nodos.vistaFicha.hidden = true;
   nodos.vistaLista.hidden = false;
@@ -273,6 +284,7 @@ function abrirFicha(v) {
   pintarClima();
   pintarPersonal();
   pintarIncidencias();
+  punch.reiniciar();
   pintarFotos();
   verTodosPlanos = false;
   pintarPlanos();
@@ -290,6 +302,7 @@ function cambiado() {
 
 async function guardarYa() {
   clearTimeout(temporizador);
+  await punch.guardarYa();
   if (!pendiente || !actual) return;
   pendiente = false;
   actual.modificada = Date.now();
@@ -556,6 +569,25 @@ const visor = crearVisorPlano({
   alCerrar: cerrarPlano
 });
 
+const punch = crearPunchList({
+  nodos: {
+    lista: nodos.repasos,
+    total: nodos.totalRepasos,
+    filtros: nodos.filtrosRepasos,
+    nuevo: nodos.repaso,
+    nuevoFoto: nodos.repasoFoto,
+    pdf: nodos.punchPdf,
+    entradaCamara: nodos.entradaRepasoCamara,
+    entradaGaleria: nodos.entradaRepasoGaleria
+  },
+  visita: () => actual,
+  avisar: (texto, ms) => avisar(nodos.aviso, texto, ms),
+  ampliar: (url) => ampliar(url),
+  alGuardar: (texto) => { nodos.estadoGuardado.textContent = texto; },
+  ladoFoto: LADO_FOTO,
+  calidadFoto: CALIDAD_FOTO
+});
+
 /* --- firma --- */
 
 const firma = (() => {
@@ -656,6 +688,65 @@ function bloque(titulo, texto) {
   return el('section', {}, el('h2', {}, titulo), el('p', { class: 'parrafo' }, texto));
 }
 
+function bandaInforme() {
+  return el('div', { class: 'informe-banda' },
+    logotipo(),
+    el('span', { class: 'informe-tipo' }, 'coordinate.do')
+  );
+}
+
+function pieInforme() {
+  return el('footer', { class: 'informe-pie' },
+    el('span', {}, LEMA),
+    el('span', {}, CONTACTO)
+  );
+}
+
+/* Punch list para el PDF: una fila por repaso, con la última foto de
+   antes y la de después tal como estaban el día de la visita. */
+function seccionRepasos(lista, fecha, url, titulo) {
+  if (!lista.length) return null;
+  const c = cuentaEstados(lista, fecha);
+  const foto = (fotos) => fotos.length
+    ? el('div', {},
+      el('img', { src: url(fotos[fotos.length - 1].blob), alt: '' }),
+      fotos.length > 1 ? el('span', { class: 'informe-nota' }, `+${fotos.length - 1}`) : null)
+    : el('span', { class: 'informe-nota' }, '—');
+  return el('section', { class: 'informe-repasos' },
+    el('h2', {}, titulo),
+    el('p', { class: 'informe-nota' },
+      `${c.pendiente} por corregir · ${c.corregido} corregidos por verificar · ${c.cerrado} cerrados`),
+    el('table', { class: 'informe-tabla' },
+      el('thead', {}, el('tr', {},
+        el('th', { class: 'num' }, 'Nº'), el('th', {}, 'Zona'), el('th', {}, 'Qué corregir'),
+        el('th', {}, 'Responsable'), el('th', {}, 'Estado'), el('th', {}, 'Antes'), el('th', {}, 'Después'))),
+      el('tbody', {}, ...lista.map((r) => {
+        const estado = estadoEn(r, fecha);
+        return el('tr', { class: `estado-${estado}` },
+          el('td', { class: 'num' }, String(r.numero)),
+          el('td', {}, r.zona || '—', el('div', { class: 'informe-nota' }, CATEGORIAS[r.categoria] || r.categoria)),
+          el('td', {}, r.texto || '—',
+            r.prioridad === 'alta' ? el('div', { class: 'informe-alta' }, 'Prioridad alta') : null),
+          el('td', {}, r.responsable || '—'),
+          el('td', {}, el('strong', {}, ESTADOS[estado]), el('div', { class: 'informe-nota' }, historial(r, fecha))),
+          el('td', { class: 'informe-mini' }, foto(fotosEn(r, fecha, 'antes'))),
+          el('td', { class: 'informe-mini' }, foto(fotosEn(r, fecha, 'despues'))));
+      })))
+  );
+}
+
+/* Abre el diálogo de impresión con lo que ya hay en #informe. */
+async function lanzarImpresion(titulo, urls) {
+  // El diálogo de impresión no espera a las imágenes: hay que decodificarlas antes.
+  await Promise.all([...nodos.informe.querySelectorAll('img')].map((i) => i.decode().catch(() => {})));
+  // El título del documento es el nombre que propone el PDF.
+  const tituloAntes = document.title;
+  document.title = titulo.trim();
+  addEventListener('afterprint', () => { document.title = tituloAntes; }, { once: true });
+  window.print();
+  setTimeout(() => { for (const u of urls) URL.revokeObjectURL(u); }, 60000);
+}
+
 async function imprimir() {
   await guardarYa();
   const v = actual;
@@ -672,10 +763,7 @@ async function imprimir() {
 
   // Pasa por el(): los apartados vacíos llegan como null y no deben pintarse.
   nodos.informe.replaceChildren(...el('div', {},
-    el('div', { class: 'informe-banda' },
-      logotipo(),
-      el('span', { class: 'informe-tipo' }, 'coordinate.do')
-    ),
+    bandaInforme(),
     el('header', {},
       el('h1', {}, 'Parte de visita de obra'),
       el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre'),
@@ -707,6 +795,7 @@ async function imprimir() {
           el('td', {}, GRAVEDADES[i.gravedad] || i.gravedad),
           el('td', {}, i.estado === 'cerrada' ? 'Resuelta' : 'Abierta')))))
     ),
+    seccionRepasos(punch.lista(v), v.fecha, url, 'Punch list · repasos de terminaciones'),
     bloque('Observaciones e instrucciones', v.observaciones),
     ...planosInforme.map(({ plano, imagen, notas }) => el('section', { class: 'informe-plano' },
       el('h2', {}, `Plano · ${plano.nombre}`),
@@ -733,20 +822,35 @@ async function imprimir() {
       v.firma ? el('img', { src: url(v.firma), alt: 'Firma' }) : el('div', { class: 'informe-hueco' }),
       el('p', {}, v.autor || '')
     ),
-    el('footer', { class: 'informe-pie' },
-      el('span', {}, LEMA),
-      el('span', {}, CONTACTO)
-    )
+    pieInforme()
   ).childNodes);
+  await lanzarImpresion(`Visita ${v.fecha} ${v.obra}`, urls);
+}
 
-  // El diálogo de impresión no espera a las imágenes: hay que decodificarlas antes.
-  await Promise.all([...nodos.informe.querySelectorAll('img')].map((i) => i.decode().catch(() => {})));
-  // El título del documento es el nombre que propone el PDF.
-  const tituloAntes = document.title;
-  document.title = `Visita ${v.fecha} ${v.obra}`.trim();
-  addEventListener('afterprint', () => { document.title = tituloAntes; }, { once: true });
-  window.print();
-  setTimeout(() => { for (const u of urls) URL.revokeObjectURL(u); }, 60000);
+/* El punch list solo, para pasárselo a los contratistas. */
+async function imprimirPunch() {
+  await guardarYa();
+  const v = actual;
+  const lista = punch.lista(v);
+  if (!lista.length) return;
+  const urls = [];
+  const url = (blob) => { const u = URL.createObjectURL(blob); urls.push(u); return u; };
+  const responsables = [...new Set(lista.map((r) => r.responsable.trim()).filter(Boolean))];
+  nodos.informe.replaceChildren(...el('div', {},
+    bandaInforme(),
+    el('header', {},
+      el('h1', {}, 'Punch list de terminaciones'),
+      el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre'),
+      el('table', { class: 'informe-datos' }, el('tbody', {},
+        el('tr', {}, el('th', {}, 'Fecha'), el('td', {}, fechaLarga(v.fecha))),
+        el('tr', {}, el('th', {}, 'Revisado por'), el('td', {}, v.autor || '—')),
+        responsables.length > 0 && el('tr', {}, el('th', {}, 'Responsables'), el('td', {}, responsables.join(', ')))
+      ))
+    ),
+    seccionRepasos(lista, v.fecha, url, 'Repasos'),
+    pieInforme()
+  ).childNodes);
+  await lanzarImpresion(`Punch list ${v.fecha} ${v.obra}`, urls);
 }
 
 /* Tonos y enlaces de una nota para el PDF. Chrome conserva los enlaces
@@ -777,7 +881,9 @@ async function planosConNotas(v) {
 }
 
 async function generarInforme(v) {
-  const blob = await generarInformeInteractivo(v, await planosConNotas(v), { contacto: CONTACTO, lema: LEMA });
+  const blob = await generarInformeInteractivo(v, await planosConNotas(v), {
+    contacto: CONTACTO, lema: LEMA, repasos: punch.lista(v)
+  });
   const nombre = `informe-visita-${v.fecha}${v.obra ? '-' + v.obra.toLowerCase().replace(/[^a-z0-9áéíóúñü]+/gi, '-').replace(/^-|-$/g, '') : ''}.html`;
   return { blob, nombre };
 }
@@ -806,6 +912,7 @@ async function informeInteractivo() {
 }
 
 function resumen(v) {
+  const repasos = punch.lista(v).filter((r) => estadoEn(r, v.fecha) !== 'cerrado' || r.cerrado === v.fecha);
   const lineas = [
     `COORDINATE · PARTE DE VISITA · ${v.obra || 'Obra'}`,
     `${fechaLarga(v.fecha)}${v.hora ? ' · ' + v.hora : ''}`,
@@ -821,6 +928,11 @@ function resumen(v) {
     v.incidencias.length && '\nIncidencias:',
     ...v.incidencias.map((i) =>
       `  · [${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? ', resuelta' : ''}] ${i.texto}`),
+    repasos.length && '\nPunch list (repasos):',
+    ...repasos.map((r) =>
+      `  ${r.numero}. [${ESTADOS[estadoEn(r, v.fecha)].toUpperCase()}] `
+      + `${[r.zona, CATEGORIAS[r.categoria]].filter(Boolean).join(' · ')}: ${r.texto || '(sin descripción)'}`
+      + (r.responsable ? ` → ${r.responsable}` : '')),
     v.observaciones && `\nObservaciones:\n${v.observaciones}`,
     v.notas.length && '\nNotas en plano:',
     ...v.notas.slice().sort((a, b) => a.numero - b.numero).flatMap((k) => [
@@ -887,12 +999,19 @@ async function generarCopia() {
   }
   const planos = [];
   for (const p of await listarPlanos()) planos.push({ ...p, blob: await aDatos(p.blob) });
-  const json = JSON.stringify({ formato: 'visitas-obra-e04', version: 2, exportada: new Date().toISOString(), visitas: salida, planos });
+  const repasos = [];
+  for (const r of await listarRepasos()) {
+    repasos.push({ ...r, fotos: await Promise.all(r.fotos.map(async (f) => ({ ...f, blob: await aDatos(f.blob) }))) });
+  }
+  const json = JSON.stringify({
+    formato: 'visitas-obra-e04', version: 3, exportada: new Date().toISOString(), visitas: salida, planos, repasos
+  });
   nodos.aviso.hidden = true;
   return {
     blob: new Blob([json], { type: 'application/json' }),
     nombre: `copia-visitas-${hoy()}-${ahora().replace(':', '')}.json`,
-    resumen: `${plural(visitas.length, 'visita', 'visitas')} y ${plural(planos.length, 'plano', 'planos')}`
+    resumen: `${plural(visitas.length, 'visita', 'visitas')}, ${plural(planos.length, 'plano', 'planos')} y `
+      + plural(repasos.length, 'repaso', 'repasos')
   };
 }
 
@@ -914,6 +1033,12 @@ async function importar(archivo) {
     // Las copias de la versión 1 no traen planos.
     for (const p of datos.planos || []) {
       if (!(await leerPlano(p.id))) await guardarPlano({ ...p, blob: await deDatos(p.blob) });
+    }
+    // Las copias anteriores a la versión 3 no traen punch list.
+    for (const r of datos.repasos || []) {
+      const existente = await leerRepaso(r.id);
+      if (existente && existente.modificado >= r.modificado) continue;
+      await guardarRepaso({ ...r, fotos: await Promise.all(r.fotos.map(async (f) => ({ ...f, blob: await deDatos(f.blob) }))) });
     }
     let nuevas = 0, actualizadas = 0;
     for (const v of datos.visitas) {
@@ -947,6 +1072,7 @@ nodos.ficha.addEventListener('input', (ev) => {
   if (!campo || !actual) return;
   actual[campo] = ev.target.value;
   cambiado();
+  if (campo === 'obra' || campo === 'fecha') punch.pintar();
 });
 
 nodos.botonPersonal.addEventListener('click', () => {
@@ -996,6 +1122,7 @@ nodos.copiaNube.addEventListener('click', () => nube.copiaNube());
 
 nodos.borrarFirma.addEventListener('click', () => firma.borrar());
 nodos.botonInforme.addEventListener('click', imprimir);
+nodos.punchPdf.addEventListener('click', imprimirPunch);
 nodos.compartir.addEventListener('click', compartir);
 nodos.borrar.addEventListener('click', async () => {
   if (!confirm('¿Borrar esta visita con sus fotos? No se puede deshacer.')) return;

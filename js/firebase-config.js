@@ -9,12 +9,12 @@
    Mientras apiKey esté vacío, la app funciona como siempre, sólo en el
    teléfono, y no aparece nada de cuentas ni equipo. */
 export const FIREBASE = {
-  apiKey: '',
-  authDomain: '',
-  projectId: '',
-  storageBucket: '',
-  messagingSenderId: '',
-  appId: ''
+  apiKey: 'AIzaSyBwEKtgXTfq_mXo0ow7payIS2Gw_aqDXtE',
+  authDomain: 'coordinate-b7759.firebaseapp.com',
+  projectId: 'coordinate-b7759',
+  storageBucket: 'coordinate-b7759.firebasestorage.app',
+  messagingSenderId: '181407868247',
+  appId: '1:181407868247:web:3f2568421b9a635bcdca12'
 };
 
 /* Para probar con los emuladores locales: abrir la app con ?emulador=1. */

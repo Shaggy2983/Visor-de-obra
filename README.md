@@ -110,14 +110,19 @@ La interfaz y el informe impreso siguen la marca v2 de COORDINATE:
   `css/estilos.css`. Los impresos usan fondo `#eef1f6`, acento `#3d7cc4`
   y bandas `#1b3560`.
 - **Inter**, copiada en `vendor/inter/` para que funcione sin conexión.
-- **Logotipo «C◎ORDINATE»** con la mira de nodos haciendo de O. Va dentro
-  del HTML para que use Inter; los archivos sueltos están en `marca/`.
+- **Logotipo «C◎ORDINATE»**: el símbolo oficial (anillo de ocho nodos con
+  el centro azul) hace de O. Va dentro del HTML para que use Inter; los
+  archivos sueltos están en `marca/` (`favicon.svg` es el oficial).
 
-Los SVG de `marca/` son una **reconstrucción provisional** del logotipo.
-Si tienes los oficiales (`02_Marca/Logo/`), cópialos encima con el mismo
-nombre. Si el símbolo cambia, cambia también su copia dentro de
-`index.html`, `visita.html` y `js/visita.js` (función `logotipo`), y vuelve
-a generar los iconos con `herramientas/iconos.py`.
+Al abrir la app sale una **bienvenida** de unos 5 segundos: los nodos del
+símbolo orbitan mientras se llena una barra (`js/bienvenida.js` y el bloque
+`#bienvenida` de `index.html` y `visita.html`). Sale una vez por sesión, se
+salta tocando la pantalla y, con «reducir movimiento», dura 1,5 s sin giro.
+
+Si el símbolo cambia, cambia también su copia dentro de `index.html`,
+`visita.html`, `privacidad.html`, `js/visita.js` (función `logotipo`) y
+`js/informe-interactivo.js` (`SIMBOLO`), y vuelve a generar los iconos con
+`herramientas/iconos.py`.
 
 ## Cuentas de correo y almacenamiento
 

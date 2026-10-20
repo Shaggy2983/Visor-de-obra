@@ -114,7 +114,7 @@ body { touch-action: none; }
 
 /* ---------- marca ---------- */
 
-/* Logotipo «C◎ORDINATE»: el símbolo de mira de nodos hace de O. */
+/* Logotipo «C◎ORDINATE»: el símbolo de nodos en anillo hace de O. */
 .marca {
   display: inline-flex;
   align-items: center;
@@ -525,6 +525,75 @@ a.boton {
 .medida-rotulo strong { font-size: .9rem; color: #ffd978; font-variant-numeric: tabular-nums; }
 .medida-rotulo span { font-size: .68rem; color: var(--texto-tenue); }
 .medida-rotulo span:empty { display: none; }
+
+/* ---------- bienvenida ---------- */
+
+.bienvenida {
+  --duracion: 5000ms;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(120% 90% at 50% 0%, var(--color-section), #0c101a 72%);
+  transition: opacity .45s ease, visibility .45s;
+  cursor: pointer;
+}
+.bienvenida[hidden] { display: none; }
+.bienvenida.fuera { opacity: 0; visibility: hidden; }
+
+.bienvenida-caja { display: flex; flex-direction: column; align-items: center; gap: .4rem; padding: 1.5rem; text-align: center; }
+
+.bienvenida-simbolo { width: 7.5rem; height: 7.5rem; overflow: visible; margin-bottom: 1.2rem; }
+
+/* Cada nodo gira alrededor del centro con su propio retraso: se agrupan
+   y se separan como una órbita que «carga». Al principio salen del centro. */
+.bienvenida .nodo {
+  fill: var(--color-text);
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+  animation:
+    nodo-nace .7s cubic-bezier(.2,.8,.2,1) both,
+    nodo-orbita 1.8s cubic-bezier(.55,0,.3,1) .7s infinite;
+  animation-delay: calc(var(--i) * 45ms), calc(.7s + var(--i) * 70ms);
+}
+.bienvenida .nucleo {
+  fill: var(--color-accent);
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+  animation: nucleo-late 1.8s ease-in-out .7s infinite;
+}
+
+@keyframes nodo-nace { from { transform: scale(0) rotate(-90deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+@keyframes nodo-orbita { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes nucleo-late { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+.bienvenida-marca {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: .32em;
+  padding-left: .32em;
+  color: var(--color-text);
+  animation: aparece .8s ease .6s both;
+}
+.bienvenida-lema { margin: 0 0 1.4rem; font-size: .82rem; color: var(--color-accent-300); animation: aparece .8s ease 1.1s both; }
+@keyframes aparece { from { opacity: 0; transform: translateY(.4rem); } to { opacity: 1; transform: none; } }
+
+.bienvenida-barra { width: 11rem; height: 3px; border-radius: 2px; background: rgba(255,255,255,.12); overflow: hidden; }
+.bienvenida-barra span {
+  display: block;
+  height: 100%;
+  background: var(--color-accent);
+  transform-origin: left;
+  animation: barra calc(var(--duracion) - .5s) cubic-bezier(.4,0,.2,1) both;
+}
+@keyframes barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .bienvenida .nodo, .bienvenida .nucleo { animation: none; }
+}
 
 /* ---------- portada, carga, avisos ---------- */
 

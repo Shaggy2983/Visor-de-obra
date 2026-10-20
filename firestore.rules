@@ -1,0 +1,116 @@
+rules_version = '2';
+
+// Reglas de la base de datos de COORDINATE · Obra.
+//
+//   usuarios/{uid}                 ficha de cada usuario (sólo la ve él)
+//   obras/{obra}                   obra compartida: nombre, miembros con su
+//                                  rol e invitaciones pendientes por correo
+//   obras/{obra}/visitas|repasos|planos/{id}
+//                                  lo que se sincroniza de cada obra
+//
+// «personas» guarda el nombre y el correo de cada miembro, para la lista
+// del equipo; cada uno sólo puede tocar su propia ficha.
+//
+// Roles: admin (gestiona la obra y su equipo), editor (escribe visitas,
+// repasos y planos) y lector (sólo ve). Cada mapa de roles va acompañado
+// de una lista con sus claves (miembrosLista, invitadosLista) porque las
+// consultas «obras donde estoy» sólo pueden hacerse sobre listas.
+
+service cloud.firestore {
+  match /databases/{base}/documents {
+
+    function firmado() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    function correo() { return request.auth.token.email.lower(); }
+    // Una invitación por correo sólo la puede usar quien ha demostrado que
+    // ese correo es suyo (Google lo da por verificado; con contraseña hay
+    // que pulsar el enlace del correo de verificación).
+    function verificado() { return request.auth.token.email_verified == true; }
+    function roles() { return ['admin', 'editor', 'lector']; }
+
+    match /usuarios/{usuario} {
+      allow read, write: if firmado() && uid() == usuario;
+    }
+
+    match /obras/{obra} {
+      function antes() { return resource.data; }
+      function despues() { return request.resource.data; }
+      function cambian() { return despues().diff(antes()).affectedKeys(); }
+
+      function bienFormada(d) {
+        return d.nombre is string && d.nombre.size() > 0 && d.nombre.size() <= 120
+          && d.miembros is map && d.invitaciones is map
+          && d.miembrosLista.toSet() == d.miembros.keys().toSet()
+          && d.invitadosLista.toSet() == d.invitaciones.keys().toSet()
+          && d.miembros.values().hasOnly(roles())
+          && d.invitaciones.values().hasOnly(roles())
+          // Siempre queda al menos un administrador.
+          && d.miembros.values().hasAny(['admin']);
+      }
+
+      function soyAdmin() { return antes().miembros[uid()] == 'admin'; }
+
+      // Sólo cambia la ficha de quien escribe en «personas».
+      function soloMiFicha() {
+        return despues().get('personas', {}).diff(antes().get('personas', {})).affectedKeys().hasOnly([uid()]);
+      }
+
+      // El invitado se añade con el rol de su invitación y la gasta.
+      function aceptaInvitacion() {
+        let c = correo();
+        return verificado()
+          && c in antes().invitaciones
+          && cambian().hasOnly(['miembros', 'miembrosLista', 'invitaciones', 'invitadosLista', 'personas', 'modificada'])
+          && soloMiFicha()
+          && despues().miembros.diff(antes().miembros).affectedKeys().hasOnly([uid()])
+          && despues().miembros[uid()] == antes().invitaciones[c]
+          && despues().invitaciones.diff(antes().invitaciones).affectedKeys().hasOnly([c])
+          && !(c in despues().invitaciones);
+      }
+
+      // El invitado rechaza: sólo quita su propia invitación.
+      function rechazaInvitacion() {
+        let c = correo();
+        return verificado()
+          && c in antes().invitaciones
+          && cambian().hasOnly(['invitaciones', 'invitadosLista', 'modificada'])
+          && despues().invitaciones.diff(antes().invitaciones).affectedKeys().hasOnly([c])
+          && !(c in despues().invitaciones);
+      }
+
+      // Un miembro que no administra se va de la obra.
+      function seVa() {
+        return uid() in antes().miembros
+          && antes().miembros[uid()] != 'admin'
+          && cambian().hasOnly(['miembros', 'miembrosLista', 'personas', 'modificada'])
+          && soloMiFicha()
+          && despues().miembros.diff(antes().miembros).affectedKeys().hasOnly([uid()])
+          && !(uid() in despues().miembros);
+      }
+
+      allow read: if firmado() && (uid() in antes().miembrosLista
+        || (verificado() && correo() in antes().invitadosLista));
+
+      allow create: if firmado()
+        && despues().creador == uid()
+        && despues().miembros.keys() == [uid()]
+        && despues().miembros[uid()] == 'admin'
+        && bienFormada(despues());
+
+      allow update: if firmado() && bienFormada(despues())
+        && despues().creador == antes().creador
+        && (soyAdmin() || aceptaInvitacion() || rechazaInvitacion() || seVa());
+
+      allow delete: if firmado() && soyAdmin();
+
+      // Visitas, repasos y planos de la obra.
+      match /{coleccion}/{id} {
+        function obraDoc() { return get(/databases/$(base)/documents/obras/$(obra)).data; }
+        allow read: if firmado() && uid() in obraDoc().miembrosLista;
+        allow write: if firmado()
+          && coleccion in ['visitas', 'repasos', 'planos']
+          && obraDoc().miembros[uid()] in ['admin', 'editor'];
+      }
+    }
+  }
+}

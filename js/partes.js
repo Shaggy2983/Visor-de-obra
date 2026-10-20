@@ -9,7 +9,14 @@
 
    Los repasos del punch list tampoco son de una visita sino de la obra:
    siguen abiertos de visita en visita hasta que se cierran, y sus fotos
-   se guardan una sola vez. */
+   se guardan una sola vez.
+
+   Con una cuenta de equipo, lo de las obras compartidas se sincroniza
+   (js/equipo.js). Para eso cada guardado avisa con el evento «crd-cambio»
+   (salvo los que hace la propia sincronización, que van «callados»), y
+   cada borrado de algo ya compartido deja una baja pendiente de subir.
+   Las tablas «sinc» y «subidos» son de la sincronización: la versión de
+   cada registro que ya está en la nube y los archivos ya subidos. */
 
 // Nombre heredado de la primera versión: cambiarlo dejaría huérfanas las
 // visitas ya guardadas en los teléfonos.
@@ -17,15 +24,19 @@ const BASE = 'visitas-obra-e04';
 const TABLA = 'visitas';
 const PLANOS = 'planos';
 const REPASOS = 'repasos';
+const BAJAS = 'bajas';
+const SINC = 'sinc';
+const SUBIDOS = 'subidos';
 
 function abrir() {
   return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 3);
+    const peticion = indexedDB.open(BASE, 4);
     peticion.onupgradeneeded = () => {
       const bd = peticion.result;
-      for (const tabla of [TABLA, PLANOS, REPASOS]) {
+      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC]) {
         if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
       }
+      if (!bd.objectStoreNames.contains(SUBIDOS)) bd.createObjectStore(SUBIDOS, { keyPath: 'ruta' });
     };
     peticion.onsuccess = () => cumplir(peticion.result);
     peticion.onerror = () => fallar(peticion.error);
@@ -47,6 +58,21 @@ async function operar(modo, hacer, tabla = TABLA) {
   }
 }
 
+function avisarCambio(callado) {
+  if (!callado) dispatchEvent(new CustomEvent('crd-cambio'));
+}
+
+/* Al borrar algo que ya está en una obra compartida, queda una baja para
+   borrarlo también de la nube en la próxima sincronización. */
+async function borrarConBaja(tabla, tipo, id, callado) {
+  const previo = await operar('readonly', (t) => t.get(id), tabla);
+  await operar('readwrite', (t) => t.delete(id), tabla);
+  if (!callado && previo && previo.obraId) {
+    await operar('readwrite', (t) => t.put({ id: `${tipo}:${id}`, tipo, registro: id, obraId: previo.obraId, cuando: Date.now() }), BAJAS);
+  }
+  avisarCambio(callado);
+}
+
 /* Más reciente primero: por fecha de la visita y, dentro del día, por hora. */
 function orden(a, b) {
   return (b.fecha + b.hora).localeCompare(a.fecha + a.hora) || b.creada - a.creada;
@@ -61,12 +87,13 @@ export function leerVisita(id) {
   return operar('readonly', (t) => t.get(id)).then((v) => v || null);
 }
 
-export function guardarVisita(visita) {
-  return operar('readwrite', (t) => t.put(visita));
+export async function guardarVisita(visita, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(visita));
+  avisarCambio(callado);
 }
 
-export function borrarVisita(id) {
-  return operar('readwrite', (t) => t.delete(id));
+export function borrarVisita(id, { callado = false } = {}) {
+  return borrarConBaja(TABLA, 'visitas', id, callado);
 }
 
 /* --- planos --- */
@@ -80,12 +107,13 @@ export function leerPlano(id) {
   return operar('readonly', (t) => t.get(id), PLANOS).then((p) => p || null);
 }
 
-export function guardarPlano(plano) {
-  return operar('readwrite', (t) => t.put(plano), PLANOS);
+export async function guardarPlano(plano, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(plano), PLANOS);
+  avisarCambio(callado);
 }
 
-export function borrarPlano(id) {
-  return operar('readwrite', (t) => t.delete(id), PLANOS);
+export function borrarPlano(id, { callado = false } = {}) {
+  return borrarConBaja(PLANOS, 'planos', id, callado);
 }
 
 /* --- repasos del punch list --- */
@@ -98,10 +126,39 @@ export function leerRepaso(id) {
   return operar('readonly', (t) => t.get(id), REPASOS).then((r) => r || null);
 }
 
-export function guardarRepaso(repaso) {
-  return operar('readwrite', (t) => t.put(repaso), REPASOS);
+export async function guardarRepaso(repaso, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(repaso), REPASOS);
+  avisarCambio(callado);
 }
 
-export function borrarRepaso(id) {
-  return operar('readwrite', (t) => t.delete(id), REPASOS);
+export function borrarRepaso(id, { callado = false } = {}) {
+  return borrarConBaja(REPASOS, 'repasos', id, callado);
+}
+
+/* --- estado de la sincronización --- */
+
+export async function listarBajas() {
+  return (await operar('readonly', (t) => t.getAll(), BAJAS)) || [];
+}
+
+export function quitarBaja(id) {
+  return operar('readwrite', (t) => t.delete(id), BAJAS);
+}
+
+/* Versión de un registro que ya está en la nube (0 si no está). */
+export async function versionSincronizada(tipo, id) {
+  const r = await operar('readonly', (t) => t.get(`${tipo}:${id}`), SINC);
+  return r ? r.version : 0;
+}
+
+export function anotarSincronizada(tipo, id, version) {
+  return operar('readwrite', (t) => t.put({ id: `${tipo}:${id}`, version }), SINC);
+}
+
+export async function estaSubido(ruta) {
+  return Boolean(await operar('readonly', (t) => t.get(ruta), SUBIDOS));
+}
+
+export function anotarSubido(ruta) {
+  return operar('readwrite', (t) => t.put({ ruta }), SUBIDOS);
 }

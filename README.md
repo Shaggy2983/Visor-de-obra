@@ -124,6 +124,53 @@ Si el símbolo cambia, cambia también su copia dentro de `index.html`,
 `js/informe-interactivo.js` (`SIMBOLO`), y vuelve a generar los iconos con
 `herramientas/iconos.py`.
 
+## Cuentas de equipo y obras compartidas (Firebase)
+
+Opcional. Sin configurar, la app funciona sólo en el teléfono, como
+siempre, y no aparece nada de cuentas. Con Firebase configurado, arriba de
+la lista de visitas sale **Cuenta y equipo**:
+
+- **Entrar o crear cuenta** con correo y contraseña o con Google. La
+  cuenta con contraseña se verifica por correo (hace falta para recibir
+  invitaciones).
+- **Compartir una obra**: lo que en el teléfono lleva ese nombre de obra
+  (visitas, repasos del punch list, planos, fotos y firmas) sube a la nube.
+- **Invitar** por correo con un papel: *Administrador* (gestiona el
+  equipo), *Editor* (escribe) o *Solo lectura*. La persona ve la
+  invitación al entrar con ese correo; la app ofrece mandarle el aviso
+  por WhatsApp o correo.
+- **Sincronización** automática (al guardar, al volver la señal y cada
+  dos minutos) y sin señal sigue funcionando todo en el teléfono. Si dos
+  personas cambian lo mismo, gana el último que guardó.
+- **Borrar mi cuenta** (lo exige Google Play): sale de las obras, borra
+  las que sólo eran suyas y su ficha. Lo del teléfono se queda.
+
+Cómo está hecho: `js/equipo.js` (sesión, obras y sincronización),
+`js/equipo-ui.js` (la interfaz), `js/firebase-app.js` (carga perezosa del
+SDK, en `vendor/firebase/`), y las reglas de seguridad `firestore.rules` y
+`storage.rules`, con sus pruebas en `pruebas/`.
+
+### Crear el proyecto (una vez)
+
+1. En [console.firebase.google.com](https://console.firebase.google.com)
+   **Crear un proyecto** (por ejemplo `coordinate-obra`). Analytics no
+   hace falta.
+2. **Authentication → Comenzar → Método de acceso**: activar
+   *Correo electrónico/contraseña* y *Google*. En **Configuración →
+   Dominios autorizados**, añadir `shaggy2983.github.io` (y el dominio
+   propio, si lo hay).
+3. **Firestore Database → Crear base de datos**, en modo producción. En
+   la pestaña **Reglas**, pegar el contenido de `firestore.rules` y
+   **Publicar**.
+4. **Storage → Comenzar** (pide el plan Blaze, de pago por uso, con una
+   cuota gratuita). En **Reglas**, pegar `storage.rules` y **Publicar**.
+5. **Configuración del proyecto → Tus apps → Web (`</>`)**: registrar
+   la app (sin Hosting) y copiar los valores de `firebaseConfig` en
+   `js/firebase-config.js`.
+
+Con la consola de Firebase instalada también se pueden subir las reglas
+con `firebase deploy --only firestore:rules,storage` desde la raíz.
+
 ## Cuentas de correo y almacenamiento
 
 En la lista de visitas, **Cuentas vinculadas** conecta una cuenta de
@@ -277,13 +324,19 @@ esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 | `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom, dibujo y notas |
 | `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
 | `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |
+| `js/equipo.js` | Cuenta, obras compartidas y sincronización con Firebase |
+| `js/equipo-ui.js` | Interfaz de cuenta y equipo |
+| `js/firebase-app.js` | Carga del SDK de Firebase (o de los emuladores) |
+| `js/firebase-config.js` | Datos del proyecto de Firebase |
+| `firestore.rules`, `storage.rules` | Reglas de seguridad de la base de datos y de los archivos |
+| `pruebas/` | Pruebas de las reglas contra los emuladores |
 | `js/cuentas.js` | Vincular Google y Microsoft; correo y archivos en la nube |
 | `js/cuentas-config.js` | ID de cliente de Google y Microsoft |
 | `js/nube.js` | Tarjetas de cuentas y diálogos de correo, nube y copias |
 | `oauth.html` | Página a la que vuelven Google y Microsoft al vincular |
 | `sw.js` | Service worker: la app entera cabe en el teléfono |
 | `marca/` | Logotipos y favicon de COORDINATE |
-| `vendor/` | three.js, web-ifc, pdf.js e Inter, copiados aquí para no depender de un CDN |
+| `vendor/` | three.js, web-ifc, pdf.js, Firebase e Inter, copiados aquí para no depender de un CDN |
 | `android/` | La aplicación Android (TWA) que se publica en Google Play |
 | `apk/` | Guía para publicar en Play y la vía alternativa con Capacitor |
 | `tienda/` | Textos y gráficos de la ficha de Google Play |
@@ -333,10 +386,11 @@ elementos es reescribir ese buffer dejando fuera los rangos que no tocan.
 
 ## Licencias
 
-El código de este repositorio es del proyecto. En `vendor/` viajan cuatro
+El código de este repositorio es del proyecto. En `vendor/` viajan cinco
 librerías de terceros con sus licencias al lado:
 
 - [three.js](https://threejs.org) — MIT (`vendor/three/LICENSE.txt`)
 - [web-ifc](https://github.com/ThatOpen/engine_web-ifc) — MPL-2.0 (`vendor/web-ifc/LICENSE.md`)
 - [pdf.js](https://mozilla.github.io/pdf.js/) 4.10.38, compilación *legacy* — Apache-2.0 (`vendor/pdfjs/LICENSE.txt`)
+- [Firebase JS SDK](https://firebase.google.com) 12.19.0 — Apache-2.0 (`vendor/firebase/LEEME.txt`)
 - [Inter](https://rsms.me/inter/) — SIL Open Font License 1.1 (`vendor/inter/LICENSE.txt`)

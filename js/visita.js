@@ -20,6 +20,8 @@ import {
 } from './repasos.js';
 import { crearNube } from './nube.js';
 import { avisoPendiente } from './cuentas.js';
+import { equipo } from './equipo.js';
+import { iniciarEquipoUI } from './equipo-ui.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -81,6 +83,7 @@ const nodos = {
   punchPdf: $('btn-punch-pdf'),
   entradaRepasoCamara: $('entrada-repaso-camara'),
   entradaRepasoGaleria: $('entrada-repaso-galeria'),
+  avisoLectura: $('aviso-lectura'),
   fotoGrande: $('foto-grande'),
   aviso: $('aviso')
 };
@@ -232,7 +235,8 @@ function tarjeta(v) {
         plural(pendientes, 'incidencia abierta', 'incidencias abiertas')),
       v.fotos.length > 0 && el('span', {}, plural(v.fotos.length, 'foto', 'fotos')),
       (v.notas || []).length > 0 && el('span', {}, plural(v.notas.length, 'nota en plano', 'notas en plano')),
-      v.clima.length > 0 && el('span', {}, v.clima.join(', '))
+      v.clima.length > 0 && el('span', {}, v.clima.join(', ')),
+      v.obraId && el('span', { class: 'compartida', title: 'Obra compartida con tu equipo' }, '☁ Compartida')
     )
   );
 }
@@ -246,6 +250,7 @@ async function nuevaVisita() {
     fecha: hoy(),
     hora: ahora(),
     obra: anterior ? anterior.obra : '',
+    obraId: anterior ? anterior.obraId || null : null,
     autor: anterior ? anterior.autor : '',
     clima: [],
     temperatura: '',
@@ -273,7 +278,7 @@ async function nuevaVisita() {
 /* ficha                                                               */
 /* ------------------------------------------------------------------ */
 
-function abrirFicha(v) {
+function abrirFicha(v, { recarga = false } = {}) {
   actual = v;
   nodos.vistaLista.hidden = true;
   nodos.vistaFicha.hidden = false;
@@ -289,8 +294,9 @@ function abrirFicha(v) {
   verTodosPlanos = false;
   pintarPlanos();
   firma.cargar(v.firma);
+  nodos.avisoLectura.hidden = equipo.rolEn(v.obraId) !== 'lector';
   nodos.estadoGuardado.textContent = 'Guardado';
-  scrollTo(0, 0);
+  if (!recarga) scrollTo(0, 0);
 }
 
 function cambiado() {
@@ -1151,6 +1157,47 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   });
 }
+
+/* --- equipo: cuenta, obras compartidas y sincronización --- */
+
+/* Nombres de obra que hay en el teléfono, para compartir una. */
+async function obrasLocales() {
+  const nombres = new Map();
+  for (const r of [...await listarVisitas(), ...await listarRepasos(), ...await listarPlanos()]) {
+    const n = (r.obra || '').trim();
+    if (n && !nombres.has(n.toLowerCase())) nombres.set(n.toLowerCase(), n);
+  }
+  return [...nombres.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
+
+iniciarEquipoUI({
+  grupo: $('grupo-equipo'),
+  contenedor: $('equipo'),
+  avisar: (texto, ms) => avisar(nodos.aviso, texto, ms),
+  obrasLocales
+});
+
+/* Llegan cambios de la nube (o se ha asignado una obra compartida): se
+   repinta lo que se está viendo. La visita abierta sólo se recarga si no
+   hay cambios propios sin guardar. */
+addEventListener('crd-remoto', async (ev) => {
+  const ids = new Set(ev.detail.ids);
+  if (!actual) {
+    if (!nodos.vistaLista.hidden) mostrarLista();
+    return;
+  }
+  if (ids.has(actual.id) && !pendiente && !visor.abierto) {
+    const fresca = await leerVisita(actual.id);
+    if (fresca && actual && fresca.id === actual.id) abrirFicha(normalizar(fresca), { recarga: true });
+    else if (!fresca) location.hash = '';
+    return;
+  }
+  punch.cargar();
+  if (!visor.abierto) pintarPlanos();
+});
+equipo.addEventListener('cambio', () => {
+  if (actual) nodos.avisoLectura.hidden = equipo.rolEn(actual.obraId) !== 'lector';
+});
 
 // Mensaje de la vuelta de Google o Microsoft (cuenta vinculada o error).
 const avisoCuentas = avisoPendiente();

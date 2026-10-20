@@ -643,6 +643,79 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
 .pagina-visita .aviso { z-index: 80; }
 
+/* ---------- cuenta y equipo ---------- */
+
+.equipo { margin-bottom: 1rem; padding: .8rem .85rem; border: 1px solid var(--borde); border-radius: .7rem; background: var(--fondo-2); }
+.equipo > h2 { margin-top: 0; }
+.equipo .fila-botones { margin-top: .5rem; }
+
+.inicial {
+  flex: 0 0 auto;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 50%;
+  background: var(--acento);
+  color: var(--texto-sobre-acento);
+  font-weight: 700;
+  line-height: 2.3rem;
+  text-align: center;
+}
+
+.estado-sinc { margin: .4rem 0 0; }
+.estado-sinc.fase-error, .estado-sinc.fase-sin-red { color: #ffb36b; }
+
+.aviso-verificar, .invitacion, .aviso-invitacion {
+  margin-top: .6rem;
+  padding: .55rem .7rem;
+  border-radius: .55rem;
+  background: var(--fondo-3);
+  border-left: 3px solid var(--acento);
+  font-size: .86rem;
+}
+.aviso-verificar p, .invitacion p, .aviso-invitacion p { margin: 0 0 .3rem; }
+
+.equipo-sub, .dialogo-sub { margin: 1rem 0 .4rem; font-size: .72rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--texto-tenue); }
+
+.obras-compartidas { display: flex; flex-direction: column; gap: .4rem; }
+.obra-compartida {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: .55rem .7rem;
+  border: 1px solid var(--borde);
+  border-radius: .55rem;
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.obra-nombre { font-weight: 600; }
+.obra-compartida .pie { margin: 0; }
+
+.cuenta-pie { justify-content: space-between; }
+
+.miembro { display: flex; align-items: center; gap: .5rem; padding: .45rem 0; border-bottom: 1px solid var(--borde); }
+.miembro-datos { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.miembro-datos strong, .miembro-datos .pie { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin: 0; }
+.miembro-rol { font-size: .8rem; color: var(--texto-tenue); }
+.dialogo .selector-rol { width: auto; margin: 0; padding: .4rem .45rem; font-size: 14px; }
+.opciones-obra { display: flex; flex-wrap: wrap; gap: .35rem; }
+.acciones-obra { margin-top: 1rem; }
+
+.compartida { color: var(--color-accent-300); }
+
+.aviso-lectura {
+  margin: 0 0 .6rem;
+  padding: .5rem .7rem;
+  border-radius: .55rem;
+  background: rgba(240,180,60,.12);
+  border: 1px solid rgba(240,180,60,.45);
+  font-size: .84rem;
+}
+.aviso-lectura[hidden] { display: none; }
+
 /* ---------- informe impreso ---------- */
 
 .informe { display: none; }

@@ -1,3 +1,4 @@
 visor-obra-CRD.zip
 node_modules/
 .DS_Store
+*-debug.log

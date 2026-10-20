@@ -6,7 +6,8 @@
 
 export const CONFIG = {
   google: {
-    clientId: ''
+    // Proyecto coordinate-b7759 · cliente web «COORDINATE Visor (Gmail y Drive)»
+    clientId: '181407868247-k1pr406phm1rdvd7o6t26a80ggohto6i.apps.googleusercontent.com'
   },
   microsoft: {
     clientId: '',

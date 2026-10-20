@@ -48,15 +48,22 @@ Play exige que el `.aab` vaya firmado con una **clave de subida**. Se
 crea una vez, en tu ordenador, con `keytool` (viene con Java o con
 Android Studio; en Windows también vale instalar *Temurin JDK 17*):
 
-    keytool -genkeypair -v -keystore subida-coordinate.jks -alias coordinate -keyalg RSA -keysize 2048 -validity 10000
+    keytool -genkeypair -v -keystore subida-coordinate.jks -alias coordinate -keyalg RSA -keysize 2048 -validity 10000 -storetype PKCS12
 
-Pide una contraseña y unos datos (nombre, organización, país: `DO`).
+Pide una contraseña (no se ve al escribir) y unos datos (nombre,
+organización, país: `DO`). Con `PKCS12` la clave usa la misma contraseña
+que el almacén. Ejecuta los comandos **de uno en uno**: si se pegan dos
+en la misma línea, PowerShell no hace ninguno.
 
-Pásala a texto para guardarla en GitHub:
+Pásala a texto para guardarla en GitHub. En Windows (PowerShell, cada
+línea por separado):
 
-- Windows (PowerShell):
-  `[Convert]::ToBase64String([IO.File]::ReadAllBytes("subida-coordinate.jks")) | Set-Clipboard`
-- macOS / Linux: `base64 -w0 subida-coordinate.jks`
+    [Convert]::ToBase64String([IO.File]::ReadAllBytes("$HOME\Documents\subida-coordinate.jks")) | Out-File -Encoding ascii -NoNewline "$HOME\Documents\clave-base64.txt"
+    notepad "$HOME\Documents\clave-base64.txt"
+
+En el Bloc de notas: Ctrl+A, Ctrl+C, y pégalo en el secreto sin copiar
+nada entre medias (copiar otra cosa sobrescribe el portapapeles). Después
+borra `clave-base64.txt`. En macOS o Linux: `base64 -w0 subida-coordinate.jks`.
 
 En GitHub: **Settings → Secrets and variables → Actions → New
 repository secret**, crea estos cuatro:

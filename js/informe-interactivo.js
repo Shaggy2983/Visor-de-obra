@@ -9,7 +9,7 @@ import { CATEGORIAS, ESTADOS, PRIORIDADES, estadoEn, fotosEn, historial } from '
 
 const LADO_PLANO_INFORME = 3000;   // equilibrio entre detalle y peso del archivo
 
-const SIMBOLO = '<svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19" fill="none" stroke="currentColor" stroke-width="4"/><path d="M32 6V58M6 32H58" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><g fill="#62a0e8"><circle cx="32" cy="6" r="4.5"/><circle cx="58" cy="32" r="4.5"/><circle cx="32" cy="58" r="4.5"/><circle cx="6" cy="32" r="4.5"/><circle cx="32" cy="32" r="6.5"/></g></svg>';
+const SIMBOLO = '<svg viewBox="10 10 44 44" aria-hidden="true"><g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g><circle cx="32" cy="32" r="6" fill="#62a0e8"/></svg>';
 
 async function fuenteInter() {
   try {

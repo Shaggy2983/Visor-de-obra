@@ -2,5 +2,5 @@
 <resources>
     <string name="appName">COORDINATE · Obra</string>
     <string name="launcherName">CRD Obra</string>
-    <string name="providerAuthority">do.coordinate.visorobra.fileprovider</string>
+    <string name="providerAuthority">com.coordinate.visorobra.fileprovider</string>
 </resources>

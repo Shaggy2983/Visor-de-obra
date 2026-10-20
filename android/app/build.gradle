@@ -11,11 +11,11 @@ def codigo = (System.getenv('VERSION_CODE') ?: System.getenv('GITHUB_RUN_NUMBER'
 def almacen = System.getenv('ANDROID_KEYSTORE_PATH')
 
 android {
-    namespace 'do.coordinate.visorobra'
+    namespace 'com.coordinate.visorobra'
     compileSdk 36
 
     defaultConfig {
-        applicationId 'do.coordinate.visorobra'
+        applicationId 'com.coordinate.visorobra'
         minSdk 23
         targetSdk 36
         versionCode codigo

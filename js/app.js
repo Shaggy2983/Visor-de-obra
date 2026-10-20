@@ -3,6 +3,7 @@
 import { Visor, FONDOS } from './visor.js';
 import { Medidor, metros } from './medir.js';
 import { Cortes } from './cortes.js';
+import { Colores } from './colores.js';
 import { arDisponible, RealidadAumentada } from './ar.js';
 import { guardarModelo, leerModelo } from './almacen.js';
 import {
@@ -89,6 +90,25 @@ const cortes = new Cortes(visor, {
   alPedirCara: () => avisar(nodos.aviso, 'Toca una cara del modelo para cortar paralelo a ella.', 3500)
 });
 
+const colores = new Colores(visor, {
+  selector: $('colorear'),
+  leyenda: $('leyenda'),
+  quitar: $('btn-quitar-colores'),
+  incorporados: {
+    'Categoría': (id) => estado.elementos.get(id)?.clase,
+    'Planta': (id) => {
+      const e = estado.elementos.get(id);
+      const p = e && e.planta !== undefined && estado.plantas.get(e.planta);
+      return p ? p.nombre : '';
+    },
+    'Clase IFC': (id) => estado.elementos.get(id)?.tipo
+  },
+  ids: () => estado.elementos.keys(),
+  pedir: (orden) => { if (trabajador) trabajador.postMessage(orden); },
+  alCambiar: () => aplicar(),
+  avisar: (t) => avisar(nodos.aviso, t, 3500)
+});
+
 const estado = {
   elementos: new Map(),   // expressID → {clase, tipo, nombre, guid, planta}
   categorias: new Map(),  // etiqueta → {ids: [], visible}
@@ -127,6 +147,8 @@ function recibir(m) {
     terminarCarga(m);
   } else if (m.tipo === 'propiedades') {
     mostrarPropiedades(m);
+  } else if (m.tipo === 'claves' || m.tipo === 'valores') {
+    colores.recibir(m);
   } else if (m.tipo === 'error') {
     fallo(m.mensaje);
   }
@@ -158,6 +180,7 @@ async function cargar(datos, nombre, recordar) {
   estado.sinPlanta = { visible: true, cuenta: 0 };
   estado.cargado = false;
   cerrarFicha();
+  colores.reiniciar();
   medidor.borrar();
   medidor.encender(false);
   nodos.titulo.textContent = nombre.replace(/\.ifc$/i, '');
@@ -215,6 +238,7 @@ function esVisible(id) {
   const e = estado.elementos.get(id);
   if (!e) return true;
   if (estado.ocultos.has(id)) return false;
+  if (colores.oculto(id)) return false;
   const cat = estado.categorias.get(e.clase);
   if (cat && !cat.visible) return false;
   if (e.planta === undefined) return estado.sinPlanta.visible;
@@ -531,8 +555,8 @@ addEventListener('drop', async (ev) => {
   }
 });
 
-/* Cortes y Vista abren el panel más bajo: se ajustan mirando el modelo. */
-const HOJAS_BAJAS = ['hoja-cortes', 'hoja-vista'];
+/* Colores, Cortes y Vista abren el panel más bajo: se ajustan mirando el modelo. */
+const HOJAS_BAJAS = ['hoja-colores', 'hoja-cortes', 'hoja-vista'];
 
 function hojaActiva() {
   const p = document.querySelector('.pestana.activa');
@@ -548,6 +572,7 @@ function abrirHoja(id) {
     h.classList.toggle('activa', h.id === id);
   }
   nodos.panel.classList.toggle('panel-bajo', HOJAS_BAJAS.includes(id));
+  if (id === 'hoja-colores' && estado.cargado) colores.cargarClaves();
   nodos.panel.hidden = false;
   if (medidor.activo) medidor.encender(false);
   nodos.medir.classList.remove('activo');
@@ -635,6 +660,7 @@ nodos.todo.addEventListener('click', () => {
   for (const c of estado.categorias.values()) { c.visible = true; c.transparente = false; }
   estado.transparentes.clear();
   estado.rayosX = false;
+  colores.mostrarTodo();
   if (visor.aislado) visor.aislar(false);
   cortes.quitar();
   marcarBarra();

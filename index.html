@@ -45,6 +45,7 @@
     <button class="pestana activa" data-hoja="hoja-filtros" role="tab">Filtros</button>
     <button class="pestana" data-hoja="hoja-buscar" role="tab">Buscar</button>
     <button class="pestana" data-hoja="hoja-propiedades" role="tab">Propiedades</button>
+    <button class="pestana" data-hoja="hoja-colores" role="tab">Colores</button>
     <button class="pestana" data-hoja="hoja-cortes" role="tab">Cortes</button>
     <button class="pestana" data-hoja="hoja-vista" role="tab">Vista</button>
     <button id="btn-cerrar-panel" class="pestana pestana-cerrar" title="Cerrar panel">✕</button>
@@ -77,6 +78,17 @@
     <input type="search" id="filtro-propiedades" class="campo" placeholder="Filtrar propiedades…" autocomplete="off" hidden>
     <div id="propiedades" class="propiedades">
       <p class="vacio">Toca un elemento del modelo para ver sus datos.</p>
+    </div>
+  </section>
+
+  <section id="hoja-colores" class="hoja">
+    <div class="grupo">
+      <div class="grupo-cabecera">
+        <h2>Colorear por propiedad</h2>
+        <button class="enlace" id="btn-quitar-colores" hidden>Colores del modelo</button>
+      </div>
+      <select id="colorear" class="campo" aria-label="Propiedad para colorear"></select>
+      <div id="leyenda" class="lista leyenda"></div>
     </div>
   </section>
 

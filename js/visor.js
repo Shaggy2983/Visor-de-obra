@@ -204,6 +204,7 @@ export class Visor {
     const mat = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
     mat.color.setRGB(color.r, color.g, color.b, THREE.SRGBColorSpace);
     mat.userData.opacidad = color.a;
+    mat.userData.color = mat.color.clone();
 
     const malla = new THREE.Mesh(geo, mat);
     malla.frustumCulled = false;
@@ -506,6 +507,45 @@ export class Visor {
     this.refrescarVisibles();
     if (this.aislado) this.encuadrar(this.seleccion);
     return this.aislado;
+  }
+
+  /* --------------------------------------------------------------- */
+  /* colorear por propiedad                                           */
+  /* --------------------------------------------------------------- */
+
+  /* colorDe(id) → THREE.Color, o null para dejar su color propio.
+     Sin función se vuelve a los colores del modelo. Se pinta con colores
+     por vértice: la geometría de cada elemento es suya en el lote. */
+  colorear(colorDe) {
+    const blanco = new THREE.Color(1, 1, 1);
+    for (const m of this.lotes) {
+      const geo = m.geometry;
+      const original = m.material.userData.color;
+      if (colorDe) {
+        let atributo = geo.attributes.color;
+        if (!atributo) {
+          atributo = new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 3), 3);
+          geo.setAttribute('color', atributo);
+          m.userData.fantasma.geometry.setAttribute('color', atributo);
+        }
+        const c = atributo.array;
+        const ind = m.userData.indicesOriginales;
+        const rangos = m.userData.rangos;
+        for (let i = 0; i < rangos.length; i += 3) {
+          const color = colorDe(rangos[i]) || original;
+          for (let k = rangos[i + 1], fin = k + rangos[i + 2]; k < fin; k++) {
+            const o = ind[k] * 3;
+            c[o] = color.r; c[o + 1] = color.g; c[o + 2] = color.b;
+          }
+        }
+        atributo.needsUpdate = true;
+      }
+      for (const mat of [m.material, m.userData.fantasma.material]) {
+        if (mat.vertexColors !== !!colorDe) mat.needsUpdate = true;
+        mat.vertexColors = !!colorDe;
+        mat.color.copy(colorDe ? blanco : original);
+      }
+    }
   }
 
   /* --------------------------------------------------------------- */

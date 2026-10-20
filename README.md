@@ -23,6 +23,10 @@ IFC se lee dentro del navegador y se queda en el teléfono.
   áreas; los puntos se pegan a esquinas y bordes.
 - **Cortes**: planta, alzados en X y en Z, paralelo a una cara que se
   toque y caja de sección, con relleno de color en lo cortado.
+- **Colorear por propiedad**, como el Appearance Profiler de Navisworks:
+  por categoría, planta, clase IFC, tipo, material o cualquier propiedad
+  de un Pset. Cada valor sale de un color con su leyenda (los números, en
+  tramos de frío a cálido) y desde la leyenda se oculta cada valor.
 - **Transparencias**: de todo el modelo, por categoría, por elemento y
   «rayos X» (todo transparente menos lo seleccionado).
 - **Vista**: seis fondos (Acero, Azul noche, Cielo, Gris claro, Blanco y
@@ -261,6 +265,7 @@ esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 | `js/almacen.js` | El último modelo, guardado en IndexedDB |
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
 | `js/medir.js` | Medir distancias y áreas sobre el modelo |
+| `js/colores.js` | Colorear el modelo por una propiedad, con leyenda |
 | `js/cortes.js` | Cortes: planta, alzados, por cara y caja de sección |
 | `js/partes.js` | Las visitas, los planos y los repasos, guardados en IndexedDB |
 | `js/repasos.js` | Punch list: repasos de terminaciones con fotos de antes y después |

@@ -52,10 +52,21 @@ jobs:
       - name: Recuperar la clave de firma
         env:
           CLAVE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           if [ -n "$CLAVE" ]; then
-            echo "$CLAVE" | base64 -d > "$RUNNER_TEMP/subida.jks"
-            echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/subida.jks" >> "$GITHUB_ENV"
+            almacen="$RUNNER_TEMP/subida.jks"
+            # Al copiar desde Windows se cuelan saltos de línea y espacios: fuera.
+            if ! printf '%s' "$CLAVE" | tr -d '[:space:]' | base64 -d > "$almacen" 2>/dev/null; then
+              echo "::error::ANDROID_KEYSTORE_BASE64 no es un texto base64 válido. Vuelve a copiarlo con el comando de apk/LEEME-APK.md y pégalo entero en el secreto."
+              exit 1
+            fi
+            if ! keytool -list -keystore "$almacen" -storepass "$ANDROID_KEYSTORE_PASSWORD" -alias "$ANDROID_KEY_ALIAS" > /dev/null 2>&1; then
+              echo "::error::La clave se ha leído, pero no se abre con ANDROID_KEYSTORE_PASSWORD y ANDROID_KEY_ALIAS. Revisa la contraseña y que el alias sea «coordinate»."
+              exit 1
+            fi
+            echo "ANDROID_KEYSTORE_PATH=$almacen" >> "$GITHUB_ENV"
             echo "Se firmará con la clave de subida."
           else
             echo "::warning::No hay clave de subida en los secretos: se firma con la de depuración (vale para probar, no para Play)."

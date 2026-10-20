@@ -212,6 +212,100 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
 .pagina-visita .aviso { bottom: calc(var(--seguro-abajo) + 1.2rem); }
 
+/* ---------- punch list ---------- */
+
+:root {
+  --repaso-pendiente: #ff6b5e;
+  --repaso-corregido: #f0b43c;
+  --repaso-cerrado: #3fbf86;
+}
+
+.repasos { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .4rem; }
+
+.repaso {
+  border: 1px solid var(--borde);
+  border-left: 4px solid var(--repaso-pendiente);
+  border-radius: .55rem;
+  background: var(--fondo);
+}
+
+.repaso.estado-corregido { border-left-color: var(--repaso-corregido); }
+.repaso.estado-cerrado { border-left-color: var(--repaso-cerrado); }
+.repaso.estado-cerrado .repaso-resumen { opacity: .6; }
+
+.repaso-resumen {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  width: 100%;
+  padding: .5rem .55rem;
+  border: 0;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.repaso-num {
+  flex: 0 0 auto;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 .35rem;
+  border-radius: 1rem;
+  background: var(--fondo-3);
+  font-weight: 700;
+  font-size: .85rem;
+  line-height: 2rem;
+  text-align: center;
+}
+
+.prioridad-alta .repaso-num { background: var(--repaso-pendiente); color: #fff; }
+
+.repaso-textos { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.repaso-textos strong { font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repaso-textos span { font-size: .82rem; color: var(--texto-tenue); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.repaso-mini {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: .35rem;
+  object-fit: cover;
+  background: var(--fondo-2);
+}
+
+.repaso-mini.vacia { border: 1px dashed var(--borde); }
+.repaso-mini.despues { outline: 2px solid var(--repaso-cerrado); outline-offset: -2px; }
+.repaso-mini.despues.vacia { outline: 0; }
+
+.repaso-estado {
+  flex: 0 0 auto;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--repaso-pendiente);
+}
+
+.estado-corregido .repaso-estado { color: var(--repaso-corregido); }
+.estado-cerrado .repaso-estado { color: var(--repaso-cerrado); }
+
+.repaso-editor { padding: .2rem .6rem .7rem; border-top: 1px solid var(--borde); }
+.repaso-editor > * { margin-top: .5rem; }
+.repaso-editor .campo { margin-bottom: 0; }
+.repaso-estados { margin-bottom: 0; }
+.repaso-estados .chip.activo.estado-pendiente { background: var(--repaso-pendiente); border-color: var(--repaso-pendiente); color: #fff; }
+.repaso-estados .chip.activo.estado-corregido { background: var(--repaso-corregido); border-color: var(--repaso-corregido); color: #1b1300; }
+.repaso-estados .chip.activo.estado-cerrado { background: var(--repaso-cerrado); border-color: var(--repaso-cerrado); color: #04170e; }
+
+.repaso-fotos-cabecera { display: flex; align-items: center; gap: .6rem; }
+.repaso-fotos-cabecera h3 { flex: 1; margin: 0; font-size: .72rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--texto-tenue); }
+.repaso-fotos-cabecera .boton { min-height: 2.2rem; padding: .3rem .7rem; }
+
+.repaso-pie { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.repaso-pie .pie { margin: 0; }
+.boton-peligro-texto { color: #ff8a80 !important; }
+
 /* ---------- planos en la ficha ---------- */
 
 .planos { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; margin-bottom: .4rem; }
@@ -620,6 +714,16 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
   .informe-plano > img { display: block; width: 100%; max-height: 170mm; object-fit: contain; border: .5pt solid #ccc; margin-bottom: 3mm; }
   .informe section.informe-plano { break-inside: auto; }
+
+  .informe-repasos { break-inside: auto !important; }
+  .informe-repasos tr { break-inside: avoid; }
+  .informe-repasos td { font-size: 9pt; }
+  .informe-mini { width: 25mm; }
+  .informe-mini img { display: block; width: 24mm; height: 18mm; object-fit: cover; border: .5pt solid #ccc; }
+  .informe-repasos tr.estado-pendiente td:first-child { border-left: 2.5pt solid #d64545; }
+  .informe-repasos tr.estado-corregido td:first-child { border-left: 2.5pt solid #e0a526; }
+  .informe-repasos tr.estado-cerrado td:first-child { border-left: 2.5pt solid #2f9e6a; }
+  .informe-alta { margin-top: .6mm; font-size: 8pt; font-weight: 600; color: #c0392b; }
 
   .informe-firma img, .informe-hueco { display: block; height: 28mm; max-width: 80mm; object-fit: contain; }
   .informe-hueco { border-bottom: .5pt solid #999; width: 80mm; }

@@ -11,12 +11,17 @@ import {
   IfcAPI,
   IFCRELCONTAINEDINSPATIALSTRUCTURE,
   IFCRELAGGREGATES,
-  IFCBUILDINGSTOREY
+  IFCBUILDINGSTOREY,
+  IFCRELDEFINESBYPROPERTIES,
+  IFCRELDEFINESBYTYPE,
+  IFCRELASSOCIATESMATERIAL
 } from '../vendor/web-ifc/web-ifc-api.js';
 
 const api = new IfcAPI();
 let iniciado = false;
 let modelo = -1;
+let idsElementos = new Set();   // elementos con geometría del modelo abierto
+let indice = null;              // propiedad → (expressID → valor), al pedirlo
 
 /* Vértices por lote. Un valor alto reduce llamadas de dibujo; uno
    demasiado alto retrasa la aparición del primer trozo de modelo. */
@@ -116,6 +121,7 @@ async function cargar(datos) {
     CIRCLE_SEGMENTS: 12
   });
 
+  indice = null;
   const esquema = api.GetModelSchema(modelo);
   avisar('Generando la geometría…', 10);
 
@@ -249,6 +255,7 @@ async function cargar(datos) {
   for (const lote of lotes.values()) enviarLote(lote);
   lotes.clear();
 
+  idsElementos = new Set(elementos.keys());
   avisar('Ordenando plantas y categorías…', 90);
   const plantas = leerPlantas(elementos);
 
@@ -329,6 +336,10 @@ function leerPlantas(elementos) {
 /* ------------------------------------------------------------------ */
 
 function comoTexto(v) {
+  // IfcBoolean e IfcLogical llegan como enumerados .T. / .F. / .U.
+  if (v && typeof v === 'object' && /^IFC(BOOLEAN|LOGICAL)$/i.test(v.name || '') && ['T', 'F', 'U'].includes(v.value)) {
+    return { T: 'Sí', F: 'No', U: 'Desconocido' }[v.value];
+  }
   const x = valorPlano(v);
   if (x === '' || x === null || x === undefined) return '';
   if (typeof x === 'number') {
@@ -435,6 +446,132 @@ async function propiedades(id) {
 }
 
 /* ------------------------------------------------------------------ */
+/* índice de propiedades, para colorear el modelo por una de ellas     */
+/* ------------------------------------------------------------------ */
+
+/* Se construye una vez, la primera vez que se pide: recorre las
+   relaciones de propiedades, de tipo y de material de todo el modelo. Las
+   propiedades del propio elemento mandan sobre las heredadas del tipo. */
+function construirIndice() {
+  indice = new Map();
+  const anotar = (clave, id, valor) => {
+    if (!valor || !idsElementos.has(id)) return;
+    let m = indice.get(clave);
+    if (!m) indice.set(clave, (m = new Map()));
+    if (!m.has(id)) m.set(id, valor);
+  };
+
+  const conjuntos = new Map();   // expressID del conjunto → {nombre, filas}
+  const conjunto = (id) => {
+    let c = conjuntos.get(id);
+    if (c) return c;
+    c = { nombre: '', filas: [] };
+    try {
+      const l = api.GetLine(modelo, id, true);
+      c.nombre = comoTexto(l.Name) || 'Propiedades';
+      for (const p of l.HasProperties || []) {
+        const clave = comoTexto(p.Name);
+        let valor = comoTexto(p.NominalValue);
+        if (!valor && p.EnumerationValues) valor = comoTexto(p.EnumerationValues);
+        if (clave && valor) c.filas.push([clave, valor]);
+      }
+      for (const q of l.Quantities || []) {
+        const clave = comoTexto(q.Name);
+        const valor = comoTexto(q.LengthValue ?? q.AreaValue ?? q.VolumeValue ?? q.CountValue ?? q.WeightValue);
+        if (clave && valor) c.filas.push([clave, valor]);
+      }
+    } catch (e) { /* conjunto ilegible: vacío */ }
+    conjuntos.set(id, c);
+    return c;
+  };
+  const aplicarConjunto = (idConjunto, objetos) => {
+    const c = conjunto(idConjunto);
+    for (const o of objetos) {
+      for (const [clave, valor] of c.filas) anotar(`${c.nombre} · ${clave}`, o, valor);
+    }
+  };
+  const relacionados = (l, campo) => (l[campo] || []).map(valorPlano);
+  const recorrer = (tipo, hacer) => {
+    try {
+      const ids = api.GetLineIDsWithType(modelo, tipo);
+      for (let i = 0; i < ids.size(); i++) {
+        try { hacer(api.GetLine(modelo, ids.get(i), false)); } catch (e) { /* relación rota */ }
+      }
+    } catch (e) { /* el esquema no tiene esa relación */ }
+  };
+
+  // Atributo «tipo de objeto» de cada elemento (posición 4 de IfcObject).
+  for (const id of idsElementos) {
+    try {
+      const cruda = api.GetRawLineData(modelo, id);
+      anotar('Tipo de objeto', id, comoTexto(cruda.arguments[4]));
+    } catch (e) { /* sin línea */ }
+  }
+
+  recorrer(IFCRELDEFINESBYPROPERTIES, (l) => {
+    aplicarConjunto(valorPlano(l.RelatingPropertyDefinition), relacionados(l, 'RelatedObjects'));
+  });
+
+  recorrer(IFCRELDEFINESBYTYPE, (l) => {
+    const objetos = relacionados(l, 'RelatedObjects');
+    const tipo = api.GetLine(modelo, valorPlano(l.RelatingType), false);
+    const nombre = comoTexto(tipo.Name);
+    for (const o of objetos) anotar('Nombre del tipo', o, nombre);
+    for (const ps of tipo.HasPropertySets || []) aplicarConjunto(valorPlano(ps), objetos);
+  });
+
+  recorrer(IFCRELASSOCIATESMATERIAL, (l) => {
+    const nombre = nombreMaterial(valorPlano(l.RelatingMaterial));
+    for (const o of relacionados(l, 'RelatedObjects')) anotar('Material', o, nombre);
+  });
+}
+
+/* Nombre legible de cualquier asociación de material: un material, un
+   conjunto de capas («Ladrillo / Aislante / Yeso»), una lista… */
+function nombreMaterial(id) {
+  try {
+    const l = api.GetLine(modelo, id, true);
+    const nombres = [];
+    const recoger = (o, profundidad) => {
+      if (!o || typeof o !== 'object' || profundidad > 6) return;
+      if (Array.isArray(o)) { for (const x of o) recoger(x, profundidad + 1); return; }
+      const tipo = o.type !== undefined ? String(api.GetNameFromTypeCode(o.type)).toUpperCase() : '';
+      if (tipo === 'IFCMATERIAL') {
+        const n = comoTexto(o.Name);
+        if (n && !nombres.includes(n)) nombres.push(n);
+        return;
+      }
+      for (const campo of ['ForLayerSet', 'MaterialLayers', 'Material', 'Materials', 'ForProfileSet',
+        'MaterialProfiles', 'MaterialConstituents']) {
+        if (o[campo]) recoger(o[campo], profundidad + 1);
+      }
+    };
+    recoger(l, 0);
+    if (nombres.length) return nombres.join(' / ');
+    return comoTexto(l.LayerSetName) || comoTexto(l.Name);
+  } catch (e) {
+    return '';
+  }
+}
+
+/* Lista de propiedades disponibles: [clave, elementos con valor, valores distintos]. */
+function claves() {
+  if (!indice) construirIndice();
+  const lista = [];
+  for (const [clave, valores] of indice) {
+    lista.push([clave, valores.size, new Set(valores.values()).size]);
+  }
+  lista.sort((a, b) => a[0].localeCompare(b[0], 'es'));
+  return { tipo: 'claves', claves: lista };
+}
+
+function valores(clave) {
+  if (!indice) construirIndice();
+  const m = indice.get(clave);
+  return { tipo: 'valores', clave, valores: m ? Array.from(m) : [] };
+}
+
+/* ------------------------------------------------------------------ */
 
 self.onmessage = async (ev) => {
   const orden = ev.data;
@@ -443,6 +580,15 @@ self.onmessage = async (ev) => {
       await cargar(orden.datos);
     } else if (orden.tipo === 'propiedades') {
       self.postMessage(await propiedades(orden.id));
+    } else if (orden.tipo === 'claves' || orden.tipo === 'valores') {
+      // Un fallo aquí no debe tirar el modelo ya abierto: se responde vacío.
+      try {
+        self.postMessage(orden.tipo === 'claves' ? claves() : valores(orden.clave));
+      } catch (e) {
+        self.postMessage(orden.tipo === 'claves'
+          ? { tipo: 'claves', claves: [] }
+          : { tipo: 'valores', clave: orden.clave, valores: [] });
+      }
     } else if (orden.tipo === 'cerrar') {
       if (modelo !== -1) api.CloseModel(modelo);
       modelo = -1;

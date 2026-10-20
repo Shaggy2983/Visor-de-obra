@@ -15,10 +15,23 @@ IFC se lee dentro del navegador y se queda en el teléfono.
 - **Abre archivos IFC** desde el teléfono, o el que venga incluido en la app.
   El último abierto queda guardado y aparece solo la próxima vez.
 - **Vista 3D** con giro, desplazamiento y encuadre automático.
-- **Toca un elemento** y salen sus datos: atributos, conjuntos de
-  propiedades (`Pset_…`), mediciones y materiales.
+- **Toca un elemento** y sale su ficha (categoría, nombre, planta y
+  medidas); desde ella, todas sus propiedades: atributos, conjuntos
+  (`Pset_…`), mediciones, materiales y caja envolvente, plegables, con
+  filtro y tocando un valor se copia.
+- **Medir** distancias (con las componentes horizontal y vertical) y
+  áreas; los puntos se pegan a esquinas y bordes.
+- **Cortes**: planta, alzados en X y en Z, paralelo a una cara que se
+  toque y caja de sección, con relleno de color en lo cortado.
+- **Colorear por propiedad**, como el Appearance Profiler de Navisworks:
+  por categoría, planta, clase IFC, tipo, material o cualquier propiedad
+  de un Pset. Cada valor sale de un color con su leyenda (los números, en
+  tramos de frío a cálido) y desde la leyenda se oculta cada valor.
+- **Transparencias**: de todo el modelo, por categoría, por elemento y
+  «rayos X» (todo transparente menos lo seleccionado).
+- **Vista**: seis fondos (Acero, Azul noche, Cielo, Gris claro, Blanco y
+  Negro), luz, aristas, rejilla y vistas rápidas (planta, frente, lados).
 - **Filtros por planta y por categoría**, con el número de piezas de cada una.
-- **Corte horizontal** con un deslizador, para mirar dentro como en un plano.
 - **Aislar y ocultar** lo seleccionado.
 - **Buscador** por nombre, categoría o GUID.
 - **Ver en obra**: abre la cámara, busca el suelo y ancla el modelo ahí, a
@@ -38,6 +51,14 @@ instalado) está el parte de visita diaria de obra:
 - **Incidencias** con gravedad (leve, media, grave). Las que no se marcan
   como resueltas **pasan solas a la visita siguiente**, con la fecha en que
   se abrieron.
+- **Punch list de terminaciones**: cada repaso lleva número, zona, tipo
+  (pintura, pañete, cerámica, carpintería…), qué corregir, responsable,
+  prioridad y fotos de **antes** y **después**. Pasa de *pendiente* a
+  *corregido* (al poner la foto de después) y a *cerrado* al verificarlo.
+  Los repasos son de la obra: los abiertos siguen en las visitas
+  siguientes, y cada informe los enseña como estaban ese día. Sale en el
+  informe de la visita, en el interactivo y en un **PDF propio** para los
+  contratistas.
 - **Fotos** con la cámara o desde la galería, con pie. Se reducen a
   1600 px antes de guardarlas para que quepan muchas en el teléfono.
 - **Firma** con el dedo.
@@ -243,7 +264,11 @@ esa guía. Para esa vía, el zip que pide ese documento se prepara con:
 | `js/interfaz.js` | Nombres de clases IFC en castellano y piezas de interfaz |
 | `js/almacen.js` | El último modelo, guardado en IndexedDB |
 | `js/visita.js` | Visita diaria: ficha, fotos, firma, informe y copia |
-| `js/partes.js` | Las visitas y los planos, guardados en IndexedDB |
+| `js/medir.js` | Medir distancias y áreas sobre el modelo |
+| `js/colores.js` | Colorear el modelo por una propiedad, con leyenda |
+| `js/cortes.js` | Cortes: planta, alzados, por cara y caja de sección |
+| `js/partes.js` | Las visitas, los planos y los repasos, guardados en IndexedDB |
+| `js/repasos.js` | Punch list: repasos de terminaciones con fotos de antes y después |
 | `js/planos.js` | Carga de planos (PDF o imagen), visor con zoom, dibujo y notas |
 | `js/informe-interactivo.js` | Genera el informe `.html` interactivo |
 | `js/utiles.js` | Piezas comunes: DOM, fechas, imágenes |

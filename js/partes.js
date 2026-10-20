@@ -5,20 +5,25 @@
 
    Los planos van en una tabla aparte: se cargan una vez por obra y los
    usan todas las visitas. Las notas puestas sobre un plano sí son de cada
-   visita y viajan dentro de ella. */
+   visita y viajan dentro de ella.
+
+   Los repasos del punch list tampoco son de una visita sino de la obra:
+   siguen abiertos de visita en visita hasta que se cierran, y sus fotos
+   se guardan una sola vez. */
 
 // Nombre heredado de la primera versión: cambiarlo dejaría huérfanas las
 // visitas ya guardadas en los teléfonos.
 const BASE = 'visitas-obra-e04';
 const TABLA = 'visitas';
 const PLANOS = 'planos';
+const REPASOS = 'repasos';
 
 function abrir() {
   return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 2);
+    const peticion = indexedDB.open(BASE, 3);
     peticion.onupgradeneeded = () => {
       const bd = peticion.result;
-      for (const tabla of [TABLA, PLANOS]) {
+      for (const tabla of [TABLA, PLANOS, REPASOS]) {
         if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
       }
     };
@@ -81,4 +86,22 @@ export function guardarPlano(plano) {
 
 export function borrarPlano(id) {
   return operar('readwrite', (t) => t.delete(id), PLANOS);
+}
+
+/* --- repasos del punch list --- */
+
+export async function listarRepasos() {
+  return (await operar('readonly', (t) => t.getAll(), REPASOS)) || [];
+}
+
+export function leerRepaso(id) {
+  return operar('readonly', (t) => t.get(id), REPASOS).then((r) => r || null);
+}
+
+export function guardarRepaso(repaso) {
+  return operar('readwrite', (t) => t.put(repaso), REPASOS);
+}
+
+export function borrarRepaso(id) {
+  return operar('readwrite', (t) => t.delete(id), REPASOS);
 }

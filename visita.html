@@ -117,6 +117,25 @@
 
     <section class="grupo">
       <div class="grupo-cabecera">
+        <h2>Punch list · repasos</h2>
+        <span id="total-repasos" class="pie"></span>
+      </div>
+      <div id="filtros-repasos" class="chips" role="group" aria-label="Mostrar repasos" hidden></div>
+      <div id="repasos" class="repasos"></div>
+      <div class="fila-botones">
+        <button type="button" id="btn-repaso-foto" class="boton boton-destacado">+ Repaso con foto</button>
+        <button type="button" id="btn-repaso" class="boton">+ Sin foto</button>
+        <button type="button" id="btn-punch-pdf" class="boton" hidden>Punch list en PDF</button>
+      </div>
+      <input type="file" id="entrada-repaso-camara" accept="image/*" capture="environment" hidden>
+      <input type="file" id="entrada-repaso-galeria" accept="image/*" multiple hidden>
+      <p class="pie">Para corregir terminaciones: cada repaso lleva número, zona, qué corregir y quién.
+         Haz la foto del defecto (<strong>antes</strong>) y, cuando lo arreglen, la de
+         <strong>después</strong>. Los que no se cierren siguen en las próximas visitas de la obra.</p>
+    </section>
+
+    <section class="grupo">
+      <div class="grupo-cabecera">
         <h2>Planos y notas</h2>
         <span id="total-planos" class="pie"></span>
       </div>

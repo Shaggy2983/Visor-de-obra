@@ -5,6 +5,7 @@
 
 import { aDatos, reducirImagen, fechaLarga, enlaceSeguro } from './utiles.js';
 import { TIPOS_NOTA, COLOR_NOTA, COLORES_TRAZO, puntosTrazo, grosorTrazo } from './planos.js';
+import { CATEGORIAS, ESTADOS, PRIORIDADES, estadoEn, fotosEn, historial } from './repasos.js';
 
 const LADO_PLANO_INFORME = 3000;   // equilibrio entre detalle y peso del archivo
 
@@ -19,8 +20,9 @@ async function fuenteInter() {
   }
 }
 
-/* planos: los registros de plano que tienen notas en esta visita. */
-export async function generarInformeInteractivo(v, planos, { contacto, lema }) {
+/* planos: los registros de plano que tienen notas en esta visita.
+   repasos: el punch list de la visita (repasosDe). */
+export async function generarInformeInteractivo(v, planos, { contacto, lema, repasos = [] }) {
   const fotos = [];
   for (const f of v.fotos) {
     fotos.push({ src: await aDatos(f.blob), pie: f.pie || '', hora: f.hora || '', nota: f.nota || null });
@@ -29,6 +31,20 @@ export async function generarInformeInteractivo(v, planos, { contacto, lema }) {
   for (const p of planos) {
     const reducido = await reducirImagen(p.blob, LADO_PLANO_INFORME, 0.85);
     datosPlanos.push({ id: p.id, nombre: p.nombre, src: await aDatos(reducido.blob), ancho: reducido.ancho, alto: reducido.alto });
+  }
+  // El punch list tal como estaba el día de la visita.
+  const datosRepasos = [];
+  for (const r of repasos) {
+    const fotosFase = async (fase) => Promise.all(fotosEn(r, v.fecha, fase).map(async (f) => ({
+      src: await aDatos(f.blob), pie: `Repaso ${r.numero} · ${fase === 'antes' ? 'antes' : 'después'} · ${f.fecha} ${f.hora}`
+    })));
+    const estado = estadoEn(r, v.fecha);
+    datosRepasos.push({
+      numero: r.numero, zona: r.zona, tipo: CATEGORIAS[r.categoria] || r.categoria, texto: r.texto,
+      responsable: r.responsable, alta: r.prioridad === 'alta', prioridad: PRIORIDADES[r.prioridad] || '',
+      estado, estadoTexto: ESTADOS[estado], historial: historial(r, v.fecha),
+      antes: await fotosFase('antes'), despues: await fotosFase('despues')
+    });
   }
   const datos = {
     visita: {
@@ -64,6 +80,7 @@ export async function generarInformeInteractivo(v, planos, { contacto, lema }) {
       }] : [];
     }),
     fotos,
+    repasos: datosRepasos,
     firma: v.firma ? await aDatos(v.firma) : null,
     tipos: TIPOS_NOTA,
     colores: COLOR_NOTA,
@@ -143,7 +160,20 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
 .pie-informe{margin:32px 0 8px;padding:10px 14px;background:#fff;border-top:2px solid var(--section);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:12px;color:#22436f}
 .firma img{max-height:110px;max-width:280px}
 .vacio{color:var(--text-2)}
-@media print{.capa,.boton,.ir{display:none!important}.plano,.nota,.fotos figure{break-inside:avoid}body{background:#fff}}
+.filtros{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.filtros .boton[aria-pressed=true]{background:var(--section);color:#fff;border-color:var(--section)}
+.repasos{display:grid;gap:10px}
+.repaso{background:#fff;border:1px solid var(--borde);border-left:5px solid #d64545;border-radius:10px;padding:10px 12px}
+.repaso.corregido{border-left-color:#e0a526}.repaso.cerrado{border-left-color:#2f9e6a}
+.repaso-cab{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.repaso-cab .n{font-weight:700;color:var(--section)}
+.repaso-cab .est{margin-left:auto;font-size:12px;font-weight:600;padding:2px 8px;border-radius:10px;background:#fde3e1;color:#9b2520}
+.repaso.corregido .est{background:#fdf0d2;color:#7a5408}.repaso.cerrado .est{background:#dcf2e6;color:#1d6b46}
+.repaso p{margin:4px 0;white-space:pre-wrap}
+.alta{color:#c0392b;font-weight:600;font-size:12px}
+.antes-despues{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.antes-despues .miniaturas img{width:84px;height:63px;cursor:zoom-in}
+@media print{.capa,.boton,.ir{display:none!important}.plano,.nota,.repaso,.fotos figure{break-inside:avoid}body{background:#fff}}
 </style>
 </head>
 <body>
@@ -197,8 +227,15 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
     h('tr', {}, h('th', {}, 'Tiempo'), h('td', {}, V.tiempo || '—')),
     h('tr', {}, h('th', {}, 'Jornada'), h('td', {}, V.jornada || '—')),
     h('tr', {}, h('th', {}, 'Notas en plano'), h('td', {}, String(D.notas.length))),
-    h('tr', {}, h('th', {}, 'Fotos'), h('td', {}, String(D.fotos.length)))
+    h('tr', {}, h('th', {}, 'Fotos'), h('td', {}, String(D.fotos.length))),
+    D.repasos.length ? h('tr', {}, h('th', {}, 'Punch list'), h('td', {}, resumenRepasos())) : null
   ))));
+
+  function resumenRepasos() {
+    var c = { pendiente: 0, corregido: 0, cerrado: 0 };
+    D.repasos.forEach(function (r) { c[r.estado]++; });
+    return c.pendiente + ' por corregir · ' + c.corregido + ' por verificar · ' + c.cerrado + ' cerrados';
+  }
 
   /* --- planos con sus notas --- */
   var activa = null;
@@ -306,6 +343,38 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
       h('tbody', {}, V.incidencias.map(function (i) {
         return h('tr', {}, h('td', {}, i.texto), h('td', {}, G[i.gravedad] || i.gravedad), h('td', {}, i.estado === 'cerrada' ? 'Resuelta' : 'Abierta'));
       })))));
+  }
+  if (D.repasos.length) {
+    var sr = seccion('Punch list · repasos de terminaciones');
+    var filtro = 'todos';
+    var FILTROS = { todos: 'Todos', pendiente: 'Por corregir', corregido: 'Por verificar', cerrado: 'Cerrados' };
+    var filtros = h('div', { class: 'filtros' });
+    var listaRepasos = h('div', { class: 'repasos' });
+    function fila(titulo, fotos) {
+      return h('div', {}, h('span', { class: 'etiqueta vacio' }, titulo),
+        fotos.length ? h('div', { class: 'miniaturas' }, fotos.map(function (f) {
+          return h('img', { src: f.src, alt: f.pie, onclick: function () { verFoto(f); } });
+        })) : h('p', { class: 'vacio' }, '—'));
+    }
+    function pintarRepasos() {
+      filtros.replaceChildren.apply(filtros, Object.keys(FILTROS).map(function (k) {
+        return h('button', { class: 'boton', 'aria-pressed': String(filtro === k), onclick: function () { filtro = k; pintarRepasos(); } }, FILTROS[k]);
+      }));
+      listaRepasos.replaceChildren.apply(listaRepasos, D.repasos.filter(function (r) { return filtro === 'todos' || r.estado === filtro; }).map(function (r) {
+        return h('div', { class: 'repaso ' + r.estado },
+          h('div', { class: 'repaso-cab' },
+            h('span', { class: 'n' }, '#' + r.numero),
+            h('strong', {}, [r.zona, r.tipo].filter(Boolean).join(' · ') || 'Sin zona'),
+            h('span', { class: 'est' }, r.estadoTexto)),
+          h('p', {}, r.texto || h('span', { class: 'vacio' }, 'Sin descripción')),
+          h('div', { class: 'vacio' }, [r.responsable && 'Responsable: ' + r.responsable, r.historial].filter(Boolean).join(' · '),
+            r.alta ? h('span', { class: 'alta' }, ' · Prioridad alta') : null),
+          h('div', { class: 'antes-despues' }, fila('Antes', r.antes), fila('Después', r.despues)));
+      }));
+      if (!listaRepasos.children.length) listaRepasos.append(h('p', { class: 'vacio' }, 'Ningún repaso en este apartado.'));
+    }
+    pintarRepasos();
+    sr.append(h('p', { class: 'vacio' }, resumenRepasos()), filtros, listaRepasos);
   }
   texto('Observaciones e instrucciones', V.observaciones);
 

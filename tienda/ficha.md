@@ -56,6 +56,12 @@ INFORMES
   navegador; tocas un número del plano y aparece la nota con sus fotos.
 • Resumen para compartir por WhatsApp o correo.
 
+EQUIPO (opcional)
+• Crea tu cuenta, comparte una obra e invita a tu equipo como
+  administrador, editor o solo lectura.
+• Visitas, punch list, planos y fotos se sincronizan entre teléfonos;
+  sin señal sigues trabajando y se sincroniza al volver la cobertura.
+
 CORREO Y NUBE (opcional)
 • Vincula tu cuenta de Google (Gmail y Drive) o de Microsoft (Outlook y
   OneDrive) para enviar el parte por correo, guardar el informe en la
@@ -74,8 +80,8 @@ MODELO 3D (IFC)
   (en teléfonos compatibles con ARCore).
 
 PRIVACIDAD
-Todo se guarda en tu teléfono. COORDINATE no tiene servidores que reciban
-tus datos: sólo sale lo que tú envías o guardas en tu propia cuenta.
+Sin cuenta, todo se guarda en tu teléfono. Con cuenta, sólo lo de las
+obras que compartes va a la nube, y sólo lo ve tu equipo.
 
 COORDINATE — coordinación BIM y gestión de datos de proyectos.
 Los problemas se resuelven en el modelo, no en obra.
@@ -93,9 +99,17 @@ capturas de una obra real, usa sólo casos anónimos.
 
 ## Acceso a la app (para los revisores de Google)
 
-Todas las funciones están disponibles sin iniciar sesión. La vinculación
-con Google o Microsoft es opcional y sólo sirve para enviar el parte por
-correo y guardarlo en la nube del propio usuario.
+Todas las funciones están disponibles sin iniciar sesión. La cuenta de
+equipo es opcional (compartir obras y sincronizar). Para que los
+revisores la prueben, crea una cuenta de prueba con correo y contraseña
+(ya verificada) y dala en «Acceso a la app → Todas o algunas funciones
+están restringidas → Añadir instrucciones».
+
+## Borrado de cuenta
+
+Play pide un enlace donde pedir el borrado: la política de privacidad
+(`https://shaggy2983.github.io/Visor-de-obra/privacidad.html`, apartado
+«Cuenta de equipo») explica cómo borrarla en la app y por correo.
 
 ## Anuncios
 
@@ -115,23 +129,19 @@ Mayores de 18 años (herramienta profesional). No dirigida a menores.
 
 ## Seguridad de los datos (propuesta)
 
-La app no envía nada a servidores de COORDINATE. Lo único que sale del
-teléfono lo hace **por acción expresa del usuario** (enviar un correo,
-guardar en su nube) y directamente a Google o Microsoft. Propuesta
-prudente de respuestas:
+Con la cuenta de equipo, lo de las obras compartidas se guarda en
+Firebase (servidores de Google para COORDINATE). Propuesta de respuestas:
 
-- ¿Recopila o comparte datos de usuario? **Sí** (por la opción de
-  correo y nube).
-- Tipos de datos, todos **recopilados**, **opcionales** y con finalidad
-  **Funcionalidad de la app**:
-  - Información personal → Dirección de correo electrónico (de la
-    cuenta vinculada).
-  - Fotos y vídeos → Fotos.
-  - Archivos y documentos → Archivos y documentos (informes, planos,
-    copias de seguridad).
-- ¿Se comparten con terceros? **No**: el envío a quien el usuario elige
-  es una transferencia iniciada por el usuario, que Google exime de
-  declarar como «compartir».
+- ¿Recopila o comparte datos de usuario? **Sí**.
 - ¿Cifrados en tránsito? **Sí** (HTTPS).
-- ¿El usuario puede pedir que se borren? **Sí**: todo se borra desde la
-  app o al desinstalarla; COORDINATE no guarda copia.
+- ¿El usuario puede pedir que se borren? **Sí**: en la app («Borrar mi
+  cuenta») y por correo.
+- Tipos de datos, todos **recopilados**, **no compartidos** con terceros
+  y con finalidad **Funcionalidad de la app** y **Gestión de la cuenta**:
+  - Información personal → **Nombre** y **Dirección de correo
+    electrónico** (obligatorios para tener cuenta, que es opcional).
+  - Fotos y vídeos → **Fotos** (opcional).
+  - Archivos y documentos → **Archivos y documentos** (opcional: planos,
+    partes, firmas).
+- ¿Es obligatorio recopilarlos? Marca **opcional**: la app funciona sin
+  cuenta.

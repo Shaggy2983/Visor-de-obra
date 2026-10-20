@@ -1,0 +1,9 @@
+Firebase JS SDK 12.19.0 (app, auth, firestore, storage), empaquetado en un
+solo módulo ES con esbuild para funcionar sin conexión y sin CDN.
+
+Copyright Google LLC. Licencia Apache 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+
+Para regenerarlo (desde una carpeta de trabajo con `npm i firebase@12.19.0 esbuild`):
+  npx esbuild herramientas/firebase-entrada.js --bundle --format=esm --minify \
+    --target=es2020 --legal-comments=none --outfile=vendor/firebase/firebase.js

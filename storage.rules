@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Fotos, firmas y planos de cada obra compartida, en obras/{obra}/...
+// Los ven los miembros de la obra; los suben y borran admin y editores.
+// Sólo imágenes y de menos de 30 MB.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /obras/{obra}/{archivo=**} {
+      function obraDoc() {
+        return firestore.get(/databases/(default)/documents/obras/$(obra)).data;
+      }
+      allow read: if request.auth != null && request.auth.uid in obraDoc().miembrosLista;
+      allow write: if request.auth != null
+        && obraDoc().miembros[request.auth.uid] in ['admin', 'editor']
+        && (request.resource == null
+            || (request.resource.size < 30 * 1024 * 1024
+                && request.resource.contentType.matches('image/.*')));
+    }
+  }
+}

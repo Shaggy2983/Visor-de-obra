@@ -41,6 +41,11 @@
 <!-- ---------- lista de visitas ---------- -->
 
 <main id="vista-lista" class="contenido">
+  <section id="grupo-equipo" class="grupo equipo" hidden>
+    <h2>Cuenta y equipo</h2>
+    <div id="equipo"></div>
+  </section>
+
   <input type="search" id="buscar" class="campo" placeholder="Buscar por obra, trabajos, incidencias…" autocomplete="off">
   <div id="lista" class="tarjetas"></div>
   <p id="lista-vacia" class="vacio" hidden>Todavía no hay visitas. Pulsa <strong>Nueva visita</strong>
@@ -75,6 +80,7 @@
     <a href="#" class="enlace">← Visitas</a>
     <span id="estado-guardado" class="pie"></span>
   </div>
+  <p id="aviso-lectura" class="aviso-lectura" hidden>Esta obra la ves en <strong>solo lectura</strong>: lo que cambies se queda en este teléfono y no se comparte.</p>
 
   <form id="ficha" autocomplete="off" onsubmit="return false">
 

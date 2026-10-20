@@ -8,7 +8,7 @@ de publicar: tú respondes ante Google por lo que se declara.
 | Campo | Valor |
 |---|---|
 | Nombre (máx. 30) | COORDINATE · Visita de obra |
-| Paquete | `com.coordinate.visorobra` |
+| Paquete | `com.coordinate.bitacora` |
 | Categoría | Empresa |
 | Etiquetas | Productividad, Herramientas |
 | Correo de contacto | hola@coordinate.do |

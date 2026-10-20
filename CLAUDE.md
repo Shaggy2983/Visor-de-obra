@@ -62,8 +62,10 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 
 ## Android y Google Play
 
-- TWA en `android/` (paquete `com.coordinate.visorobra`, abre
-  `visita.html`). GitHub Actions («Compilar app Android») genera `.apk` y
+- TWA en `android/` (paquete `com.coordinate.bitacora`, abre
+  `visita.html`). Hasta la versión 12 el paquete era
+  `com.coordinate.visorobra` (sólo APK de prueba, nunca subido a Play):
+  es otra app para Android, se desinstala a mano. GitHub Actions («Compilar app Android») genera `.apk` y
   `.aab` firmados con la clave de subida.
 - Verificación de dominio en el repositorio `shaggy2983.github.io`
   (`.well-known/assetlinks.json`, huella de la clave de subida

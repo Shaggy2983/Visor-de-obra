@@ -193,6 +193,21 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   touch-action: none;
 }
 
+.firma-caja { position: relative; }
+.firma-caja:not(.bloqueada) .firma { outline: 3px solid var(--acento); outline-offset: 2px; }
+/* Bloqueada, el dedo desplaza la página en vez de dibujar. */
+.firma-caja.bloqueada .firma { touch-action: auto; opacity: .92; }
+.firma-firmar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 4px 14px rgba(0,0,0,.35);
+}
+.firma-firmar[hidden] { display: none; }
+/* Con la firma hecha, el botón se aparta para que se vea. */
+.firma-caja.con-firma .firma-firmar { left: auto; top: auto; right: .5rem; bottom: .5rem; transform: none; }
+
 .acciones-ficha { display: flex; flex-direction: column; gap: .6rem; background: none !important; border: 0 !important; padding: 0 !important; }
 .acciones-ficha .boton { margin: 0; }
 

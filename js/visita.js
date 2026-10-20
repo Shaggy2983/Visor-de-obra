@@ -62,6 +62,10 @@ const nodos = {
   entradaGaleria: $('entrada-galeria'),
   firma: $('firma'),
   borrarFirma: $('btn-borrar-firma'),
+  firmaCaja: $('firma-caja'),
+  firmar: $('btn-firmar'),
+  firmaListo: $('btn-firma-listo'),
+  firmaAyuda: $('firma-ayuda'),
   informe: $('informe'),
   botonInforme: $('btn-informe'),
   compartir: $('btn-compartir'),
@@ -609,13 +613,34 @@ const misRepasos = crearMisRepasos({
   calidadFoto: CALIDAD_FOTO
 });
 
-/* --- firma --- */
+/* --- firma ---
+   El recuadro está bloqueado hasta pulsar «Firmar», para que un roce al
+   desplazar la ficha no deje trazos. «Listo» lo vuelve a bloquear, y se
+   bloquea solo al abrir otra visita. */
 
 const firma = (() => {
   const lienzo = nodos.firma;
   const ctx = lienzo.getContext('2d');
   let trazando = false;
   let huboTrazo = false;
+  let bloqueada = true;
+
+  function pintarEstado() {
+    nodos.firmaCaja.classList.toggle('bloqueada', bloqueada);
+    nodos.firmaCaja.classList.toggle('con-firma', huboTrazo);
+    nodos.firmar.hidden = !bloqueada;
+    nodos.firmar.textContent = huboTrazo ? '✍ Volver a firmar' : '✍ Firmar';
+    nodos.firmaListo.hidden = bloqueada;
+    nodos.borrarFirma.hidden = !huboTrazo;
+    nodos.firmaAyuda.textContent = bloqueada
+      ? (huboTrazo ? 'Firma guardada y bloqueada.' : 'La firma está bloqueada para evitar trazos por error. Pulsa «Firmar» para habilitarla.')
+      : 'Firma con el dedo dentro del recuadro y pulsa «Listo» para bloquearla.';
+  }
+
+  function bloquear(si) {
+    bloqueada = si;
+    pintarEstado();
+  }
 
   function preparar() {
     const r = lienzo.getBoundingClientRect();
@@ -635,6 +660,7 @@ const firma = (() => {
   }
 
   lienzo.addEventListener('pointerdown', (ev) => {
+    if (bloqueada) return;   // sin preventDefault: el dedo desplaza la página
     trazando = true;
     lienzo.setPointerCapture(ev.pointerId);
     ctx.beginPath();
@@ -652,6 +678,7 @@ const firma = (() => {
     trazando = false;
     if (!huboTrazo || !actual) return;
     const visita = actual;
+    pintarEstado();
     lienzo.toBlob((blob) => {
       visita.firma = blob;
       if (actual === visita) cambiado();
@@ -667,13 +694,24 @@ const firma = (() => {
     const ancho = lienzo.getBoundingClientRect().width;
     if (!actual || !ancho || ancho === anchoPrevio) return;
     anchoPrevio = ancho;
-    firma.cargar(actual.firma);
+    firma.cargar(actual.firma, { mantenerBloqueo: true });
   });
 
+  nodos.firmar.addEventListener('click', () => {
+    if (huboTrazo) {
+      if (!confirm('¿Borrar la firma actual y volver a firmar?')) return;
+      firma.borrar();
+    }
+    bloquear(false);
+  });
+  nodos.firmaListo.addEventListener('click', () => bloquear(true));
+
   return {
-    async cargar(blob) {
+    async cargar(blob, { mantenerBloqueo = false } = {}) {
       preparar();
       huboTrazo = Boolean(blob);
+      if (!mantenerBloqueo) bloqueada = true;
+      pintarEstado();
       if (!blob) return;
       const img = await decodificar(blob);
       const r = lienzo.getBoundingClientRect();
@@ -682,6 +720,7 @@ const firma = (() => {
     borrar() {
       preparar();
       huboTrazo = false;
+      pintarEstado();
       if (actual) { actual.firma = null; cambiado(); }
     }
   };
@@ -1138,7 +1177,9 @@ nodos.correo.addEventListener('click', async () => { await guardarYa(); nube.env
 nodos.nube.addEventListener('click', async () => { await guardarYa(); nube.guardar(actual); });
 nodos.copiaNube.addEventListener('click', () => nube.copiaNube());
 
-nodos.borrarFirma.addEventListener('click', () => firma.borrar());
+nodos.borrarFirma.addEventListener('click', () => {
+  if (confirm('¿Borrar la firma?')) firma.borrar();
+});
 nodos.botonInforme.addEventListener('click', imprimir);
 nodos.punchPdf.addEventListener('click', imprimirPunch);
 nodos.compartir.addEventListener('click', compartir);

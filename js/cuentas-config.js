@@ -10,7 +10,8 @@ export const CONFIG = {
     clientId: '181407868247-k1pr406phm1rdvd7o6t26a80ggohto6i.apps.googleusercontent.com'
   },
   microsoft: {
-    clientId: '',
+    // Entra · app «COORDINATE Visor (Outlook y OneDrive)», cuentas personales y de empresa
+    clientId: '1494f883-aaba-44e3-96d6-b879f7a9b4ec',
     // 'common' admite cuentas personales (Outlook, Hotmail) y de empresa.
     tenant: 'common'
   }

@@ -17,7 +17,7 @@ android {
 
     defaultConfig {
         applicationId 'com.coordinate.bitacora'
-        minSdk 23
+        minSdk 24
         targetSdk 36
         versionCode codigo
         versionName providers.gradleProperty('versionName').get()

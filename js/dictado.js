@@ -12,6 +12,7 @@
 
 import { avisar } from './interfaz.js';
 import { ahora } from './utiles.js';
+import { marcarHora } from './horas.js';
 
 const Reconocedor = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -40,6 +41,9 @@ function limpiar(texto) {
 /* Pega lo dictado donde está el cursor, con espacio y mayúscula si toca. */
 function insertar(area, texto) {
   if (!texto) return;
+  // Sin foco (no se abre el teclado mientras se dicta) se escribe al final.
+  if (document.activeElement !== area) area.selectionStart = area.selectionEnd = area.value.length;
+  if (area.dataset.campo === 'trabajos' && /(^|\n)$/.test(area.value.slice(0, area.selectionStart))) marcarHora(area);
   const ini = area.selectionStart ?? area.value.length;
   const fin = area.selectionEnd ?? area.value.length;
   const antes = area.value.slice(0, ini);
@@ -60,52 +64,104 @@ function aviso(texto) {
   if (nodo) avisar(nodo, texto, 4500);
 }
 
-function parar() {
-  if (!activo) return;
-  const { boton, rec } = activo;
-  activo = null;
-  boton.classList.remove('escuchando');
-  boton.setAttribute('aria-pressed', 'false');
-  boton.title = 'Dictar';
-  try { rec.stop(); } catch { /* ya parado */ }
+/* Vista previa de lo que va oyendo, bajo el cuadro. */
+function vista(area, texto) {
+  const ancla = area.closest('.con-dictado') || area;
+  let v = ancla.parentElement?.querySelector(':scope > .dictado-vista');
+  if (!texto) { v?.remove(); return; }
+  if (!v) { v = document.createElement('div'); v.className = 'dictado-vista'; ancla.after(v); }
+  v.textContent = texto;
 }
 
-function empezar(area, boton) {
-  if (activo && activo.area === area) { parar(); return; }
-  parar();
+function parar() {
+  if (!activo) return;
+  const { boton, rec, area, vigia } = activo;
+  activo = null;
+  clearTimeout(vigia);
+  boton.classList.remove('escuchando', 'oyendo');
+  boton.setAttribute('aria-pressed', 'false');
+  boton.title = 'Dictar';
+  vista(area, '');
+  try { rec.abort(); } catch { /* ya parado */ }
+}
+
+/* Pide el micrófono de forma explícita: en la app instalada (TWA) es lo
+   que hace aparecer el aviso de permiso de Android/Chrome. */
+let micOk = false;
+async function pedirMicrofono() {
+  if (micOk || !navigator.mediaDevices?.getUserMedia) return true;
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    s.getTracks().forEach((t) => t.stop());
+    micOk = true;
+    return true;
+  } catch (e) {
+    aviso(e && e.name === 'NotAllowedError'
+      ? 'Sin permiso de micrófono. Actívalo en Ajustes → Apps → Chrome → Permisos → Micrófono, y vuelve a tocar 🎤.'
+      : 'No se encuentra el micrófono del teléfono.');
+    return false;
+  }
+}
+
+/* Android escucha mejor frase a frase: cada vez que termina una frase se
+   vuelve a arrancar hasta que se toca de nuevo el botón. */
+function escuchar(area, boton) {
   const rec = new Reconocedor();
   rec.lang = idioma();
-  rec.continuous = true;
-  rec.interimResults = false;
+  rec.continuous = false;
+  rec.interimResults = true;
   rec.maxAlternatives = 1;
+  const estado = activo;
+  estado.rec = rec;
+  rec.onaudiostart = () => { boton.classList.add('oyendo'); clearTimeout(estado.vigia); };
   rec.onresult = (ev) => {
+    let provisional = '';
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
-      if (ev.results[i].isFinal) insertar(area, limpiar(ev.results[i][0].transcript));
+      const r = ev.results[i];
+      if (r.isFinal) { insertar(area, limpiar(r[0].transcript)); vista(area, ''); }
+      else provisional += r[0].transcript;
     }
+    if (provisional) vista(area, `🎙 ${provisional}`);
   };
   rec.onerror = (ev) => {
+    if (ev.error === 'no-speech' || ev.error === 'aborted') return;   // se reintenta en onend
     if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
-      aviso('Permite el micrófono para dictar (Ajustes de la app → Permisos).');
+      aviso('Sin permiso de micrófono o de voz de Google. Ajustes → Apps → Chrome → Permisos → Micrófono.');
     } else if (ev.error === 'network') {
       aviso('El dictado necesita señal. Sin señal, usa el micrófono del teclado.');
     } else if (ev.error === 'language-not-supported') {
       aviso('Este teléfono no reconoce el español para dictar.');
-    } else if (ev.error !== 'no-speech' && ev.error !== 'aborted') {
-      aviso('No se ha podido dictar. Prueba otra vez.');
+    } else if (ev.error === 'audio-capture') {
+      aviso('Otra app está usando el micrófono. Ciérrala y vuelve a probar.');
+    } else {
+      aviso(`No se ha podido dictar (${ev.error}). Prueba otra vez.`);
     }
+    estado.fallo = true;
     parar();
   };
-  rec.onend = () => { if (activo && activo.rec === rec) parar(); };
-  activo = { area, boton, rec };
+  rec.onend = () => {
+    if (activo !== estado || estado.fallo) return;
+    try { escuchar(area, boton); } catch { parar(); }   // siguiente frase
+  };
+  rec.start();
+}
+
+async function empezar(area, boton) {
+  if (activo && activo.area === area) { parar(); return; }
+  parar();
+  activo = { area, boton, rec: null, vigia: 0, fallo: false };
   boton.classList.add('escuchando');
   boton.setAttribute('aria-pressed', 'true');
   boton.title = 'Parar dictado';
-  try {
-    rec.start();
-    area.focus({ preventScroll: true });
-  } catch {
+  const estado = activo;
+  if (!(await pedirMicrofono()) || activo !== estado) { if (activo === estado) parar(); return; }
+  // Si en 6 s no llega sonido, algo bloquea el reconocimiento.
+  estado.vigia = setTimeout(() => {
+    if (activo !== estado || boton.classList.contains('oyendo')) return;
+    aviso('No llega sonido al dictado. Revisa el permiso de micrófono y que «Voz de Google» esté instalada y actualizada.');
     parar();
-  }
+  }, 6000);
+  try { escuchar(area, boton); } catch { aviso('Este teléfono no permite el dictado aquí. Usa el micrófono del teclado.'); parar(); }
 }
 
 function preparar(area) {

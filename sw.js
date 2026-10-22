@@ -2,7 +2,7 @@
    sin cobertura. El modelo IFC no se guarda aquí sino en IndexedDB, que
    admite archivos grandes sin límites de caché. */
 
-const VERSION = 'crd-v28';
+const VERSION = 'crd-v29';
 const PIEZAS = [
   './',
   './index.html',
@@ -66,11 +66,17 @@ const PIEZAS = [
 self.addEventListener('install', (ev) => {
   ev.waitUntil((async () => {
     const cacheado = await caches.open(VERSION);
+    // Cada pieza se pide con «?v=VERSION»: así ni la caché del navegador ni
+    // la de GitHub Pages (CDN, hasta 10 min) devuelven la copia anterior
+    // justo después de publicar. Se guarda con su dirección limpia.
     // Una pieza que falle no debe tumbar la instalación entera.
-    // cache: 'reload' salta la caché HTTP del navegador: sin eso, justo
-    // después de publicar se guardaba la copia anterior de algún archivo.
-    await Promise.all(PIEZAS.map((p) =>
-      cacheado.add(new Request(p, { cache: 'reload' })).catch(() => {})));
+    await Promise.all(PIEZAS.map(async (p) => {
+      try {
+        const url = `${p}${p.includes('?') ? '&' : '?'}v=${VERSION}`;
+        const r = await fetch(new Request(url, { cache: 'reload' }));
+        if (r.ok) await cacheado.put(new Request(p), r);
+      } catch (e) { /* se pedirá cuando haga falta */ }
+    }));
     self.skipWaiting();
   })());
 });
@@ -90,22 +96,36 @@ self.addEventListener('fetch', (ev) => {
   const url = new URL(peticion.url);
   if (url.origin !== location.origin) return;
 
+  // Páginas: primero la red (con señal se ve siempre lo último publicado);
+  // sin señal o si tarda más de 4 s, lo guardado.
+  if (peticion.mode === 'navigate') {
+    ev.respondWith((async () => {
+      const guardado = caches.match(peticion, { ignoreSearch: true });
+      try {
+        const red = fetch(peticion, { cache: 'no-cache' });
+        const respuesta = await Promise.race([red, new Promise((_, no) => setTimeout(() => no(new Error('lento')), 4000))]);
+        if (respuesta.ok && respuesta.type === 'basic') {
+          const copia = respuesta.clone();
+          caches.open(VERSION).then((c) => c.put(peticion, copia)).catch(() => {});
+          return respuesta;
+        }
+        return (await guardado) || respuesta;
+      } catch (e) {
+        return (await guardado) || (await caches.match('./visita.html')) || (await caches.match('./index.html')) || Response.error();
+      }
+    })());
+    return;
+  }
+
+  // El resto (código, estilos, librerías): lo guardado de esta versión.
   ev.respondWith((async () => {
     const guardado = await caches.match(peticion, { ignoreSearch: true });
     if (guardado) return guardado;
-    try {
-      const respuesta = await fetch(peticion);
-      if (respuesta.ok && respuesta.type === 'basic') {
-        const cacheado = await caches.open(VERSION);
-        cacheado.put(peticion, respuesta.clone());
-      }
-      return respuesta;
-    } catch (e) {
-      if (peticion.mode === 'navigate') {
-        const inicio = await caches.match('./index.html');
-        if (inicio) return inicio;
-      }
-      throw e;
+    const respuesta = await fetch(peticion);
+    if (respuesta.ok && respuesta.type === 'basic') {
+      const cacheado = await caches.open(VERSION);
+      cacheado.put(peticion, respuesta.clone());
     }
+    return respuesta;
   })());
 });

@@ -270,11 +270,6 @@ nodos.imprimir.addEventListener('click', () => {
   document.title = 'COORDINATE · Panel del equipo';
 });
 
-const botonTema = $('btn-tema');
-if (botonTema && window.crdTema) {
-  window.crdTema.pintarBoton();
-  botonTema.addEventListener('click', () => avisar(nodos.aviso, window.crdTema.nombre(window.crdTema.siguiente())));
-}
 
 addEventListener('crd-novedades', pintarNovedades);
 addEventListener('crd-remoto', (ev) => { if ((ev.detail.nuevas || []).length) pintar({ fresco: true }); });

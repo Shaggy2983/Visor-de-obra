@@ -979,3 +979,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   .informe-legal { margin: 6mm 0 0; font-size: 7pt; color: #6b7a90; line-height: 1.4; }
   .informe-pie { margin-top: 3mm; border-radius: 1.5mm; }
 }
+
+/* ---------- firma adjunta / mi firma ---------- */
+.firma-opciones { align-items: center; }
+.firma-opciones .enlace { margin-left: auto; }

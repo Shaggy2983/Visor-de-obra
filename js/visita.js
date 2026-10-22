@@ -67,6 +67,10 @@ const nodos = {
   firmar: $('btn-firmar'),
   firmaListo: $('btn-firma-listo'),
   firmaAyuda: $('firma-ayuda'),
+  firmaAdjuntar: $('btn-firma-adjuntar'),
+  firmaMia: $('btn-firma-mia'),
+  firmaGuardar: $('btn-firma-guardar'),
+  entradaFirma: $('entrada-firma'),
   informe: $('informe'),
   botonInforme: $('btn-informe'),
   compartir: $('btn-compartir'),
@@ -671,6 +675,11 @@ const misRepasos = crearMisRepasos({
    desplazar la ficha no deje trazos. «Listo» lo vuelve a bloquear, y se
    bloquea solo al abrir otra visita. */
 
+const MI_FIRMA = 'crd-mi-firma';
+function leerMiFirma() {
+  try { return localStorage.getItem(MI_FIRMA); } catch { return null; }
+}
+
 const firma = (() => {
   const lienzo = nodos.firma;
   const ctx = lienzo.getContext('2d');
@@ -685,6 +694,8 @@ const firma = (() => {
     nodos.firmar.textContent = huboTrazo ? '✍ Volver a firmar' : '✍ Firmar';
     nodos.firmaListo.hidden = bloqueada;
     nodos.borrarFirma.hidden = !huboTrazo;
+    nodos.firmaMia.hidden = !leerMiFirma();
+    nodos.firmaGuardar.hidden = !huboTrazo;
     nodos.firmaAyuda.textContent = bloqueada
       ? (huboTrazo ? 'Firma guardada y bloqueada.' : 'La firma está bloqueada para evitar trazos por error. Pulsa «Firmar» para habilitarla.')
       : 'Firma con el dedo dentro del recuadro y pulsa «Listo» para bloquearla.';
@@ -758,6 +769,88 @@ const firma = (() => {
     bloquear(false);
   });
   nodos.firmaListo.addEventListener('click', () => bloquear(true));
+
+  /* Firma adjunta: una imagen (foto o escaneo de la firma, o un PNG).
+     Se recorta al trazo, el papel blanco pasa a transparente y se encaja
+     en el recuadro sin deformarla. */
+  async function prepararImagen(origen) {
+    const img = await decodificar(origen);
+    const r = lienzo.getBoundingClientRect();
+    const dpr = devicePixelRatio || 1;
+    const W = Math.max(1, Math.round(r.width * dpr));
+    const H = Math.max(1, Math.round(r.height * dpr));
+    // 1) a un lienzo de trabajo, como mucho 1600 px de ancho
+    const k = Math.min(1, 1600 / img.width);
+    const w = Math.max(1, Math.round(img.width * k));
+    const h = Math.max(1, Math.round(img.height * k));
+    const t = new OffscreenCanvas(w, h);
+    const tc = t.getContext('2d', { willReadFrequently: true });
+    tc.drawImage(img, 0, 0, w, h);
+    const datos = tc.getImageData(0, 0, w, h);
+    const px = datos.data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const luz = (px[i] + px[i + 1] + px[i + 2]) / 3;
+        // papel claro → transparente; tinta → se queda (con borde suave)
+        const alfa = px[i + 3] * Math.min(1, Math.max(0, (225 - luz) / 70));
+        px[i + 3] = alfa;
+        if (alfa > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      }
+    }
+    if (x1 < 0) throw new Error('vacia');
+    tc.putImageData(datos, 0, 0);
+    // 2) recorte con margen y encaje en el recuadro
+    const m = Math.round(Math.max(x1 - x0, y1 - y0) * 0.04);
+    x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m);
+    x1 = Math.min(w - 1, x1 + m); y1 = Math.min(h - 1, y1 + m);
+    const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+    const esc = Math.min((W * 0.92) / cw, (H * 0.85) / ch);
+    const fin = new OffscreenCanvas(W, H);
+    fin.getContext('2d').drawImage(t, x0, y0, cw, ch, (W - cw * esc) / 2, (H - ch * esc) / 2, cw * esc, ch * esc);
+    return fin.convertToBlob({ type: 'image/png' });
+  }
+
+  async function ponerFirma(blob) {
+    if (!actual) return;
+    if (huboTrazo && !confirm('¿Cambiar la firma actual por esta?')) return;
+    actual.firma = blob;
+    await firma.cargar(blob);
+    cambiado();
+  }
+
+  nodos.firmaAdjuntar.addEventListener('click', () => nodos.entradaFirma.click());
+  nodos.entradaFirma.addEventListener('change', async () => {
+    const archivo = nodos.entradaFirma.files[0];
+    nodos.entradaFirma.value = '';
+    if (!archivo) return;
+    try {
+      await ponerFirma(await prepararImagen(archivo));
+      avisar(nodos.aviso, 'Firma adjuntada. Puedes guardarla como «mi firma» para las próximas visitas.', 4000);
+    } catch (e) {
+      avisar(nodos.aviso, e.message === 'vacia'
+        ? 'No se ve ninguna firma en la imagen. Usa una foto con la firma en tinta oscura sobre papel blanco.'
+        : 'No se ha podido leer la imagen de la firma.', 5000);
+    }
+  });
+
+  nodos.firmaGuardar.addEventListener('click', async () => {
+    if (!actual?.firma) return;
+    try {
+      localStorage.setItem(MI_FIRMA, await aDatos(actual.firma));
+      pintarEstado();
+      avisar(nodos.aviso, 'Guardada como tu firma en este teléfono. En las próximas visitas: «⭐ Usar mi firma».', 4000);
+    } catch {
+      avisar(nodos.aviso, 'No se ha podido guardar la firma en este teléfono.', 4000);
+    }
+  });
+
+  nodos.firmaMia.addEventListener('click', async () => {
+    const datos = leerMiFirma();
+    if (!datos) return;
+    await ponerFirma(await deDatos(datos));
+  });
 
   return {
     async cargar(blob, { mantenerBloqueo = false } = {}) {

@@ -40,6 +40,17 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   temperatura, o con «📍 Tomar del lugar», ubicación aproximada (redondeada)
   → Open-Meteo (libre, sin clave) → temperatura y estados. Declarado en
   privacidad y en Seguridad de los datos (ubicación aproximada).
+- **Línea de tiempo** (`js/horas.js`): en «Trabajos realizados» cada línea
+  nueva empieza con la hora del teléfono («08:15 · …»); las incidencias
+  guardan `hora` al crearse y `resuelta` al marcarse resueltas.
+- **Informe PDF** (`imprimir()` en `js/visita.js`, `@media print` en
+  `css/visita.css`): nº de documento PV-AAAAMMDD-HHMM, ficha en recuadros,
+  cifras clave, secciones numeradas, trabajos como tabla Hora|Actividad,
+  etiquetas de gravedad/estado, dos firmas y «Página X de Y».
+- **Firma adjunta** (`firma` en `js/visita.js`): «📎 Adjuntar firma» (foto o
+  PNG; recorta al trazo, papel → transparente, encaja sin deformar),
+  «Guardar como mi firma» (localStorage `crd-mi-firma`, sólo ese teléfono)
+  y «⭐ Usar mi firma».
 - **Predictivo y corrector** (`js/predictivo.js`): sugerencias de frases y
   listas (empresa, oficio, obra, autor, zona) aprendidas de las visitas y
   repasos locales; activa spellcheck/autocapitalize para Gboard (ES/EN).

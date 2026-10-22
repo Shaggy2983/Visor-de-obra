@@ -11,6 +11,7 @@
    «nueva línea», «coma», «dos puntos», «punto final». */
 
 import { avisar } from './interfaz.js';
+import { ahora } from './utiles.js';
 
 const Reconocedor = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -43,7 +44,9 @@ function insertar(area, texto) {
   const fin = area.selectionEnd ?? area.value.length;
   const antes = area.value.slice(0, ini);
   const despues = area.value.slice(fin);
-  const inicioFrase = antes.trim() === '' || /[.!?\n]\s*$/.test(antes);
+  // En «Trabajos realizados» cada línea nueva lleva su hora (js/horas.js).
+  if (area.dataset.campo === 'trabajos') texto = texto.replace(/\n/g, `\n${ahora()} · `);
+  const inicioFrase = antes.trim() === '' || /[.!?\n]\s*$/.test(antes) || /(^|\n)\d{1,2}:\d{2} · $/.test(antes);
   if (inicioFrase) texto = texto.charAt(0).toLocaleUpperCase('es') + texto.slice(1);
   const hueco = antes && !/[\s\n]$/.test(antes) ? ' ' : '';
   const nuevo = antes + hueco + texto;

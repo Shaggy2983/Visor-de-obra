@@ -67,6 +67,10 @@ const nodos = {
   firmar: $('btn-firmar'),
   firmaListo: $('btn-firma-listo'),
   firmaAyuda: $('firma-ayuda'),
+  firmaAdjuntar: $('btn-firma-adjuntar'),
+  firmaMia: $('btn-firma-mia'),
+  firmaGuardar: $('btn-firma-guardar'),
+  entradaFirma: $('entrada-firma'),
   informe: $('informe'),
   botonInforme: $('btn-informe'),
   compartir: $('btn-compartir'),
@@ -431,6 +435,14 @@ function contarPersonal() {
 
 /* --- incidencias --- */
 
+/* «10:42», «Desde 2026-10-20 08:15», «… · resuelta 15:20». */
+function horasIncidencia(i, fecha) {
+  const alta = i.desde && i.desde !== fecha ? `Desde ${i.desde}${i.hora ? ` ${i.hora}` : ''}` : (i.hora ? `🕒 ${i.hora}` : '');
+  const fin = i.estado === 'cerrada' && i.resuelta
+    ? `resuelta ${i.resueltaFecha && i.resueltaFecha !== fecha ? `${i.resueltaFecha} ` : ''}${i.resuelta}` : '';
+  return [alta, fin].filter(Boolean).join(' · ');
+}
+
 function pintarIncidencias() {
   nodos.incidencias.replaceChildren(...actual.incidencias.map((inc) => {
     const cerrada = inc.estado === 'cerrada';
@@ -448,10 +460,14 @@ function pintarIncidencias() {
         el('label', { class: 'casilla' },
           el('input', {
             type: 'checkbox', checked: cerrada,
-            onchange: (ev) => { inc.estado = ev.target.checked ? 'cerrada' : 'abierta'; pintarIncidencias(); cambiado(); }
+            onchange: (ev) => {
+              inc.estado = ev.target.checked ? 'cerrada' : 'abierta';
+              if (ev.target.checked) { inc.resuelta = ahora(); inc.resueltaFecha = actual.fecha; } else { delete inc.resuelta; delete inc.resueltaFecha; }
+              pintarIncidencias(); cambiado();
+            }
           }),
           'Resuelta'),
-        inc.desde && inc.desde !== actual.fecha && el('span', { class: 'pie' }, `Desde ${inc.desde}`),
+        el('span', { class: 'pie' }, horasIncidencia(inc, actual.fecha)),
         el('button', {
           type: 'button', class: 'boton quitar', title: 'Quitar', 'aria-label': 'Quitar incidencia',
           onclick: () => {
@@ -659,6 +675,11 @@ const misRepasos = crearMisRepasos({
    desplazar la ficha no deje trazos. «Listo» lo vuelve a bloquear, y se
    bloquea solo al abrir otra visita. */
 
+const MI_FIRMA = 'crd-mi-firma';
+function leerMiFirma() {
+  try { return localStorage.getItem(MI_FIRMA); } catch { return null; }
+}
+
 const firma = (() => {
   const lienzo = nodos.firma;
   const ctx = lienzo.getContext('2d');
@@ -673,6 +694,8 @@ const firma = (() => {
     nodos.firmar.textContent = huboTrazo ? '✍ Volver a firmar' : '✍ Firmar';
     nodos.firmaListo.hidden = bloqueada;
     nodos.borrarFirma.hidden = !huboTrazo;
+    nodos.firmaMia.hidden = !leerMiFirma();
+    nodos.firmaGuardar.hidden = !huboTrazo;
     nodos.firmaAyuda.textContent = bloqueada
       ? (huboTrazo ? 'Firma guardada y bloqueada.' : 'La firma está bloqueada para evitar trazos por error. Pulsa «Firmar» para habilitarla.')
       : 'Firma con el dedo dentro del recuadro y pulsa «Listo» para bloquearla.';
@@ -747,6 +770,88 @@ const firma = (() => {
   });
   nodos.firmaListo.addEventListener('click', () => bloquear(true));
 
+  /* Firma adjunta: una imagen (foto o escaneo de la firma, o un PNG).
+     Se recorta al trazo, el papel blanco pasa a transparente y se encaja
+     en el recuadro sin deformarla. */
+  async function prepararImagen(origen) {
+    const img = await decodificar(origen);
+    const r = lienzo.getBoundingClientRect();
+    const dpr = devicePixelRatio || 1;
+    const W = Math.max(1, Math.round(r.width * dpr));
+    const H = Math.max(1, Math.round(r.height * dpr));
+    // 1) a un lienzo de trabajo, como mucho 1600 px de ancho
+    const k = Math.min(1, 1600 / img.width);
+    const w = Math.max(1, Math.round(img.width * k));
+    const h = Math.max(1, Math.round(img.height * k));
+    const t = new OffscreenCanvas(w, h);
+    const tc = t.getContext('2d', { willReadFrequently: true });
+    tc.drawImage(img, 0, 0, w, h);
+    const datos = tc.getImageData(0, 0, w, h);
+    const px = datos.data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const luz = (px[i] + px[i + 1] + px[i + 2]) / 3;
+        // papel claro → transparente; tinta → se queda (con borde suave)
+        const alfa = px[i + 3] * Math.min(1, Math.max(0, (225 - luz) / 70));
+        px[i + 3] = alfa;
+        if (alfa > 40) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      }
+    }
+    if (x1 < 0) throw new Error('vacia');
+    tc.putImageData(datos, 0, 0);
+    // 2) recorte con margen y encaje en el recuadro
+    const m = Math.round(Math.max(x1 - x0, y1 - y0) * 0.04);
+    x0 = Math.max(0, x0 - m); y0 = Math.max(0, y0 - m);
+    x1 = Math.min(w - 1, x1 + m); y1 = Math.min(h - 1, y1 + m);
+    const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+    const esc = Math.min((W * 0.92) / cw, (H * 0.85) / ch);
+    const fin = new OffscreenCanvas(W, H);
+    fin.getContext('2d').drawImage(t, x0, y0, cw, ch, (W - cw * esc) / 2, (H - ch * esc) / 2, cw * esc, ch * esc);
+    return fin.convertToBlob({ type: 'image/png' });
+  }
+
+  async function ponerFirma(blob) {
+    if (!actual) return;
+    if (huboTrazo && !confirm('¿Cambiar la firma actual por esta?')) return;
+    actual.firma = blob;
+    await firma.cargar(blob);
+    cambiado();
+  }
+
+  nodos.firmaAdjuntar.addEventListener('click', () => nodos.entradaFirma.click());
+  nodos.entradaFirma.addEventListener('change', async () => {
+    const archivo = nodos.entradaFirma.files[0];
+    nodos.entradaFirma.value = '';
+    if (!archivo) return;
+    try {
+      await ponerFirma(await prepararImagen(archivo));
+      avisar(nodos.aviso, 'Firma adjuntada. Puedes guardarla como «mi firma» para las próximas visitas.', 4000);
+    } catch (e) {
+      avisar(nodos.aviso, e.message === 'vacia'
+        ? 'No se ve ninguna firma en la imagen. Usa una foto con la firma en tinta oscura sobre papel blanco.'
+        : 'No se ha podido leer la imagen de la firma.', 5000);
+    }
+  });
+
+  nodos.firmaGuardar.addEventListener('click', async () => {
+    if (!actual?.firma) return;
+    try {
+      localStorage.setItem(MI_FIRMA, await aDatos(actual.firma));
+      pintarEstado();
+      avisar(nodos.aviso, 'Guardada como tu firma en este teléfono. En las próximas visitas: «⭐ Usar mi firma».', 4000);
+    } catch {
+      avisar(nodos.aviso, 'No se ha podido guardar la firma en este teléfono.', 4000);
+    }
+  });
+
+  nodos.firmaMia.addEventListener('click', async () => {
+    const datos = leerMiFirma();
+    if (!datos) return;
+    await ponerFirma(await deDatos(datos));
+  });
+
   return {
     async cargar(blob, { mantenerBloqueo = false } = {}) {
       preparar();
@@ -781,18 +886,6 @@ function logotipo() {
   return marca;
 }
 
-function bloque(titulo, texto) {
-  if (!texto || !texto.trim()) return null;
-  return el('section', {}, el('h2', {}, titulo), el('p', { class: 'parrafo' }, texto));
-}
-
-function bandaInforme() {
-  return el('div', { class: 'informe-banda' },
-    logotipo(),
-    el('span', { class: 'informe-tipo' }, 'coordinate.do')
-  );
-}
-
 function pieInforme() {
   return el('footer', { class: 'informe-pie' },
     el('span', {}, LEMA),
@@ -800,9 +893,62 @@ function pieInforme() {
   );
 }
 
+/* Nº de documento estable: PV-AAAAMMDD-HHMM (fecha y hora de la visita). */
+function numeroParte(v) {
+  return `PV-${(v.fecha || '').replaceAll('-', '')}-${(v.hora || '0000').replace(':', '')}`;
+}
+
+/* Cabecera de las secciones: «1 · Personal en obra». */
+let seccionN = 0;
+function titulo(texto, extra) {
+  seccionN += 1;
+  return el('h2', { class: 'informe-h2' },
+    el('span', { class: 'informe-h2-n' }, String(seccionN).padStart(2, '0')),
+    el('span', {}, texto),
+    extra ? el('span', { class: 'informe-h2-extra' }, extra) : null);
+}
+
+function bloqueN(texto, contenido) {
+  if (!contenido || !String(contenido).trim()) return null;
+  return el('section', {}, titulo(texto), el('p', { class: 'parrafo' }, contenido));
+}
+
+function etiqueta(texto, clase) {
+  return el('span', { class: `informe-etiqueta ${clase}` }, texto);
+}
+
+/* Trabajos como línea de tiempo: «08:15 · texto» → fila Hora | Actividad. */
+function lineaTiempo(texto) {
+  const lineas = String(texto || '').split('\n').map((l) => l.trim()).filter(Boolean);
+  if (!lineas.length) return null;
+  const filas = lineas.map((l) => {
+    const m = l.match(/^(\d{1,2}:\d{2})\s*·\s*(.*)$/);
+    return m ? { hora: m[1], texto: m[2] } : { hora: '', texto: l };
+  });
+  return el('section', {},
+    titulo('Trabajos realizados', `${plural(filas.length, 'registro', 'registros')}`),
+    el('table', { class: 'informe-tabla informe-tiempo' },
+      el('thead', {}, el('tr', {}, el('th', { class: 'informe-hora' }, 'Hora'), el('th', {}, 'Actividad'))),
+      el('tbody', {}, ...filas.map((f) => el('tr', {},
+        el('td', { class: 'informe-hora' }, f.hora ? el('span', { class: 'informe-reloj' }, f.hora) : '—'),
+        el('td', {}, f.texto))))));
+}
+
+/* Fila de cifras clave bajo la ficha. */
+function cifras(v, repasos) {
+  const abiertas = v.incidencias.filter((i) => i.estado !== 'cerrada').length;
+  const c = cuentaEstados(repasos, v.fecha);
+  const caja = (n, t, clase = '') => el('div', { class: `informe-cifra ${clase}` }, el('strong', {}, String(n)), el('span', {}, t));
+  return el('div', { class: 'informe-cifras' },
+    caja(totalPersonas(v), 'personas en obra'),
+    caja(v.incidencias.length, abiertas ? `incidencias · ${abiertas} abiertas` : 'incidencias', abiertas ? 'alerta' : ''),
+    caja(repasos.length, `repasos · ${c.pendiente} por corregir`, c.pendiente ? 'aviso' : ''),
+    caja(v.fotos.length, 'fotos'));
+}
+
 /* Punch list para el PDF: una fila por repaso, con la última foto de
    antes y la de después tal como estaban el día de la visita. */
-function seccionRepasos(lista, fecha, url, titulo) {
+function seccionRepasos(lista, fecha, url, nombre) {
   if (!lista.length) return null;
   const c = cuentaEstados(lista, fecha);
   const foto = (fotos) => fotos.length
@@ -811,9 +957,7 @@ function seccionRepasos(lista, fecha, url, titulo) {
       fotos.length > 1 ? el('span', { class: 'informe-nota' }, `+${fotos.length - 1}`) : null)
     : el('span', { class: 'informe-nota' }, '—');
   return el('section', { class: 'informe-repasos' },
-    el('h2', {}, titulo),
-    el('p', { class: 'informe-nota' },
-      `${c.pendiente} por corregir · ${c.corregido} corregidos por verificar · ${c.cerrado} cerrados`),
+    titulo(nombre, `${c.pendiente} por corregir · ${c.corregido} por verificar · ${c.cerrado} cerrados`),
     el('table', { class: 'informe-tabla' },
       el('thead', {}, el('tr', {},
         el('th', { class: 'num' }, 'Nº'), el('th', {}, 'Zona'), el('th', {}, 'Qué corregir'),
@@ -860,43 +1004,59 @@ async function imprimir() {
   nodos.aviso.hidden = true;
 
   // Pasa por el(): los apartados vacíos llegan como null y no deben pintarse.
+  seccionN = 0;
+  const repasosV = punch.lista(v);
+  const dato = (t, valor) => el('div', { class: 'informe-dato' }, el('span', {}, t), el('strong', {}, valor || '—'));
   nodos.informe.replaceChildren(...el('div', {},
-    bandaInforme(),
-    el('header', {},
-      el('h1', {}, 'Parte de visita de obra'),
-      el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre'),
-      el('table', { class: 'informe-datos' }, el('tbody', {},
-        el('tr', {}, el('th', {}, 'Fecha'), el('td', {}, fechaLarga(v.fecha), v.hora ? ` · ${v.hora}` : '')),
-        el('tr', {}, el('th', {}, 'Realizada por'), el('td', {}, v.autor || '—')),
-        el('tr', {}, el('th', {}, 'Tiempo'), el('td', {},
-          [v.clima.join(', '), v.temperatura].filter(Boolean).join(' · ') || '—')),
-        el('tr', {}, el('th', {}, 'Jornada'), el('td', {}, v.jornada || '—'))
-      ))
-    ),
+    el('div', { class: 'informe-banda' },
+      logotipo(),
+      el('div', { class: 'informe-banda-doc' },
+        el('span', { class: 'informe-tipo' }, 'Parte diario de obra'),
+        el('strong', {}, numeroParte(v)))),
+    el('header', { class: 'informe-cabecera' },
+      el('div', {},
+        el('h1', {}, 'Parte de visita de obra'),
+        el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre')),
+      el('div', { class: 'informe-sello' },
+        el('span', {}, 'Emitido'),
+        el('strong', {}, new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })),
+        el('span', {}, ahora()))),
+    el('div', { class: 'informe-ficha' },
+      dato('Fecha', fechaLarga(v.fecha)),
+      dato('Hora de inicio', v.hora),
+      dato('Realizada por', v.autor),
+      dato('Jornada', v.jornada),
+      dato('Tiempo', v.clima.join(', ')),
+      dato('Temperatura', v.temperatura)),
+    cifras(v, repasosV),
     v.personal.some((p) => p.empresa || p.oficio || p.numero) && el('section', {},
-      el('h2', {}, `Personal en obra (${totalPersonas(v)})`),
+      titulo('Personal en obra', plural(totalPersonas(v), 'persona', 'personas')),
       el('table', { class: 'informe-tabla' },
         el('thead', {}, el('tr', {}, el('th', {}, 'Empresa'), el('th', {}, 'Oficio'), el('th', { class: 'num' }, 'Nº'))),
         el('tbody', {}, ...v.personal.filter((p) => p.empresa || p.oficio || p.numero).map((p) =>
           el('tr', {}, el('td', {}, p.empresa), el('td', {}, p.oficio), el('td', { class: 'num' }, p.numero))))
       )
     ),
-    bloque('Trabajos realizados', v.trabajos),
-    bloque('Maquinaria y medios', v.maquinaria),
-    bloque('Materiales recibidos', v.materiales),
+    lineaTiempo(v.trabajos),
+    (v.maquinaria?.trim() || v.materiales?.trim()) && el('section', {},
+      titulo('Medios y materiales'),
+      el('div', { class: 'informe-dos' },
+        el('div', {}, el('h3', {}, 'Maquinaria y medios'), el('p', { class: 'parrafo' }, v.maquinaria?.trim() || '—')),
+        el('div', {}, el('h3', {}, 'Materiales recibidos'), el('p', { class: 'parrafo' }, v.materiales?.trim() || '—')))),
     v.incidencias.length > 0 && el('section', {},
-      el('h2', {}, 'Incidencias'),
+      titulo('Incidencias', `${v.incidencias.filter((i) => i.estado !== 'cerrada').length} abiertas · ${v.incidencias.filter((i) => i.estado === 'cerrada').length} resueltas`),
       el('table', { class: 'informe-tabla' },
-        el('thead', {}, el('tr', {}, el('th', {}, 'Descripción'), el('th', {}, 'Gravedad'), el('th', {}, 'Estado'))),
+        el('thead', {}, el('tr', {}, el('th', {}, 'Hora'), el('th', {}, 'Descripción'), el('th', {}, 'Gravedad'), el('th', {}, 'Estado'))),
         el('tbody', {}, ...v.incidencias.map((i) => el('tr', {},
-          el('td', {}, i.texto, i.desde && i.desde !== v.fecha ? el('span', { class: 'informe-nota' }, ` (desde ${i.desde})`) : null),
-          el('td', {}, GRAVEDADES[i.gravedad] || i.gravedad),
-          el('td', {}, i.estado === 'cerrada' ? 'Resuelta' : 'Abierta')))))
+          el('td', { class: 'informe-hora' }, horasIncidencia(i, v.fecha).replace('🕒 ', '') || '—'),
+          el('td', {}, i.texto),
+          el('td', {}, etiqueta(GRAVEDADES[i.gravedad] || i.gravedad, `grav-${i.gravedad}`)),
+          el('td', {}, etiqueta(i.estado === 'cerrada' ? 'Resuelta' : 'Abierta', i.estado === 'cerrada' ? 'ok' : 'abierta'))))))
     ),
-    seccionRepasos(punch.lista(v), v.fecha, url, 'Punch list · repasos de terminaciones'),
-    bloque('Observaciones e instrucciones', v.observaciones),
+    seccionRepasos(repasosV, v.fecha, url, 'Punch list · repasos de terminaciones'),
+    bloqueN('Observaciones e instrucciones', v.observaciones),
     ...planosInforme.map(({ plano, imagen, notas }) => el('section', { class: 'informe-plano' },
-      el('h2', {}, `Plano · ${plano.nombre}`),
+      titulo(`Plano · ${plano.nombre}`, notas.length ? plural(notas.length, 'nota', 'notas') : null),
       el('img', { src: url(imagen), alt: plano.nombre }),
       notas.length > 0 && el('table', { class: 'informe-tabla' },
         el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Nº'), el('th', {}, 'Tipo'), el('th', {}, 'Nota'), el('th', {}, 'Fotos'))),
@@ -906,8 +1066,8 @@ async function imprimir() {
           el('td', {}, k.texto || '—', detallesInforme(k)),
           el('td', {}, v.fotos.map((f, i) => (f.nota === k.id ? String(i + 1) : null)).filter(Boolean).join(', ') || '—')))))
     )),
-    v.fotos.length > 0 && el('section', {},
-      el('h2', {}, 'Fotos'),
+    v.fotos.length > 0 && el('section', { class: 'informe-seccion-fotos' },
+      titulo('Registro fotográfico', plural(v.fotos.length, 'foto', 'fotos')),
       el('div', { class: 'informe-fotos' }, ...v.fotos.map((f, n) => {
         const nota = f.nota && v.notas.find((k) => k.id === f.nota);
         return el('figure', {},
@@ -916,10 +1076,19 @@ async function imprimir() {
       }))
     ),
     el('section', { class: 'informe-firma' },
-      el('h2', {}, 'Firma'),
-      v.firma ? el('img', { src: url(v.firma), alt: 'Firma' }) : el('div', { class: 'informe-hueco' }),
-      el('p', {}, v.autor || '')
-    ),
+      titulo('Conformidad'),
+      el('div', { class: 'informe-firmas' },
+        el('div', { class: 'informe-firma-caja' },
+          v.firma ? el('img', { src: url(v.firma), alt: 'Firma' }) : el('div', { class: 'informe-hueco' }),
+          el('strong', {}, v.autor || 'Nombre y cargo'),
+          el('span', {}, `Elaborado · ${fechaLarga(v.fecha)}`)),
+        el('div', { class: 'informe-firma-caja' },
+          el('div', { class: 'informe-hueco' }),
+          el('strong', {}, 'Nombre y cargo'),
+          el('span', {}, 'Recibido / Vo. Bo.')))),
+    el('p', { class: 'informe-legal' },
+      `Documento ${numeroParte(v)} generado con COORDINATE · Visita de obra. Refleja lo observado en la fecha indicada; `
+      + 'no sustituye los documentos de diseño ni las órdenes de la dirección técnica.'),
     pieInforme()
   ).childNodes);
   await lanzarImpresion(`Visita ${v.fecha} ${v.obra}`, urls);
@@ -934,18 +1103,34 @@ async function imprimirPunch() {
   const urls = [];
   const url = (blob) => { const u = URL.createObjectURL(blob); urls.push(u); return u; };
   const responsables = [...new Set(lista.map((r) => r.responsable.trim()).filter(Boolean))];
+  seccionN = 0;
+  const dato = (t, valor) => el('div', { class: 'informe-dato' }, el('span', {}, t), el('strong', {}, valor || '—'));
   nodos.informe.replaceChildren(...el('div', {},
-    bandaInforme(),
-    el('header', {},
-      el('h1', {}, 'Punch list de terminaciones'),
-      el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre'),
-      el('table', { class: 'informe-datos' }, el('tbody', {},
-        el('tr', {}, el('th', {}, 'Fecha'), el('td', {}, fechaLarga(v.fecha))),
-        el('tr', {}, el('th', {}, 'Revisado por'), el('td', {}, v.autor || '—')),
-        responsables.length > 0 && el('tr', {}, el('th', {}, 'Responsables'), el('td', {}, responsables.join(', ')))
-      ))
-    ),
+    el('div', { class: 'informe-banda' },
+      logotipo(),
+      el('div', { class: 'informe-banda-doc' },
+        el('span', { class: 'informe-tipo' }, 'Punch list de terminaciones'),
+        el('strong', {}, numeroParte(v).replace('PV-', 'PL-')))),
+    el('header', { class: 'informe-cabecera' },
+      el('div', {},
+        el('h1', {}, 'Punch list de terminaciones'),
+        el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre')),
+      el('div', { class: 'informe-sello' },
+        el('span', {}, 'Emitido'),
+        el('strong', {}, new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })),
+        el('span', {}, ahora()))),
+    el('div', { class: 'informe-ficha' },
+      dato('Fecha de revisión', fechaLarga(v.fecha)),
+      dato('Revisado por', v.autor),
+      dato('Responsables', responsables.join(', '))),
     seccionRepasos(lista, v.fecha, url, 'Repasos'),
+    el('section', { class: 'informe-firma' },
+      titulo('Conformidad'),
+      el('div', { class: 'informe-firmas' },
+        el('div', { class: 'informe-firma-caja' }, el('div', { class: 'informe-hueco' }),
+          el('strong', {}, v.autor || 'Nombre y cargo'), el('span', {}, 'Revisado por')),
+        el('div', { class: 'informe-firma-caja' }, el('div', { class: 'informe-hueco' }),
+          el('strong', {}, 'Nombre y cargo'), el('span', {}, 'Contratista · recibido')))),
     pieInforme()
   ).childNodes);
   await lanzarImpresion(`Punch list ${v.fecha} ${v.obra}`, urls);
@@ -1025,7 +1210,7 @@ function resumen(v) {
     v.materiales && `\nMateriales:\n${v.materiales}`,
     v.incidencias.length && '\nIncidencias:',
     ...v.incidencias.map((i) =>
-      `  · [${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? ', resuelta' : ''}] ${i.texto}`),
+      `  · ${i.hora ? `${i.hora} ` : ''}[${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? `, resuelta${i.resuelta ? ` ${i.resuelta}` : ''}` : ''}] ${i.texto}`),
     repasos.length && '\nPunch list (repasos):',
     ...repasos.map((r) =>
       `  ${r.numero}. [${ESTADOS[estadoEn(r, v.fecha)].toUpperCase()}] `
@@ -1183,7 +1368,7 @@ nodos.botonPersonal.addEventListener('click', () => {
 });
 
 nodos.botonIncidencia.addEventListener('click', () => {
-  actual.incidencias.push({ id: nuevoId(), texto: '', gravedad: 'media', estado: 'abierta', desde: actual.fecha });
+  actual.incidencias.push({ id: nuevoId(), texto: '', gravedad: 'media', estado: 'abierta', desde: actual.fecha, hora: ahora() });
   pintarIncidencias();
   nodos.incidencias.lastElementChild.querySelector('textarea').focus();
   cambiado();

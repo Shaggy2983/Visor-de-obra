@@ -78,7 +78,7 @@
   --aviso-texto: #a85a00;
   --portada-arriba: #d6e4f5;
   --portada-abajo: #eef1f6;
-  color-scheme: light;
+  color-scheme: only light; /* «only»: que Chrome no oscurezca la página por su cuenta */
 }
 @media (prefers-color-scheme: light) {
   :root[data-tema="auto"] {
@@ -103,7 +103,7 @@
     --borde-rgb: 201, 211, 226;
     --peligro-texto: #b3261e;
     --aviso-texto: #a85a00;
-    color-scheme: light;
+    color-scheme: only light; /* «only»: que Chrome no oscurezca la página por su cuenta */
   }
 }
 
@@ -858,3 +858,22 @@ a.boton {
 .ajustes-atajos { display: flex; flex-wrap: wrap; gap: .45rem; }
 .ajustes-nota { margin: .45rem 0 0; font-size: .76rem; color: var(--texto-tenue); }
 .ajustes-nota a { color: var(--seleccion); }
+
+/* aviso de versión nueva (js/tema.js) */
+.aviso-version {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--seguro-abajo) + 1rem);
+  transform: translateX(-50%);
+  z-index: 90;
+  max-width: calc(100vw - 2rem);
+  padding: .7rem 1rem;
+  border: 0;
+  border-radius: 2rem;
+  background: var(--acento);
+  color: var(--texto-sobre-acento);
+  font: 600 .9rem/1.2 inherit;
+  font-family: inherit;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  cursor: pointer;
+}

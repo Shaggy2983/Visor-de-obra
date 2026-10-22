@@ -983,3 +983,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 /* ---------- firma adjunta / mi firma ---------- */
 .firma-opciones { align-items: center; }
 .firma-opciones .enlace { margin-left: auto; }
+
+/* ---------- dictado: vista previa y estado «oyendo» ---------- */
+.dictado-vista { margin: .3rem 0 0; padding: .35rem .6rem; border-radius: .5rem; background: rgba(198,40,40,.12); color: var(--texto); font-size: .9rem; font-style: italic; }
+.boton-dictado.escuchando:not(.oyendo) { background: #8e2a2a; animation: none; opacity: .85; }

@@ -23,6 +23,7 @@ import { avisoPendiente } from './cuentas.js';
 import { equipo } from './equipo.js';
 import { iniciarEquipoUI } from './equipo-ui.js';
 import { crearMisRepasos } from './mis-repasos.js';
+import { climaActual, permisoUbicacion } from './clima.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -90,7 +91,8 @@ const nodos = {
   entradaRepasoGaleria: $('entrada-repaso-galeria'),
   avisoLectura: $('aviso-lectura'),
   fotoGrande: $('foto-grande'),
-  aviso: $('aviso')
+  aviso: $('aviso'),
+  botonClima: $('btn-clima')
 };
 
 let actual = null;        // la visita abierta en la ficha
@@ -303,6 +305,45 @@ function abrirFicha(v, { recarga = false } = {}) {
   nodos.avisoLectura.hidden = equipo.rolEn(v.obraId) !== 'lector';
   nodos.estadoGuardado.textContent = 'Guardado';
   if (!recarga) scrollTo(0, 0);
+  if (!recarga && v.fecha === hoy() && !v.temperatura) tomarClima({ automatico: true });
+}
+
+/* --- tiempo del lugar (js/clima.js) --- */
+
+let pidiendoClima = false;
+
+async function tomarClima({ automatico = false } = {}) {
+  if (pidiendoClima || !actual) return;
+  if (automatico && (!navigator.onLine || (await permisoUbicacion()) === 'denied')) return;
+  const visita = actual;
+  pidiendoClima = true;
+  nodos.botonClima.disabled = true;
+  nodos.botonClima.textContent = 'Consultando…';
+  try {
+    const datos = await climaActual();
+    if (actual !== visita) return;
+    // Lo automático no pisa lo que el usuario ya escribió mientras tanto.
+    if (automatico && visita.temperatura) return;
+    visita.temperatura = datos.temperatura;
+    const campo = nodos.ficha.querySelector('[data-campo="temperatura"]');
+    if (campo) campo.value = datos.temperatura;
+    if (datos.clima.length && (!automatico || visita.clima.length === 0)) visita.clima = datos.clima;
+    pintarClima();
+    cambiado();
+    avisar(nodos.aviso, `Tiempo del lugar: ${[datos.clima.join(', '), datos.temperatura].filter(Boolean).join(' · ')}`);
+  } catch (e) {
+    if (automatico) return;
+    const textos = {
+      permiso: 'Permite la ubicación para tomar el tiempo (Ajustes de la app → Permisos).',
+      'sin-senal': 'Sin señal no se puede consultar el tiempo.',
+      ubicacion: 'No se ha podido saber dónde estás. Activa la ubicación del teléfono.'
+    };
+    avisar(nodos.aviso, textos[e.message] || 'No se ha podido consultar el tiempo.', 5000);
+  } finally {
+    pidiendoClima = false;
+    nodos.botonClima.disabled = false;
+    nodos.botonClima.textContent = '📍 Tomar del lugar';
+  }
 }
 
 function cambiado() {
@@ -1131,6 +1172,8 @@ nodos.ficha.addEventListener('input', (ev) => {
   cambiado();
   if (campo === 'obra' || campo === 'fecha') punch.pintar();
 });
+
+nodos.botonClima.addEventListener('click', () => tomarClima());
 
 nodos.botonPersonal.addEventListener('click', () => {
   actual.personal.push({ id: nuevoId(), empresa: '', oficio: '', numero: '' });

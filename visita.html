@@ -104,7 +104,10 @@
     <section class="grupo">
       <h2>Tiempo y jornada</h2>
       <div id="climas" class="chips" role="group" aria-label="Tiempo"></div>
-      <label>Temperatura<input type="text" class="campo" data-campo="temperatura" inputmode="decimal" placeholder="p. ej. 8 / 17 °C"></label>
+      <div class="temperatura-fila">
+        <label>Temperatura<input type="text" class="campo" data-campo="temperatura" inputmode="decimal" placeholder="p. ej. 8 / 17 °C"></label>
+        <button type="button" id="btn-clima" class="boton" title="Tomar la temperatura y el tiempo del lugar donde estás">📍 Tomar del lugar</button>
+      </div>
       <div id="jornadas" class="chips" role="radiogroup" aria-label="Jornada"></div>
     </section>
 
@@ -251,5 +254,6 @@
 
 <script type="module" src="./js/visita.js"></script>
 <script type="module" src="./js/dictado.js"></script>
+<script type="module" src="./js/predictivo.js"></script>
 </body>
 </html>

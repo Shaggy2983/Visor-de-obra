@@ -865,3 +865,29 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   50% { box-shadow: 0 0 0 .45rem rgba(198,40,40,0); }
 }
 @media (prefers-reduced-motion: reduce) { .boton-dictado.escuchando { animation: none; } }
+
+/* ---------- temperatura del lugar (js/clima.js) ---------- */
+
+.temperatura-fila { display: flex; align-items: flex-end; gap: .5rem; }
+.temperatura-fila label { flex: 1; }
+.temperatura-fila .boton { white-space: nowrap; margin-bottom: .05rem; }
+
+/* ---------- texto predictivo (js/predictivo.js) ---------- */
+
+.sugerencias {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  margin: .35rem 0 .2rem;
+}
+.sugerencias[hidden] { display: none; }
+.sugerencia {
+  max-width: 100%;
+  padding: .4rem .7rem;
+  border: 1px solid var(--color-accent-800);
+  border-radius: 1rem;
+  background: var(--color-accent-900);
+  color: var(--color-accent-300);
+  font: inherit; font-size: .85rem; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: pointer;
+}
+.sugerencia:active { background: var(--color-accent-800); }

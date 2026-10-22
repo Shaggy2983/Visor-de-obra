@@ -31,6 +31,7 @@
 import { cargarFirebase, configurado } from './firebase-app.js';
 import * as partes from './partes.js';
 import { mismaObra, ahora } from './utiles.js';
+import * as novedades from './novedades.js';
 
 export const ROLES = { admin: 'Administrador', editor: 'Editor', lector: 'Solo lectura', contratista: 'Contratista' };
 export const PAPELES_EQUIPO = { admin: 'Administrador', miembro: 'Miembro' };
@@ -116,6 +117,8 @@ export class Equipo extends EventTarget {
     this.estado = { fase: 'apagado', texto: '' };
     this.sincronizando = false;
     this.otraVez = false;
+    this.perfil = {};           // cargo, empresa, teléfono y foto (usuarios/{uid})
+    this.cacheObras = new Map(); // obraId → { cuando, datos } para el panel
   }
 
   get activo() { return configurado(); }
@@ -219,8 +222,37 @@ export class Equipo extends EventTarget {
 
   async prepararUsuario() {
     const { fb, db } = this.f;
+    const ref = fb.doc(db, 'usuarios', this.usuario.uid);
+    await fb.setDoc(ref, { nombre: this.nombre, correo: this.correo, visto: fb.serverTimestamp() }, { merge: true });
+    const d = (await fb.getDoc(ref)).data() || {};
+    this.perfil = { cargo: d.cargo || '', empresa: d.empresa || '', telefono: d.telefono || '', foto: d.foto || '' };
+    this.avisar();
+  }
+
+  /* Guarda el perfil y pone al día la ficha que ven los demás en cada obra
+     y equipo (nombre, cargo, empresa y foto; el teléfono sólo en la ficha
+     propia). */
+  async guardarPerfil({ nombre, cargo, empresa, telefono, foto }) {
+    const { fb, db } = this.f;
+    const limpio = (t, n) => String(t || '').trim().slice(0, n);
+    nombre = limpio(nombre, 80);
+    if (nombre && nombre !== this.usuario.displayName) {
+      await fb.updateProfile(this.usuario, { displayName: nombre });
+      this.usuario = this.f.auth.currentUser;
+    }
+    this.perfil = { cargo: limpio(cargo, 80), empresa: limpio(empresa, 80), telefono: limpio(telefono, 30), foto: foto || '' };
     await fb.setDoc(fb.doc(db, 'usuarios', this.usuario.uid),
-      { nombre: this.nombre, correo: this.correo, visto: fb.serverTimestamp() }, { merge: true });
+      { nombre: this.nombre, correo: this.correo, ...this.perfil }, { merge: true });
+    const uid = this.usuario.uid;
+    const ficha = this.ficha();
+    for (const [grupos, coleccion] of [[this.obras, 'obras'], [this.equipos, 'equipos']]) {
+      for (const g of grupos) {
+        if (!(uid in g.miembros)) continue;
+        await fb.updateDoc(this.ref(g, coleccion), new fb.FieldPath('personas', uid), ficha, 'modificada', Date.now())
+          .catch((e) => console.warn('ficha', g.nombre, e.code));
+      }
+    }
+    await this.refrescarObras();
   }
 
   /* Para borrar la cuenta Google pide haber entrado hace poco. */
@@ -314,8 +346,52 @@ export class Equipo extends EventTarget {
     return o && this.usuario ? o.miembros[this.usuario.uid] || null : null;
   }
 
+  /* Lo que ven de ti los demás miembros. Sólo lo que tiene valor, para no
+     engordar el documento de la obra. */
   ficha() {
-    return { nombre: this.nombre, correo: this.correo };
+    const f = { nombre: this.nombre, correo: this.correo };
+    for (const k of ['cargo', 'empresa', 'foto']) if (this.perfil[k]) f[k] = this.perfil[k];
+    return f;
+  }
+
+  /* Administradores de una obra (menos tú), con su correo: para avisarles. */
+  administradores(obraId) {
+    const o = obraId && this.obras.find((x) => x.id === obraId);
+    if (!o || !this.usuario) return [];
+    return Object.entries(o.miembros)
+      .filter(([id, r]) => r === 'admin' && id !== this.usuario.uid)
+      .map(([id]) => ({ uid: id, ...(o.personas || {})[id] }))
+      .filter((p) => p.correo);
+  }
+
+  nombreDe(obra, uid) {
+    if (this.usuario && uid === this.usuario.uid) return this.nombre;
+    const p = (obra.personas || {})[uid];
+    return (p && p.nombre) || '';
+  }
+
+  /* Visitas y repasos de una obra tal como están en la nube (sin fotos):
+     lo que usan el panel y el espacio de la obra. Se guarda un minuto en
+     memoria para no repetir lecturas al cambiar de pestaña. */
+  async leerObra(obra, { fresco = false } = {}) {
+    const previo = this.cacheObras.get(obra.id);
+    if (!fresco && previo && Date.now() - previo.cuando < 60000) return previo.datos;
+    const { fb, db } = this.f;
+    const rol = obra.miembros[this.usuario.uid];
+    if (!rol || rol === 'contratista') return { visitas: [], repasos: [] };
+    const leer = async (tipo) => {
+      const res = await fb.getDocs(fb.collection(db, 'obras', obra.id, tipo));
+      return res.docs.map((d) => ({ d, x: d.data() })).filter(({ x }) => !x.borrado && x.datos)
+        .map(({ d, x }) => {
+          try {
+            return { ...JSON.parse(x.datos), id: d.id, _autor: x.autor || null, _actualizado: x.actualizado ? x.actualizado.toMillis() : 0 };
+          } catch (e) { return null; }
+        }).filter(Boolean);
+    };
+    const [visitas, repasos] = await Promise.all([leer('visitas'), leer('repasos')]);
+    const datos = { visitas, repasos };
+    this.cacheObras.set(obra.id, { cuando: Date.now(), datos });
+    return datos;
   }
 
   ref(obra, coleccion = 'obras') {
@@ -604,6 +680,7 @@ export class Equipo extends EventTarget {
     this.sincronizando = true;
     this.ponerEstado('sincronizando', 'Sincronizando…');
     const cambiados = new Set();
+    const nuevas = [];
     try {
       await this.refrescarObras();
       await this.reconciliar();
@@ -618,8 +695,12 @@ export class Equipo extends EventTarget {
         }
         for (const tipo of Object.keys(TIPOS)) {
           if (ESCRIBEN.includes(obra.miembros[uid])) await this.subir(obra, tipo);
-          await this.bajar(obra, tipo, cambiados);
+          await this.bajar(obra, tipo, cambiados, nuevas);
         }
+      }
+      if (nuevas.length) {
+        novedades.anotar(this.usuario.uid, nuevas);
+        this.cacheObras.clear();
       }
       this.ponerEstado('ok', this.obras.length ? `Sincronizado a las ${ahora()}` : '');
     } catch (e) {
@@ -627,7 +708,7 @@ export class Equipo extends EventTarget {
       this.ponerEstado('error', 'No se pudo sincronizar; se reintentará solo.');
     } finally {
       this.sincronizando = false;
-      if (cambiados.size) dispatchEvent(new CustomEvent('crd-remoto', { detail: { ids: [...cambiados] } }));
+      if (cambiados.size) dispatchEvent(new CustomEvent('crd-remoto', { detail: { ids: [...cambiados], nuevas } }));
       if (this.otraVez) { this.otraVez = false; this.programar(1000); }
     }
   }
@@ -715,7 +796,7 @@ export class Equipo extends EventTarget {
     }
   }
 
-  async bajar(obra, tipo, cambiados) {
+  async bajar(obra, tipo, cambiados, nuevas) {
     const { fb, db, storage } = this.f;
     const T = TIPOS[tipo];
     const clave = `crd-marca:${this.usuario.uid}:${obra.id}:${tipo}`;
@@ -746,6 +827,17 @@ export class Equipo extends EventTarget {
       await T.guardar(r, { callado: true });
       await partes.anotarSincronizada(tipo, d.id, x.version);
       cambiados.add(d.id);
+      // Lo que hace otro es novedad (salvo la primera vez que se baja la
+      // obra entera: entonces sería todo).
+      if (marca && nuevas && x.autor && x.autor !== this.usuario.uid && tipo !== 'planos') {
+        nuevas.push({
+          id: d.id, tipo, obraId: obra.id, obra: obra.nombre, nuevo: !local,
+          quien: this.nombreDe(obra, x.autor) || r.autor || '',
+          fecha: r.fecha || r.desde || '',
+          titulo: tipo === 'visitas' ? (r.autor || 'Bitácora') : `Repaso ${r.numero || ''} ${r.zona ? `· ${r.zona}` : ''}`.trim(),
+          cuando: x.actualizado ? x.actualizado.toMillis() : Date.now()
+        });
+      }
     }
     try { localStorage.setItem(clave, String(nueva)); } catch (e) { /* se repetirá */ }
   }

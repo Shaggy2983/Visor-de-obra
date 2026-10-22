@@ -19,7 +19,8 @@ import {
   crearPunchList, estadoEn, fotosEn, cuentaEstados, historial, CATEGORIAS, ESTADOS
 } from './repasos.js';
 import { crearNube } from './nube.js';
-import { avisoPendiente } from './cuentas.js';
+import { avisoPendiente, vinculadas } from './cuentas.js';
+import * as novedades from './novedades.js';
 import { equipo } from './equipo.js';
 import { iniciarEquipoUI } from './equipo-ui.js';
 import { crearMisRepasos } from './mis-repasos.js';
@@ -234,11 +235,16 @@ function pintarLista() {
   }
 }
 
+const miUid = () => (equipo.usuario ? equipo.usuario.uid : null);
+
 function tarjeta(v) {
   const pendientes = abiertas(v).length;
   const graves = abiertas(v).some((i) => i.gravedad === 'grave');
-  return el('a', { class: 'tarjeta', href: `#/v/${encodeURIComponent(v.id)}` },
-    el('div', { class: 'tarjeta-fecha' }, fechaLarga(v.fecha), v.hora ? ` · ${v.hora}` : ''),
+  const nov = miUid() && novedades.deVisita(miUid(), v.id);
+  return el('a', { class: `tarjeta${nov ? ' con-novedad' : ''}`, href: `#/v/${encodeURIComponent(v.id)}` },
+    el('div', { class: 'tarjeta-fecha' }, fechaLarga(v.fecha), v.hora ? ` · ${v.hora}` : '',
+      nov && el('span', { class: `etiqueta ${nov.nuevo ? 'ok' : 'atencion'}` }, nov.nuevo ? 'Nueva' : 'Actualizada'),
+      nov && nov.quien && el('span', { class: 'pie' }, ` de ${nov.quien}`)),
     el('div', { class: 'tarjeta-obra' }, v.obra || 'Obra sin nombre'),
     v.trabajos && el('div', { class: 'tarjeta-texto' }, v.trabajos),
     el('div', { class: 'tarjeta-datos' },
@@ -292,6 +298,7 @@ async function nuevaVisita() {
 
 function abrirFicha(v, { recarga = false } = {}) {
   actual = v;
+  if (miUid()) novedades.quitar(miUid(), v.id);
   nodos.vistaLista.hidden = true;
   nodos.vistaFicha.hidden = false;
   nodos.nueva.hidden = true;
@@ -768,7 +775,10 @@ const firma = (() => {
     }
     bloquear(false);
   });
-  nodos.firmaListo.addEventListener('click', () => bloquear(true));
+  nodos.firmaListo.addEventListener('click', () => {
+    bloquear(true);
+    if (huboTrazo) alFirmar();
+  });
 
   /* Firma adjunta: una imagen (foto o escaneo de la firma, o un PNG).
      Se recorta al trazo, el papel blanco pasa a transparente y se encaja
@@ -818,6 +828,7 @@ const firma = (() => {
     actual.firma = blob;
     await firma.cargar(blob);
     cambiado();
+    alFirmar();
   }
 
   nodos.firmaAdjuntar.addEventListener('click', () => nodos.entradaFirma.click());
@@ -1415,6 +1426,91 @@ nodos.correo.addEventListener('click', async () => { await guardarYa(); nube.env
 nodos.nube.addEventListener('click', async () => { await guardarYa(); nube.guardar(actual); });
 nodos.copiaNube.addEventListener('click', () => nube.copiaNube());
 
+/* --- aviso a los administradores al firmar ---
+   En una obra compartida, al terminar de firmar se ofrece mandar el parte
+   a sus administradores: con la cuenta vinculada (Gmail u Outlook, con el
+   informe adjunto) o con la app de correo del teléfono (sólo el texto).
+   Además les llega como novedad en la app al sincronizar. */
+async function alFirmar() {
+  const v = actual;
+  if (!v || !v.obraId || !equipo.usuario || v.avisoAdmin) return;
+  const admins = equipo.administradores(v.obraId);
+  if (!admins.length) return;
+  await guardarYa();
+  const correos = admins.map((a) => a.correo);
+  const asunto = `Bitácora firmada · ${v.obra || 'Obra'} · ${fechaLarga(v.fecha)}`;
+  const marcar = () => {
+    if (actual !== v) return;
+    v.avisoAdmin = Date.now();
+    cambiado();
+  };
+  const conCuenta = vinculadas().length > 0;
+  const cuerpo = resumen(v);
+  const mailto = `mailto:${correos.map((c) => encodeURIComponent(c).replace('%40', '@')).join(',')}?subject=${encodeURIComponent(asunto)}`
+    + `&body=${encodeURIComponent(cuerpo.length > 1800 ? `${cuerpo.slice(0, 1800)}\n…` : cuerpo)}`;
+  const dialogo = document.getElementById('dialogo');
+  nube.abrir('Avisar al administrador',
+    el('p', {}, 'Bitácora firmada. ¿La mandas a ',
+      el('strong', {}, admins.map((a) => a.nombre || a.correo).join(', ')), '?'),
+    el('p', { class: 'pie' }, `${correos.join(', ')} · Además le aparecerá como novedad en la app cuando sincronice.`),
+    el('div', { class: 'fila-botones' },
+      conCuenta && el('button', {
+        type: 'button', class: 'boton boton-destacado',
+        onclick: () => nube.enviar(v, { para: correos.join(', '), asunto, alEnviar: marcar })
+      }, 'Enviar con mi cuenta (con informe)'),
+      el('a', {
+        class: conCuenta ? 'boton' : 'boton boton-destacado', href: mailto,
+        onclick: () => { marcar(); setTimeout(() => dialogo.close(), 300); }
+      }, 'Abrir en mi app de correo'),
+      el('button', { type: 'button', class: 'enlace', onclick: () => dialogo.close() }, 'Ahora no')),
+    !conCuenta && el('p', { class: 'pie' }, 'Para mandar también el informe con fotos y planos, vincula Gmail u Outlook en «Cuentas vinculadas».'));
+}
+
+/* --- equipo: novedades, panel y perfil (botón 👥 de la cabecera) --- */
+
+const botonEquipo = document.getElementById('btn-equipo');
+const contadorEquipo = botonEquipo.querySelector('.contador');
+
+function pintarBotonEquipo() {
+  botonEquipo.hidden = !(equipo.activo && equipo.usuario);
+  const n = novedades.lista(miUid()).length;
+  contadorEquipo.hidden = !n;
+  contadorEquipo.textContent = n > 99 ? '99+' : String(n);
+}
+
+function menuEquipo() {
+  const uid = miUid();
+  const lista = novedades.lista(uid);
+  const dialogo = document.getElementById('dialogo');
+  const ir = (href) => { dialogo.close(); location.href = href; };
+  nube.abrir('Equipo',
+    el('div', { class: 'fila-botones' },
+      el('a', { class: 'boton boton-destacado', href: './panel.html' }, '📊 Panel diario y semanal'),
+      el('a', { class: 'boton', href: './perfil.html' }, '👤 Mi perfil y mis obras')),
+    el('h3', { class: 'dialogo-sub' }, lista.length ? `Novedades sin abrir (${lista.length})` : 'Sin novedades'),
+    lista.length
+      ? el('div', { class: 'obras-compartidas menu-equipo' }, ...lista.slice(0, 30).map((n) => el('button', {
+        type: 'button', class: 'obra-compartida',
+        onclick: () => {
+          if (n.tipo === 'visitas') return ir(`#/v/${encodeURIComponent(n.id)}`);
+          novedades.quitar(uid, n.id);
+          menuEquipo();
+        }
+      },
+        el('span', { class: 'obra-nombre' },
+          el('span', { class: `etiqueta ${n.nuevo ? 'ok' : 'atencion'}` }, n.nuevo ? 'Nueva' : 'Actualizada'), ' ',
+          n.tipo === 'visitas' ? `${n.obra} · ${n.fecha ? fechaLarga(n.fecha) : ''}` : `${n.obra} · ${n.titulo}`),
+        el('span', { class: 'pie' }, [n.quien && `de ${n.quien}`, n.tipo === 'repasos' && 'toca para marcarlo como visto'].filter(Boolean).join(' · ')))))
+      : el('p', { class: 'pie' }, 'Cuando alguien de tu equipo cree o cambie una bitácora en tus obras compartidas, aparecerá aquí.'),
+    lista.length > 0 && el('button', {
+      type: 'button', class: 'enlace',
+      onclick: () => { novedades.vaciar(uid); dialogo.close(); if (!actual) pintarLista(); }
+    }, 'Marcar todo como visto'));
+}
+
+botonEquipo.addEventListener('click', menuEquipo);
+addEventListener('crd-novedades', () => { pintarBotonEquipo(); if (!actual && !nodos.vistaLista.hidden) pintarLista(); });
+
 nodos.borrarFirma.addEventListener('click', () => {
   if (confirm('¿Borrar la firma?')) firma.borrar();
 });
@@ -1476,6 +1572,9 @@ iniciarEquipoUI({
    hay cambios propios sin guardar. */
 addEventListener('crd-remoto', async (ev) => {
   const ids = new Set(ev.detail.ids);
+  const nuevas = (ev.detail.nuevas || []).filter((n) => !actual || n.id !== actual.id);
+  if (nuevas.length) avisar(nodos.aviso, `👥 ${novedades.frase(nuevas)}`, 6000);
+  if (actual && ids.has(actual.id) && miUid()) novedades.quitar(miUid(), actual.id);
   if (!actual) {
     if (!nodos.vistaLista.hidden) mostrarLista();
     return;
@@ -1490,6 +1589,7 @@ addEventListener('crd-remoto', async (ev) => {
   if (!visor.abierto) pintarPlanos();
 });
 equipo.addEventListener('cambio', () => {
+  pintarBotonEquipo();
   if (actual) nodos.avisoLectura.hidden = equipo.rolEn(actual.obraId) !== 'lector';
   else misRepasos.pintar();
 });

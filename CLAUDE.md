@@ -67,6 +67,25 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   localStorage `crd-tema`. Paleta clara en `:root[data-tema="claro"]` de
   `css/estilos.css` (fondo `#eef1f6`, acento `#3d7cc4`); usar siempre los
   tokens (`--velo-rgb`, `--peligro-texto`, …), nunca colores fijos.
+- **Novedades del equipo** (`js/novedades.js`): al bajar, lo que otro crea o
+  cambia en una obra compartida (visitas y repasos) queda como novedad en el
+  teléfono (localStorage `crd-novedades:{uid}`); aviso al sincronizar,
+  etiqueta Nueva/Actualizada en la lista y botón 👥 con contador (menú con
+  novedades, Panel y Perfil). La primera bajada de una obra no cuenta.
+- **Aviso al firmar** (`alFirmar()` en `js/visita.js`): en obra compartida,
+  al terminar la firma se ofrece mandar el parte a los administradores
+  (cuenta vinculada con informe, o `mailto:`); marca `avisoAdmin`.
+- **Panel del equipo** (`panel.html`, `js/panel.js`, cálculo en
+  `js/resumen.js`, estilos `css/panel.css`): resumen diario y semanal (visitas
+  por día y persona, incidencias, repasos por responsable, personal y clima)
+  de las obras con papel admin/editor/lector. Lee de Firestore sin fotos
+  (`equipo.leerObra`, caché 1 min), así sirve en el ordenador. «Reporte en
+  PDF» con `print()` y página con nombre `reporte-panel`.
+- **Perfil y espacio de obra** (`perfil.html`, `js/perfil.js`): perfil
+  (nombre, cargo, empresa, teléfono, foto 160 px) en `usuarios/{uid}`; la
+  ficha pública (sin teléfono) va a `personas[uid]` de cada obra y equipo
+  (regla `actualizaMiFicha`). `#/obra/<id>`: miembros, equipos, cifras y
+  bitácoras recientes. Incluye «Cuenta y equipo» para entrar desde el PC.
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
 
@@ -82,7 +101,7 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   corrige los repasos que se le asignan, sin cerrarlos; vista
   `js/mis-repasos.js`). **Equipos de trabajo** reutilizables que se
   vinculan a obras con un papel.
-- Reglas: `firestore.rules` y `storage.rules`, con 72 pruebas en
+- Reglas: `firestore.rules` y `storage.rules`, con 82 pruebas en
   `pruebas/` contra los emuladores (`?emulador=1` abre la app contra
   ellos).
 
@@ -99,7 +118,7 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - Guía completa en `apk/LEEME-APK.md`; ficha, textos, capturas y
   respuestas de seguridad de datos en `tienda/`.
 
-## Estado y pendiente (a 20 de octubre de 2026)
+## Estado y pendiente (a 22 de octubre de 2026)
 
 Hecho: Firebase `coordinate-b7759` conectado y publicado (Authentication
 con `shaggy2983.github.io` autorizado, Firestore creado con reglas); ID
@@ -108,8 +127,12 @@ Entra) en `js/cuentas-config.js`.
 
 1. **Storage** de Firebase: crearlo (plan Blaze) y publicar
    `storage.rules`; hasta entonces las fotos, firmas y planos de las obras
-   compartidas no suben a la nube. Comprobar que las reglas publicadas en
-   Firestore son las de `firestore.rules`.
+   compartidas no suben a la nube (y las visitas que los llevan no llegan
+   al panel). **Publicar `firestore.rules`** de nuevo (regla
+   `actualizaMiFicha` del perfil) y comprobar que son las del repositorio.
+   Las pruebas de reglas nuevas (ficha) no se han podido correr en la nube
+   de Claude (sin acceso a la descarga del emulador): correr
+   `npm run reglas` en el PC.
 2. **Primera prueba real** de cuentas: crear cuenta, compartir una obra,
    invitar, equipo y contratista, en teléfonos de verdad.
 3. **Google Play:** la cuenta de desarrollador espera la verificación de
@@ -120,6 +143,8 @@ Entra) en `js/cuentas-config.js`.
    verificar la app.
 4. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
    repasos en el plano, papel de empresa por encima de los equipos.
+5. Notificación con la app cerrada y resumen semanal por correo automático:
+   necesitan Cloud Functions (plan Blaze).
 
 Navisworks (NWD/NWC) no se puede abrir: es un formato cerrado; se trabaja
 con IFC exportado desde el programa de origen.

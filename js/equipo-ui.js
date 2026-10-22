@@ -473,6 +473,9 @@ export function iniciarEquipoUI(opciones) {
           onclick: () => equipo.sincronizar()
         }, '⟳')),
       estado.texto && el('p', { class: `pie estado-sinc fase-${estado.fase}` }, estado.texto),
+      !/panel\.html|perfil\.html/.test(location.pathname) && el('div', { class: 'fila-botones' },
+        el('a', { class: 'boton', href: './panel.html' }, '📊 Panel del equipo'),
+        el('a', { class: 'boton', href: './perfil.html' }, '👤 Mi perfil')),
       !equipo.verificado && el('div', { class: 'aviso-verificar' },
         el('p', {}, `Verifica tu correo ${u.email} con el enlace que te enviamos: hace falta para recibir invitaciones.`),
         el('div', { class: 'fila-botones' },

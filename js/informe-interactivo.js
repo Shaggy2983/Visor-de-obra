@@ -48,7 +48,7 @@ export async function generarInformeInteractivo(v, planos, { contacto, lema, rep
   }
   const datos = {
     visita: {
-      fecha: fechaLarga(v.fecha), hora: v.hora, obra: v.obra, autor: v.autor,
+      fecha: fechaLarga(v.fecha), fechaISO: v.fecha, hora: v.hora, obra: v.obra, autor: v.autor,
       tiempo: [v.clima.join(', '), v.temperatura].filter(Boolean).join(' · '),
       jornada: v.jornada,
       personal: v.personal.filter((p) => p.empresa || p.oficio || p.numero),
@@ -339,9 +339,11 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
   if (V.incidencias.length) {
     var G = { leve: 'Leve', media: 'Media', grave: 'Grave' };
     seccion('Incidencias').append(h('div', { class: 'tarjeta' }, h('table', {},
-      h('thead', {}, h('tr', {}, h('th', {}, 'Descripción'), h('th', {}, 'Gravedad'), h('th', {}, 'Estado'))),
+      h('thead', {}, h('tr', {}, h('th', {}, 'Hora'), h('th', {}, 'Descripción'), h('th', {}, 'Gravedad'), h('th', {}, 'Estado'))),
       h('tbody', {}, V.incidencias.map(function (i) {
-        return h('tr', {}, h('td', {}, i.texto), h('td', {}, G[i.gravedad] || i.gravedad), h('td', {}, i.estado === 'cerrada' ? 'Resuelta' : 'Abierta'));
+        var alta = i.desde && i.desde !== V.fechaISO ? 'Desde ' + i.desde + (i.hora ? ' ' + i.hora : '') : (i.hora || '—');
+        var est = i.estado === 'cerrada' ? 'Resuelta' + (i.resuelta ? ' ' + i.resuelta : '') : 'Abierta';
+        return h('tr', {}, h('td', {}, alta), h('td', {}, i.texto), h('td', {}, G[i.gravedad] || i.gravedad), h('td', {}, est));
       })))));
   }
   if (D.repasos.length) {

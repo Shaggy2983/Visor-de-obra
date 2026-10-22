@@ -891,3 +891,91 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   cursor: pointer;
 }
 .sugerencia:active { background: var(--color-accent-800); }
+
+/* ---------- horas de incidencias en el informe ---------- */
+.informe-hora { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* ---------- informe impreso · diseño profesional (v21) ---------- */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 13mm 16mm;
+    @bottom-left { content: "COORDINATE · Parte de visita de obra"; font: 7pt "Inter", sans-serif; color: #6b7a90; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 7pt "Inter", sans-serif; color: #6b7a90; }
+  }
+
+  .informe { font-size: 9.5pt; line-height: 1.45; }
+
+  .informe-banda { margin: 0 0 4mm; padding: 4mm 5mm; border-radius: 1.5mm; background: linear-gradient(90deg, #121826, #1b3560); }
+  .informe-banda-doc { display: flex; flex-direction: column; align-items: flex-end; gap: .4mm; }
+  .informe-banda-doc strong { font-size: 10pt; letter-spacing: .06em; color: #fff; font-variant-numeric: tabular-nums; }
+
+  .informe-cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm; padding-bottom: 3mm; border-bottom: .6pt solid #c9d3e2; }
+  .informe-cabecera h1 { font-size: 19pt; font-weight: 700; letter-spacing: -.01em; }
+  .informe-obra { margin: .5mm 0 0; font-size: 12pt; }
+  .informe-sello { display: flex; flex-direction: column; align-items: flex-end; font-size: 7.5pt; color: #6b7a90; text-transform: uppercase; letter-spacing: .08em; }
+  .informe-sello strong { font-size: 10pt; color: #121826; letter-spacing: 0; text-transform: none; }
+
+  .informe-ficha { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 4mm 0 3mm; border: .6pt solid #c9d3e2; border-radius: 1.5mm; overflow: hidden; }
+  .informe-dato { display: flex; flex-direction: column; gap: .5mm; padding: 2.2mm 3mm; border-right: .6pt solid #e1e7ef; border-bottom: .6pt solid #e1e7ef; background: #fff; }
+  .informe-dato:nth-child(3n) { border-right: 0; }
+  .informe-dato span { font-size: 6.8pt; text-transform: uppercase; letter-spacing: .1em; color: #6b7a90; }
+  .informe-dato strong { font-size: 9.5pt; font-weight: 600; color: #121826; }
+
+  .informe-cifras { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5mm; margin: 0 0 5mm; }
+  .informe-cifra { display: flex; align-items: baseline; gap: 2mm; padding: 2.5mm 3mm; border-radius: 1.5mm; background: #eef1f6; border-left: 2pt solid #3d7cc4; }
+  .informe-cifra strong { font-size: 15pt; font-weight: 700; color: #1b3560; font-variant-numeric: tabular-nums; }
+  .informe-cifra span { font-size: 7.5pt; color: #3b4a60; line-height: 1.25; }
+  .informe-cifra.alerta { border-left-color: #c0392b; }
+  .informe-cifra.alerta strong { color: #c0392b; }
+  .informe-cifra.aviso { border-left-color: #d08a12; }
+
+  .informe h2.informe-h2 {
+    display: flex; align-items: center; gap: 2.5mm;
+    margin: 6mm 0 2.5mm; padding: 0 0 1.5mm;
+    font-size: 9.5pt; letter-spacing: .06em; text-transform: uppercase; color: #1b3560;
+    border-bottom: .6pt solid #c9d3e2;
+    break-after: avoid;
+  }
+  .informe-h2-n { display: inline-grid; place-items: center; min-width: 6.5mm; height: 6.5mm; border-radius: 1mm; background: #1b3560; color: #fff; font-size: 7.5pt; letter-spacing: 0; }
+  .informe-h2-extra { margin-left: auto; font-size: 7.5pt; letter-spacing: .02em; text-transform: none; color: #6b7a90; font-weight: 500; }
+  .informe h3 { margin: 0 0 1mm; font-size: 7.5pt; text-transform: uppercase; letter-spacing: .08em; color: #3d7cc4; }
+
+  .informe table.informe-tabla { border: .6pt solid #c9d3e2; border-radius: 1.5mm; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+  .informe .informe-tabla thead th { padding: 1.8mm 2.5mm; font-size: 7.2pt; text-transform: uppercase; letter-spacing: .07em; color: #fff; background: #1b3560; border: 0; }
+  .informe .informe-tabla td { padding: 1.8mm 2.5mm; border-bottom: .5pt solid #e1e7ef; }
+  .informe .informe-tabla tbody tr:nth-child(even) td { background: #f6f8fb; }
+  .informe .informe-tabla tbody tr:last-child td { border-bottom: 0; }
+  .informe .informe-tabla tr { break-inside: avoid; }
+
+  .informe-tiempo .informe-hora { width: 16mm; }
+  .informe-reloj { display: inline-block; padding: .4mm 1.6mm; border-radius: 1mm; background: #e6eef9; color: #1b3560; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .informe-hora { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .informe-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+  .informe-dos > div { padding: 2.5mm 3mm; border: .6pt solid #c9d3e2; border-radius: 1.5mm; }
+
+  .informe .parrafo { padding: 0 .5mm; }
+
+  .informe-etiqueta { display: inline-block; padding: .4mm 2mm; border-radius: 3mm; font-size: 7.5pt; font-weight: 600; white-space: nowrap; }
+  .informe-etiqueta.grav-leve { background: #e6f4ec; color: #1e7a4c; }
+  .informe-etiqueta.grav-media { background: #fdf1dc; color: #9a6206; }
+  .informe-etiqueta.grav-grave { background: #fbe3e1; color: #b0302a; }
+  .informe-etiqueta.abierta { background: #fbe3e1; color: #b0302a; }
+  .informe-etiqueta.ok { background: #e6f4ec; color: #1e7a4c; }
+
+  .informe-fotos { gap: 4mm; }
+  .informe-fotos figure { padding: 1.5mm; border: .6pt solid #c9d3e2; border-radius: 1.5mm; }
+  .informe-fotos img { border: 0; border-radius: 1mm; background: #f6f8fb; }
+  .informe-fotos figcaption { padding: 1mm .5mm 0; font-size: 7.5pt; }
+
+  .informe-firma { break-inside: avoid; }
+  .informe-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; margin-top: 2mm; }
+  .informe-firma-caja { display: flex; flex-direction: column; gap: .8mm; padding-top: 1mm; }
+  .informe-firma-caja img, .informe-firma-caja .informe-hueco { height: 24mm; width: 100%; max-width: none; object-fit: contain; object-position: left bottom; border-bottom: .8pt solid #121826; }
+  .informe-firma-caja strong { margin-top: 1mm; font-size: 9pt; }
+  .informe-firma-caja span { font-size: 7.5pt; color: #6b7a90; text-transform: uppercase; letter-spacing: .06em; }
+
+  .informe-legal { margin: 6mm 0 0; font-size: 7pt; color: #6b7a90; line-height: 1.4; }
+  .informe-pie { margin-top: 3mm; border-radius: 1.5mm; }
+}

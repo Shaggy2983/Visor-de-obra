@@ -27,7 +27,7 @@ const norm = (t) => quitarTildes(String(t || '').toLowerCase()).replace(/\s+/g, 
 function trozos(texto) {
   return String(texto || '')
     .split(/\n|(?<=[.;])\s+/)
-    .map((t) => t.trim().replace(/[.;]+$/, ''))
+    .map((t) => t.trim().replace(/^\d{1,2}:\d{2}\s*·\s*/, '').replace(/[.;]+$/, ''))
     .filter((t) => t.length >= 3 && t.length <= 160);
 }
 
@@ -120,7 +120,7 @@ function fragmento(area) {
   let corte = antes.lastIndexOf('\n');
   const punto = antes.match(/[.;]\s+(?=[^.;\n]*$)/);
   if (punto) corte = Math.max(corte, punto.index + 1);
-  const texto = antes.slice(corte + 1).replace(/^\s+/, '');
+  const texto = antes.slice(corte + 1).replace(/^\s+/, '').replace(/^\d{1,2}:\d{2}\s*·\s*/, '');
   return { inicio: hasta - texto.length, hasta, texto };
 }
 

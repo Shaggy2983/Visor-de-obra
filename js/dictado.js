@@ -76,6 +76,7 @@ function vista(area, texto) {
 function parar() {
   if (!activo) return;
   const { boton, rec, area, vigia } = activo;
+  if (activo.vivo) { const t = activo.vivo.texto; quitarVivo(area, activo); insertar(area, limpiar(t)); }
   activo = null;
   clearTimeout(vigia);
   boton.classList.remove('escuchando', 'oyendo');
@@ -83,6 +84,22 @@ function parar() {
   boton.title = 'Dictar';
   vista(area, '');
   try { rec.abort(); } catch { /* ya parado */ }
+}
+
+/* ¿Reconocimiento en el propio teléfono? (Chrome reciente con el idioma
+   descargado). Es más rápido y funciona sin señal. */
+let local = null;
+async function hayLocal() {
+  if (local !== null) return local;
+  local = false;
+  try {
+    if (Reconocedor.available) {
+      const r = await Reconocedor.available({ langs: [idioma()], processLocally: true });
+      local = r === 'available';
+      if (r === 'downloadable' && Reconocedor.install) Reconocedor.install({ langs: [idioma()], processLocally: true }).catch(() => {});
+    }
+  } catch { local = false; }
+  return local;
 }
 
 /* Pide el micrófono de forma explícita: en la app instalada (TWA) es lo
@@ -103,6 +120,36 @@ async function pedirMicrofono() {
   }
 }
 
+/* Texto en vivo: lo provisional se escribe ya en el cuadro (sin guardar)
+   y se sustituye por la versión final al acabar la frase. */
+function ponerVivo(area, estado, texto) {
+  const t = limpiar(texto);
+  if (!estado.vivo) {
+    if (document.activeElement !== area) area.selectionStart = area.selectionEnd = area.value.length;
+    if (area.dataset.campo === 'trabajos' && /(^|\n)$/.test(area.value.slice(0, area.selectionStart))) marcarHora(area);
+    const ini = area.selectionStart;
+    const antes = area.value.slice(0, ini);
+    const hueco = antes && !/[\s\n]$/.test(antes) ? ' ' : '';
+    estado.vivo = { inicio: ini, largo: 0, hueco, texto: '' };
+  }
+  const v = estado.vivo;
+  const nuevo = v.hueco + t;
+  area.value = area.value.slice(0, v.inicio) + nuevo + area.value.slice(v.inicio + v.largo);
+  v.largo = nuevo.length;
+  v.texto = texto;
+  area.selectionStart = area.selectionEnd = v.inicio;
+  area.classList.add('dictando');
+}
+
+function quitarVivo(area, estado) {
+  const v = estado.vivo;
+  if (!v) return;
+  area.value = area.value.slice(0, v.inicio) + area.value.slice(v.inicio + v.largo);
+  area.selectionStart = area.selectionEnd = v.inicio;
+  estado.vivo = null;
+  area.classList.remove('dictando');
+}
+
 /* Android escucha mejor frase a frase: cada vez que termina una frase se
    vuelve a arrancar hasta que se toca de nuevo el botón. */
 function escuchar(area, boton) {
@@ -111,6 +158,7 @@ function escuchar(area, boton) {
   rec.continuous = false;
   rec.interimResults = true;
   rec.maxAlternatives = 1;
+  if (activo.local) rec.processLocally = true;   // en el teléfono, sin ir a internet
   const estado = activo;
   estado.rec = rec;
   rec.onaudiostart = () => { boton.classList.add('oyendo'); clearTimeout(estado.vigia); };
@@ -118,13 +166,15 @@ function escuchar(area, boton) {
     let provisional = '';
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
       const r = ev.results[i];
-      if (r.isFinal) { insertar(area, limpiar(r[0].transcript)); vista(area, ''); }
+      if (r.isFinal) { quitarVivo(area, estado); insertar(area, limpiar(r[0].transcript)); }
       else provisional += r[0].transcript;
     }
-    if (provisional) vista(area, `🎙 ${provisional}`);
+    if (provisional) ponerVivo(area, estado, provisional);
   };
   rec.onerror = (ev) => {
     if (ev.error === 'no-speech' || ev.error === 'aborted') return;   // se reintenta en onend
+    // Si el reconocimiento en el teléfono falla, se sigue con el de Google.
+    if (estado.local && ev.error !== 'not-allowed') { local = false; estado.local = false; return; }
     if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
       aviso('Sin permiso de micrófono o de voz de Google. Ajustes → Apps → Chrome → Permisos → Micrófono.');
     } else if (ev.error === 'network') {
@@ -140,6 +190,8 @@ function escuchar(area, boton) {
     parar();
   };
   rec.onend = () => {
+    // Si la frase acabó sin «final», lo provisional se queda como texto.
+    if (estado.vivo) { const t = estado.vivo.texto; quitarVivo(area, estado); insertar(area, limpiar(t)); }
     if (activo !== estado || estado.fallo) return;
     try { escuchar(area, boton); } catch { parar(); }   // siguiente frase
   };
@@ -155,6 +207,7 @@ async function empezar(area, boton) {
   boton.title = 'Parar dictado';
   const estado = activo;
   if (!(await pedirMicrofono()) || activo !== estado) { if (activo === estado) parar(); return; }
+  estado.local = await hayLocal();
   // Si en 6 s no llega sonido, algo bloquea el reconocimiento.
   estado.vigia = setTimeout(() => {
     if (activo !== estado || boton.classList.contains('oyendo')) return;

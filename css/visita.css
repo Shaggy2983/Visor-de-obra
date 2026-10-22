@@ -13,7 +13,7 @@
 
 .barra-solida {
   position: sticky;
-  background: rgba(18,24,38,.97);
+  background: rgba(var(--velo-rgb), .97);
   border-bottom: 1px solid var(--borde);
 }
 
@@ -41,7 +41,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
 .fila-botones { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
 
-.boton-peligro { color: #ff8a80; border-color: #6b2b2b; background: transparent; }
+.boton-peligro { color: var(--peligro-texto); border-color: #6b2b2b; background: transparent; }
 
 /* ---------- lista ---------- */
 
@@ -81,7 +81,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 }
 
 .pendientes { color: var(--acento); }
-.pendientes.grave { color: #ff8a80; font-weight: 600; }
+.pendientes.grave { color: var(--peligro-texto); font-weight: 600; }
 
 .copia { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--borde); }
 
@@ -181,7 +181,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   position: absolute;
   top: .3rem; right: .3rem;
   min-height: 2rem; min-width: 2rem;
-  background: rgba(18,24,38,.8);
+  background: rgba(var(--velo-rgb), .8);
 }
 
 .firma {
@@ -319,7 +319,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 
 .repaso-pie { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
 .repaso-pie .pie { margin: 0; }
-.boton-peligro-texto { color: #ff8a80 !important; }
+.boton-peligro-texto { color: var(--peligro-texto) !important; }
 
 /* ---------- planos en la ficha ---------- */
 
@@ -352,7 +352,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   position: absolute;
   top: .3rem; right: .3rem;
   min-height: 2rem; min-width: 2rem;
-  background: rgba(18,24,38,.8);
+  background: rgba(var(--velo-rgb), .8);
 }
 
 .foto-nota {
@@ -486,7 +486,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 .nota-fotos { display: flex; gap: .45rem; overflow-x: auto; margin: .2rem 0 .3rem; }
 .nota-fotos figure { position: relative; margin: 0; flex: 0 0 auto; }
 .nota-fotos img { display: block; width: 6.5rem; height: 4.9rem; object-fit: cover; border-radius: .45rem; cursor: zoom-in; }
-.nota-fotos .quitar { position: absolute; top: .2rem; right: .2rem; min-height: 1.8rem; min-width: 1.8rem; background: rgba(18,24,38,.8); }
+.nota-fotos .quitar { position: absolute; top: .2rem; right: .2rem; min-height: 1.8rem; min-width: 1.8rem; background: rgba(var(--velo-rgb), .8); }
 
 .vincular { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0; }
 .vincular[hidden] { display: none; }
@@ -647,7 +647,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 .dialogo .casilla { color: var(--texto); }
 .dialogo-formulario > * + * { margin-top: .5rem; }
 .dialogo .opcion { display: flex; align-items: center; gap: .4rem; font-size: .9rem; color: var(--texto); }
-.dialogo .error { color: #ff8a80; }
+.dialogo .error { color: var(--peligro-texto); }
 .dialogo a.boton { margin-top: .4rem; }
 
 .copias { display: flex; flex-direction: column; gap: .4rem; }
@@ -677,7 +677,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 }
 
 .estado-sinc { margin: .4rem 0 0; }
-.estado-sinc.fase-error, .estado-sinc.fase-sin-red { color: #ffb36b; }
+.estado-sinc.fase-error, .estado-sinc.fase-sin-red { color: var(--aviso-texto); }
 
 .aviso-verificar, .invitacion, .aviso-invitacion {
   margin-top: .6rem;
@@ -732,7 +732,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 .mi-repaso-cabecera { display: flex; align-items: center; gap: .55rem; }
 .mi-repaso-texto { margin: .45rem 0 .2rem; }
 .mi-repaso-sub { margin: .5rem 0 .2rem; font-size: .7rem; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--texto-tenue); }
-.mi-repaso .prioridad { color: #ff8a80; }
+.mi-repaso .prioridad { color: var(--peligro-texto); }
 
 .aviso-lectura {
   margin: 0 0 .6rem;
@@ -987,3 +987,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 /* ---------- dictado: vista previa y estado «oyendo» ---------- */
 .dictado-vista { margin: .3rem 0 0; padding: .35rem .6rem; border-radius: .5rem; background: rgba(198,40,40,.12); color: var(--texto); font-size: .9rem; font-style: italic; }
 .boton-dictado.escuchando:not(.oyendo) { background: #8e2a2a; animation: none; opacity: .85; }
+textarea.campo.dictando { caret-color: transparent; }
+
+/* ---------- botón de tema (js/tema.js) ---------- */
+.boton-tema { min-width: 2.6rem; padding-inline: .5rem; font-size: 1.05rem; line-height: 1; }

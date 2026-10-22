@@ -33,6 +33,16 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   numeradas, dibujo a mano alzada, tonos de pintura y enlaces
   (`js/planos.js`), informe PDF e **informe interactivo** `.html`
   (`js/informe-interactivo.js`), copia de seguridad JSON.
+- **Dictado por voz** (`js/dictado.js`): micrófono en cada `textarea.campo`
+  (Web Speech API de Chrome, sin servicios de pago; necesita señal).
+  Órdenes: «coma», «dos puntos», «punto y seguido», «punto y aparte».
+- **Tiempo del lugar** (`js/clima.js`): al abrir la visita del día sin
+  temperatura, o con «📍 Tomar del lugar», ubicación aproximada (redondeada)
+  → Open-Meteo (libre, sin clave) → temperatura y estados. Declarado en
+  privacidad y en Seguridad de los datos (ubicación aproximada).
+- **Predictivo y corrector** (`js/predictivo.js`): sugerencias de frases y
+  listas (empresa, oficio, obra, autor, zona) aprendidas de las visitas y
+  repasos locales; activa spellcheck/autocapitalize para Gboard (ES/EN).
 - **Punch list de terminaciones** (`js/repasos.js`): repasos por obra con
   zona, tipo, responsable, prioridad y fotos antes/después; estados
   pendiente → corregido → cerrado con fecha; PDF propio para contratistas.

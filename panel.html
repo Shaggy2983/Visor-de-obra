@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es" class="pagina-visita pagina-panel">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COORDINATE · Panel del equipo</title>
+<meta name="description" content="COORDINATE — resumen diario y semanal de las bitácoras de tu equipo">
+<meta name="theme-color" content="#121826">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./marca/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./icono-192.png" sizes="192x192">
+<link rel="preload" href="./vendor/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="./js/tema.js"></script>
+<link rel="stylesheet" href="./css/estilos.css">
+<link rel="stylesheet" href="./css/visita.css">
+<link rel="stylesheet" href="./css/panel.css">
+</head>
+<body>
+
+<header class="barra-superior barra-solida">
+  <h1 class="titulo"><span class="marca" aria-label="COORDINATE">C<svg viewBox="10 10 44 44" aria-hidden="true"><g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g><circle cx="32" cy="32" r="6" fill="var(--color-accent)"/></svg>ORDINATE</span><span class="titulo-seccion">Panel</span></h1>
+  <div class="acciones">
+    <button type="button" id="btn-tema" class="boton boton-tema" aria-label="Tema">🌙</button>
+    <a href="./perfil.html" class="boton" title="Mi perfil y mis obras">👤 Perfil</a>
+    <a href="./visita.html" class="boton">Visitas</a>
+  </div>
+</header>
+
+<main class="contenido contenido-ancho">
+  <section id="grupo-equipo" class="grupo equipo" hidden>
+    <h2>Entra con tu cuenta</h2>
+    <p class="pie">El panel resume las bitácoras de las obras compartidas de tu equipo. Entra con la misma cuenta que usas en el teléfono.</p>
+    <div id="equipo"></div>
+  </section>
+
+  <div id="panel" hidden>
+    <div class="panel-mando">
+      <div class="chips" id="pestanas" role="tablist" aria-label="Resumen">
+        <button type="button" class="chip activo" data-vista="dia" role="tab">Diario</button>
+        <button type="button" class="chip" data-vista="semana" role="tab">Semanal</button>
+      </div>
+      <label class="panel-obra">Obra
+        <select id="obra" class="campo"></select>
+      </label>
+      <div class="panel-fecha">
+        <button type="button" id="antes" class="boton" aria-label="Anterior">◀</button>
+        <input type="date" id="fecha" class="campo" aria-label="Fecha">
+        <button type="button" id="despues" class="boton" aria-label="Siguiente">▶</button>
+        <button type="button" id="hoy" class="boton">Hoy</button>
+      </div>
+      <div class="panel-acciones">
+        <button type="button" id="recargar" class="boton" title="Volver a leer de la nube">⟳</button>
+        <button type="button" id="imprimir" class="boton boton-destacado">Reporte en PDF</button>
+      </div>
+    </div>
+
+    <section id="novedades" class="grupo panel-novedades" hidden></section>
+    <p id="estado" class="pie panel-estado"></p>
+    <div id="contenido"></div>
+  </div>
+
+  <p class="pie legal-pie"><a href="./privacidad.html">Política de privacidad</a> · COORDINATE · hola@coordinate.do</p>
+</main>
+
+<dialog id="dialogo" class="dialogo"></dialog>
+<div id="aviso" class="aviso" hidden></div>
+
+<script type="module" src="./js/panel.js"></script>
+</body>
+</html>

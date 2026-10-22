@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es" class="pagina-visita pagina-perfil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>COORDINATE · Mi perfil</title>
+<meta name="description" content="COORDINATE — tu perfil, tus obras y el espacio de cada proyecto">
+<meta name="theme-color" content="#121826">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./marca/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="./icono-192.png" sizes="192x192">
+<link rel="preload" href="./vendor/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="./js/tema.js"></script>
+<link rel="stylesheet" href="./css/estilos.css">
+<link rel="stylesheet" href="./css/visita.css">
+<link rel="stylesheet" href="./css/panel.css">
+</head>
+<body>
+
+<header class="barra-superior barra-solida">
+  <h1 class="titulo"><span class="marca" aria-label="COORDINATE">C<svg viewBox="10 10 44 44" aria-hidden="true"><g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g><circle cx="32" cy="32" r="6" fill="var(--color-accent)"/></svg>ORDINATE</span><span id="titulo-seccion" class="titulo-seccion">Perfil</span></h1>
+  <div class="acciones">
+    <button type="button" id="btn-tema" class="boton boton-tema" aria-label="Tema">🌙</button>
+    <a href="./panel.html" class="boton" title="Resumen diario y semanal">📊 Panel</a>
+    <a href="./visita.html" class="boton">Visitas</a>
+  </div>
+</header>
+
+<main class="contenido contenido-ancho">
+  <!-- perfil propio (#/) -->
+  <div id="vista-perfil">
+    <section id="mi-perfil" class="grupo" hidden></section>
+    <section id="mis-obras" class="grupo" hidden></section>
+    <section id="mis-bitacoras" class="grupo" hidden></section>
+    <section id="grupo-equipo" class="grupo equipo" hidden>
+      <h2>Cuenta y equipo</h2>
+      <div id="equipo"></div>
+    </section>
+  </div>
+
+  <!-- espacio de una obra (#/obra/ID) -->
+  <div id="vista-obra" hidden></div>
+
+  <p class="pie legal-pie"><a href="./privacidad.html">Política de privacidad</a> · COORDINATE · hola@coordinate.do</p>
+</main>
+
+<dialog id="dialogo" class="dialogo"></dialog>
+<div id="aviso" class="aviso" hidden></div>
+
+<script type="module" src="./js/perfil.js"></script>
+</body>
+</html>

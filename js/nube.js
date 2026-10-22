@@ -161,12 +161,14 @@ export function crearNube(opciones) {
     } catch (e) { /* sin memoria de destinatarios */ }
   }
 
-  function enviar(visita) {
+  /* previo (opcional): { para, asunto, alEnviar() } — p. ej. el aviso a
+     los administradores al firmar. */
+  function enviar(visita, previo = {}) {
     if (!vinculadas().length) return sinCuentas();
     const cuenta = selectorCuenta('cuenta-correo');
-    const para = el('input', { type: 'text', inputmode: 'email', class: 'campo', value: recordarDestinatarios(visita.obra), placeholder: 'correo@empresa.com, otro@…', autocapitalize: 'off', spellcheck: false });
+    const para = el('input', { type: 'text', inputmode: 'email', class: 'campo', value: previo.para || recordarDestinatarios(visita.obra), placeholder: 'correo@empresa.com, otro@…', autocapitalize: 'off', spellcheck: false });
     const cc = el('input', { type: 'text', inputmode: 'email', class: 'campo', placeholder: 'Opcional', autocapitalize: 'off', spellcheck: false });
-    const asunto = el('input', { type: 'text', class: 'campo', value: `Parte de visita · ${visita.obra || 'Obra'} · ${fechaLarga(visita.fecha)}` });
+    const asunto = el('input', { type: 'text', class: 'campo', value: previo.asunto || `Parte de visita · ${visita.obra || 'Obra'} · ${fechaLarga(visita.fecha)}` });
     const texto = el('textarea', { class: 'campo', rows: 8, value: opciones.resumen(visita) });
     const conInforme = el('input', { type: 'checkbox', checked: true });
     const conFotos = el('input', { type: 'checkbox', checked: false });
@@ -197,7 +199,8 @@ export function crearNube(opciones) {
             return true;
           });
           if (hecho) {
-            guardarDestinatarios(visita.obra, para.value);
+            if (previo.alEnviar) previo.alEnviar();
+            else guardarDestinatarios(visita.obra, para.value);
             dialogo.close();
             opciones.avisar(`Enviado a ${plural(direcciones(para.value).length, 'destinatario', 'destinatarios')}.`, 4000);
           }
@@ -318,5 +321,5 @@ export function crearNube(opciones) {
       lista);
   }
 
-  return { pintarCuentas, enviar, guardar, copiaNube };
+  return { pintarCuentas, enviar, guardar, copiaNube, abrir };
 }

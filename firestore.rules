@@ -20,7 +20,8 @@ rules_version = '2';
 // Cada mapa de papeles va acompañado de una lista con sus claves
 // (miembrosLista, invitadosLista) porque las consultas «donde estoy» sólo
 // pueden hacerse sobre listas. «personas» guarda el nombre y el correo de
-// cada miembro, para la lista del equipo; cada uno sólo toca su ficha.
+// cada miembro (y, si los ha puesto en su perfil, cargo, empresa y una foto
+// pequeña), para la lista del equipo; cada uno sólo toca su ficha.
 //
 // Vincular un equipo a una obra (lo hace quien administra los dos) apunta
 // el papel del equipo en obra.equipos y a sus miembros en la obra; quien
@@ -92,6 +93,16 @@ service cloud.firestore {
         && !(uid() in d.miembros);
     }
 
+    // Un miembro pone al día su propia ficha (nombre, cargo, empresa, foto).
+    function actualizaMiFicha(a, d) {
+      return uid() in a.miembros
+        && cambian(a, d).hasOnly(['personas', 'modificada'])
+        && soloMiFicha(a, d)
+        && d.personas[uid()] is map
+        && d.personas[uid()].keys().hasOnly(['nombre', 'correo', 'cargo', 'empresa', 'foto'])
+        && d.personas[uid()].get('foto', '').size() <= 40000;
+    }
+
     function lee(a) {
       return uid() in a.miembrosLista || (verificado() && correo() in a.invitadosLista);
     }
@@ -115,7 +126,8 @@ service cloud.firestore {
         && (resource.data.miembros.get(uid(), '') == 'admin'
             || aceptaInvitacion(resource.data, request.resource.data)
             || rechazaInvitacion(resource.data, request.resource.data)
-            || seVa(resource.data, request.resource.data));
+            || seVa(resource.data, request.resource.data)
+            || actualizaMiFicha(resource.data, request.resource.data));
 
       allow delete: if firmado() && resource.data.miembros.get(uid(), '') == 'admin';
     }
@@ -173,7 +185,8 @@ service cloud.firestore {
             || rechazaInvitacion(antes(), despues())
             || seVa(antes(), despues())
             || seUnePorEquipo()
-            || quitaPorEquipo());
+            || quitaPorEquipo()
+            || actualizaMiFicha(antes(), despues()));
 
       allow delete: if firmado() && antes().miembros.get(uid(), '') == 'admin';
 

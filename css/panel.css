@@ -1,0 +1,239 @@
+/* Panel del equipo y perfil — se cargan detrás de estilos.css y
+   visita.css. Pensados también para pantalla grande (ordenador). Sólo
+   tokens del tema: nada de colores fijos fuera de la impresión. */
+
+.contenido-ancho { max-width: 72rem; }
+
+/* ---------- mandos ---------- */
+
+.panel-mando {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: .6rem 1rem;
+  margin-bottom: .8rem;
+  padding: .7rem .8rem;
+  border: 1px solid var(--borde);
+  border-radius: .7rem;
+  background: var(--fondo-2);
+}
+.panel-mando .chips { margin: 0; }
+.panel-obra { flex: 1 1 14rem; min-width: 0; }
+.panel-fecha, .panel-acciones { display: flex; gap: .4rem; align-items: center; }
+.panel-fecha .campo { width: auto; }
+.panel-acciones { margin-left: auto; }
+.panel-estado { margin: 0 0 .6rem; }
+
+.panel-titulo { margin: .2rem 0 .6rem; font-size: 1.15rem; }
+
+/* ---------- cifras ---------- */
+
+.cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.cifra {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  padding: .6rem .7rem;
+  border: 1px solid var(--borde);
+  border-radius: .6rem;
+  background: var(--fondo-2);
+}
+.cifra strong { font-size: 1.45rem; line-height: 1.1; color: var(--acento); font-variant-numeric: tabular-nums; }
+.cifra span { font-size: .76rem; color: var(--texto-tenue); }
+.cifra.alerta strong { color: var(--peligro-texto); }
+.cifras-pequenas { grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); }
+.cifras-pequenas .cifra strong { font-size: 1.15rem; }
+
+/* ---------- obras ---------- */
+
+.panel-obra-tarjeta {
+  padding: .8rem .9rem;
+  border: 1px solid var(--borde);
+  border-radius: .7rem;
+  background: var(--fondo-2);
+}
+.panel-obra-tarjeta .grupo-cabecera h2 { font-size: 1rem; text-transform: none; letter-spacing: 0; color: var(--texto); }
+.panel-sub { margin: 1rem 0 .35rem; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; color: var(--acento); }
+
+.panel-visitas { display: grid; gap: .5rem; margin-top: .6rem; }
+@media (min-width: 52rem) { .panel-visitas { grid-template-columns: 1fr 1fr; } }
+.panel-visita { padding: .6rem .7rem; border: 1px solid var(--borde); border-radius: .55rem; background: var(--fondo); }
+.panel-visita-cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .5rem; }
+.panel-visita > .pie { margin: .15rem 0 0; }
+.panel-visita-cabecera .enlace { margin-left: auto; }
+.panel-trabajos { margin: .4rem 0 0; padding-left: 1.1rem; font-size: .88rem; }
+.panel-trabajos li + li { margin-top: .15rem; }
+
+.panel-lista { margin: .3rem 0 0; padding: 0; list-style: none; font-size: .88rem; }
+.panel-lista li { padding: .35rem 0; border-bottom: 1px solid var(--borde); }
+.panel-lista li:last-child { border-bottom: 0; }
+
+.etiqueta {
+  display: inline-block;
+  padding: .05rem .45rem;
+  border-radius: 1rem;
+  border: 1px solid var(--borde);
+  font-size: .72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--texto-tenue);
+}
+.etiqueta.ok { color: var(--acento); border-color: var(--acento); }
+.etiqueta.atencion, .etiqueta.gravedad-media { color: var(--aviso-texto); border-color: var(--aviso-texto); }
+.etiqueta.gravedad-grave { color: var(--peligro-texto); border-color: var(--peligro-texto); }
+.etiqueta.gravedad-leve { color: var(--texto-tenue); }
+
+.tabla-envoltura { overflow-x: auto; margin-top: .3rem; }
+.tabla { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.tabla th, .tabla td { padding: .35rem .5rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--borde); }
+.tabla th { font-size: .74rem; font-weight: 600; color: var(--texto-tenue); background: var(--fondo-3); }
+.tabla td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+
+.panel-novedades { padding: .7rem .8rem; border: 1px solid var(--acento); border-radius: .7rem; background: var(--fondo-2); }
+.panel-novedades h2 { color: var(--acento); }
+
+.impreso-cabecera, .impreso-pie { display: none; }
+
+/* ---------- perfil y espacio de la obra ---------- */
+
+.perfil-cabecera { display: flex; align-items: center; gap: .9rem; margin-bottom: .8rem; }
+.avatar {
+  flex: 0 0 auto;
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--acento);
+  color: var(--texto-sobre-acento);
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  overflow: hidden;
+}
+.avatar.pequeno { width: 2.4rem; height: 2.4rem; font-size: .95rem; }
+.perfil-nombre { margin: 0; font-size: 1.2rem; }
+.perfil-datos { min-width: 0; }
+.perfil-datos .pie { margin: .1rem 0 0; }
+
+.rejilla { display: grid; gap: .6rem; }
+@media (min-width: 46rem) { .rejilla { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 70rem) { .rejilla.tres { grid-template-columns: repeat(3, 1fr); } }
+
+.obra-tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  padding: .75rem .8rem;
+  border: 1px solid var(--borde);
+  border-radius: .65rem;
+  background: var(--fondo-2);
+  color: var(--texto);
+  text-decoration: none;
+}
+.obra-tarjeta strong { font-size: 1rem; }
+.obra-tarjeta .fila-botones { margin-top: .3rem; }
+
+.persona { display: flex; align-items: center; gap: .6rem; padding: .55rem .6rem; border: 1px solid var(--borde); border-radius: .6rem; background: var(--fondo-2); }
+.persona-datos { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.persona-datos .pie { margin: 0; overflow: hidden; text-overflow: ellipsis; }
+
+.firma-muestra { max-width: 16rem; height: auto; padding: .4rem; border: 1px dashed var(--borde); border-radius: .5rem; background: #fff; }
+
+.menu-equipo .obra-compartida { width: 100%; }
+
+/* contador sobre el botón de la cabecera */
+.boton-equipo { position: relative; }
+.boton-equipo .contador {
+  position: absolute;
+  top: -.35rem;
+  right: -.35rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 .25rem;
+  border-radius: 1rem;
+  background: var(--peligro-texto);
+  color: var(--color-bg);
+  font-size: .7rem;
+  font-weight: 700;
+  line-height: 1.15rem;
+  text-align: center;
+}
+.boton-equipo .contador[hidden] { display: none; }
+
+/* ---------- impresión del panel ---------- */
+
+@media print {
+  .pagina-panel.pagina-visita body > main.contenido { display: block !important; max-width: none; padding: 0; }
+  .pagina-panel #grupo-equipo, .pagina-panel .panel-mando, .pagina-panel .panel-estado,
+  .pagina-panel .panel-novedades, .pagina-panel .legal-pie, .pagina-panel .enlace,
+  .pagina-panel .panel-titulo { display: none !important; }
+  .pagina-panel #panel { display: block !important; }
+
+  .pagina-panel main {
+    font-family: "Inter", system-ui, sans-serif;
+    color: #121826;
+    font-size: 9.5pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .pagina-panel .impreso-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 6mm;
+    margin-bottom: 5mm;
+    padding: 3.5mm 5mm;
+    background: #1b3560;
+    color: #fff;
+  }
+  .pagina-panel .impreso-cabecera .pie { color: #bcd6f3; font-size: 8.5pt; }
+  .pagina-panel .impreso-marca { font-size: 13pt; font-weight: 700; letter-spacing: .04em; }
+  .pagina-panel .impreso-pie { display: block; margin-top: 6mm; font-size: 7.5pt; color: #5a6678; border-top: .5pt solid #c9d3e2; padding-top: 2mm; }
+
+  .pagina-panel .cifras { grid-template-columns: repeat(4, 1fr); gap: 2mm; }
+  .pagina-panel .cifra, .pagina-panel .panel-obra-tarjeta, .pagina-panel .panel-visita {
+    background: #eef1f6; border: .5pt solid #c9d3e2; color: #121826;
+  }
+  .pagina-panel .panel-visita { background: #fff; break-inside: avoid; }
+  .pagina-panel .panel-obra-tarjeta { background: #fff; break-inside: auto; margin-bottom: 5mm; }
+  .pagina-panel .panel-obra-tarjeta .grupo-cabecera h2 { color: #1b3560; font-size: 12pt; border-bottom: 1.5pt solid #3d7cc4; padding-bottom: 1mm; width: 100%; }
+  .pagina-panel .cifra strong { color: #1b3560; }
+  .pagina-panel .cifra.alerta strong { color: #b0302a; }
+  .pagina-panel .cifra span, .pagina-panel .pie { color: #5a6678; }
+  .pagina-panel .panel-sub { color: #1b3560; break-after: avoid; }
+  .pagina-panel .tabla th { background: #eef1f6; color: #1b3560; }
+  .pagina-panel .tabla th, .pagina-panel .tabla td { border-bottom: .5pt solid #c9d3e2; color: #121826; }
+  .pagina-panel .tabla tr { break-inside: avoid; }
+  .pagina-panel .panel-lista li { border-bottom: .5pt solid #e3e9f2; color: #121826; }
+  .pagina-panel .etiqueta { border-color: #c9d3e2; color: #3b4a60; }
+  .pagina-panel .etiqueta.ok { color: #1e7a4c; border-color: #1e7a4c; }
+  .pagina-panel .etiqueta.atencion, .pagina-panel .etiqueta.gravedad-media { color: #9a6206; border-color: #9a6206; }
+  .pagina-panel .etiqueta.gravedad-grave { color: #b0302a; border-color: #b0302a; }
+  .pagina-panel .vacio, .pagina-panel .aviso-lectura { color: #3b4a60; }
+  .pagina-panel .panel-visitas { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- lista de visitas: novedades del equipo ---------- */
+.tarjeta.con-novedad { border-color: var(--acento); }
+.tarjeta-fecha .etiqueta { margin-left: .45rem; vertical-align: 1px; }
+.tarjeta-fecha .pie { display: inline; }
+
+/* pie de página del reporte: página con nombre, para no tocar el del
+   parte de visita (visita.html también carga esta hoja) */
+@media print {
+  .pagina-panel main.contenido { page: reporte-panel; }
+  @page reporte-panel {
+    size: A4;
+    margin: 12mm 12mm 14mm;
+    @bottom-left { content: "COORDINATE · Resumen de bitácoras del equipo"; font: 7pt "Inter", sans-serif; color: #6b7a90; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 7pt "Inter", sans-serif; color: #6b7a90; }
+  }
+}
+
+.grupo .perfil-nombre { font-size: 1.25rem; text-transform: none; letter-spacing: 0; color: var(--texto); margin: 0; }
+.tabla-dias td:first-child { white-space: nowrap; }

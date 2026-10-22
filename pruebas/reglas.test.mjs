@@ -110,6 +110,19 @@ await prueba('pepe no toca un repaso cerrado', assertFails(setDoc(doc(dP, 'obras
 await prueba('pepe sube foto', assertSucceeds(uploadBytes(ref(P.storage(), 'obras/o2/archivos/despues.jpg'), png, { contentType: 'image/jpeg' })));
 await prueba('pepe no borra fotos', assertFails(deleteObject(ref(P.storage(), 'obras/o2/archivos/despues.jpg'))));
 
+// --- ficha del perfil (nombre, cargo, empresa, foto) ---
+const ficha = { nombre: 'Pepe Pérez', correo: 'pepe@obra.do', cargo: 'Pintor', empresa: 'Acabados SRL', foto: 'data:image/jpeg;base64,AAAA' };
+await prueba('pepe pone al día su ficha en la obra', assertSucceeds(updateDoc(doc(dP, 'obras/o2'), new FieldPath('personas', 'pepe'), ficha, 'modificada', 9)));
+await prueba('pepe no mete datos de más en su ficha', assertFails(updateDoc(doc(dP, 'obras/o2'), new FieldPath('personas', 'pepe'), { ...ficha, telefono: '809' })));
+await prueba('pepe no pone una foto enorme', assertFails(updateDoc(doc(dP, 'obras/o2'), new FieldPath('personas', 'pepe'), { ...ficha, foto: 'x'.repeat(40001) })));
+await prueba('pepe no cambia la ficha de ana', assertFails(updateDoc(doc(dP, 'obras/o2'), new FieldPath('personas', 'ana'), ficha)));
+await prueba('pepe no se cambia el papel con la ficha', assertFails(updateDoc(doc(dP, 'obras/o2'), new FieldPath('personas', 'pepe'), ficha, new FieldPath('miembros', 'pepe'), 'admin')));
+await prueba('extraño no se pone ficha en la obra', assertFails(updateDoc(doc(dX, 'obras/o2'), new FieldPath('personas', 'extra'), { nombre: 'X' })));
+await prueba('carla pone al día su ficha en el equipo', assertSucceeds(updateDoc(doc(dC, 'equipos/e1'), new FieldPath('personas', 'carla'), { nombre: 'Carla', correo: 'carla@obra.do', cargo: 'Supervisora' }, 'modificada', 9)));
+await prueba('carla no toca la ficha de ana en el equipo', assertFails(updateDoc(doc(dC, 'equipos/e1'), new FieldPath('personas', 'ana'), { nombre: 'Y' })));
+await prueba('usuario guarda su perfil privado', assertSucceeds(setDoc(doc(dP, 'usuarios/pepe'), { nombre: 'Pepe', telefono: '809', cargo: 'Pintor' }, { merge: true })));
+await prueba('nadie lee el perfil privado ajeno', assertFails(getDoc(doc(dA, 'usuarios/pepe'))));
+
 console.log(`reglas: ${ok} bien, ${mal} mal`);
 await env.cleanup();
 process.exit(mal ? 1 : 0);

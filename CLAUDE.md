@@ -62,6 +62,11 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   y caja de sección (`js/cortes.js`), colorear por propiedad
   (`js/colores.js`), transparencias, rayos X, 6 fondos, aristas, vistas,
   realidad aumentada (WebXR).
+- **Modo claro** (`js/tema.js`, cargado en `<head>`): botón 🌙/☀️/◐ en la
+  cabecera, ciclo oscuro → claro → automático (según el teléfono);
+  localStorage `crd-tema`. Paleta clara en `:root[data-tema="claro"]` de
+  `css/estilos.css` (fondo `#eef1f6`, acento `#3d7cc4`); usar siempre los
+  tokens (`--velo-rgb`, `--peligro-texto`, …), nunca colores fijos.
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
 

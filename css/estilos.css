@@ -40,6 +40,67 @@
   --alto-barra: 3.25rem;
   --seguro-arriba: env(safe-area-inset-top, 0px);
   --seguro-abajo: env(safe-area-inset-bottom, 0px);
+  /* tonos para velos y avisos (cambian con el tema) */
+  --velo-rgb: 18, 24, 38;
+  --superficie-rgb: 28, 36, 51;
+  --borde-rgb: 52, 66, 91;
+  --peligro-texto: #ff8a80;
+  --aviso-texto: #ffb36b;
+  color-scheme: dark;
+}
+
+/* ---------- modo claro (js/tema.js) ----------
+   «claro» siempre; «auto» sigue al sistema del teléfono. Fondo #eef1f6 y
+   acento #3d7cc4: la línea de impresos de la marca. */
+:root[data-tema="claro"] {
+  --color-bg: #eef1f6;
+  --color-surface: #ffffff;
+  --color-text: #121826;
+  --color-text-2: #3b4a60;
+  --color-accent: #3d7cc4;
+  --color-accent-300: #22436f;
+  --color-accent-400: #3d7cc4;
+  --color-accent-600: #2d5c95;
+  --color-accent-800: #bcd6f3;
+  --color-accent-900: #e6eef9;
+  --fondo-3: #e3e9f2;
+  --borde: #c9d3e2;
+  --texto-tenue: #5a6678;
+  --acento-oscuro: #2d5c95;
+  --texto-sobre-acento: #ffffff;
+  --seleccion: #3d7cc4;
+  --velo-rgb: 238, 241, 246;
+  --superficie-rgb: 255, 255, 255;
+  --borde-rgb: 201, 211, 226;
+  --peligro-texto: #b3261e;
+  --aviso-texto: #a85a00;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: light) {
+  :root[data-tema="auto"] {
+    --color-bg: #eef1f6;
+    --color-surface: #ffffff;
+    --color-text: #121826;
+    --color-text-2: #3b4a60;
+    --color-accent: #3d7cc4;
+    --color-accent-300: #22436f;
+    --color-accent-400: #3d7cc4;
+    --color-accent-600: #2d5c95;
+    --color-accent-800: #bcd6f3;
+    --color-accent-900: #e6eef9;
+    --fondo-3: #e3e9f2;
+    --borde: #c9d3e2;
+    --texto-tenue: #5a6678;
+    --acento-oscuro: #2d5c95;
+    --texto-sobre-acento: #ffffff;
+    --seleccion: #3d7cc4;
+    --velo-rgb: 238, 241, 246;
+    --superficie-rgb: 255, 255, 255;
+    --borde-rgb: 201, 211, 226;
+    --peligro-texto: #b3261e;
+    --aviso-texto: #a85a00;
+    color-scheme: light;
+  }
 }
 
 * { box-sizing: border-box; }
@@ -81,7 +142,7 @@ body { touch-action: none; }
   align-items: center;
   gap: .5rem;
   padding: calc(var(--seguro-arriba) + .4rem) .6rem .4rem;
-  background: linear-gradient(to bottom, rgba(18,24,38,.96), rgba(18,24,38,.75) 70%, transparent);
+  background: linear-gradient(to bottom, rgba(var(--velo-rgb), .96), rgba(var(--velo-rgb), .75) 70%, transparent);
 }
 
 .titulo {
@@ -107,7 +168,7 @@ body { touch-action: none; }
   justify-content: space-around;
   gap: .25rem;
   padding: .35rem .4rem calc(var(--seguro-abajo) + .35rem);
-  background: rgba(18,24,38,.92);
+  background: rgba(var(--velo-rgb), .92);
   border-top: 1px solid var(--borde);
   backdrop-filter: blur(6px);
 }
@@ -295,7 +356,7 @@ a.boton {
   align-items: center;
   gap: .6rem;
   padding: .55rem .3rem;
-  border-bottom: 1px solid rgba(52,66,91,.5);
+  border-bottom: 1px solid rgba(var(--borde-rgb), .5);
   cursor: pointer;
 }
 
@@ -352,10 +413,10 @@ a.boton {
   padding: .28rem 0;
   font-size: .84rem;
   overflow-wrap: anywhere;
-  border-bottom: 1px solid rgba(52,66,91,.45);
+  border-bottom: 1px solid rgba(var(--borde-rgb), .45);
 }
 
-.propiedades dt { border-bottom: 1px solid rgba(52,66,91,.45); }
+.propiedades dt { border-bottom: 1px solid rgba(var(--borde-rgb), .45); }
 
 /* La lista de propiedades se pliega por conjuntos. */
 .propiedades details { margin-bottom: .6rem; }
@@ -459,7 +520,7 @@ a.boton {
   max-width: 32rem;
   margin: 0 auto;
   padding: .55rem .7rem .65rem;
-  background: rgba(28,36,51,.96);
+  background: rgba(var(--superficie-rgb), .96);
   border: 1px solid var(--borde);
   border-left: 3px solid var(--seleccion);
   border-radius: .7rem;
@@ -490,7 +551,7 @@ a.boton {
   max-width: 32rem;
   margin: 0 auto;
   padding: .45rem .5rem;
-  background: rgba(28,36,51,.96);
+  background: rgba(var(--superficie-rgb), .96);
   border: 1px solid var(--borde);
   border-radius: .7rem;
   box-shadow: 0 8px 28px rgba(0,0,0,.45);
@@ -517,7 +578,7 @@ a.boton {
   align-items: center;
   padding: .2rem .5rem;
   border-radius: .4rem;
-  background: rgba(18,24,38,.9);
+  background: rgba(var(--velo-rgb), .9);
   border: 1px solid #ffc94d;
   white-space: nowrap;
   will-change: transform;
@@ -629,7 +690,7 @@ a.boton {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(12,16,26,.88);
+  background: rgba(var(--velo-rgb), .88);
 }
 
 .cargando[hidden] { display: none; }
@@ -692,7 +753,7 @@ a.boton {
   margin: 0;
   padding: .5rem .7rem;
   border-radius: .5rem;
-  background: rgba(18,24,38,.78);
+  background: rgba(var(--velo-rgb), .78);
   font-size: .85rem;
 }
 
@@ -708,7 +769,7 @@ a.boton {
   margin: .5rem 0;
   padding: .7rem .8rem;
   border-radius: .6rem;
-  background: rgba(18,24,38,.9);
+  background: rgba(var(--velo-rgb), .9);
   border: 1px solid var(--borde);
   font-size: .85rem;
 }

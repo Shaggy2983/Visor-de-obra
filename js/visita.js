@@ -1371,15 +1371,7 @@ nodos.ficha.addEventListener('input', (ev) => {
 
 nodos.botonClima.addEventListener('click', () => tomarClima());
 
-/* Tema claro / oscuro / del teléfono (js/tema.js). */
-const botonTema = document.getElementById('btn-tema');
-if (botonTema && window.crdTema) {
-  window.crdTema.pintarBoton();
-  botonTema.addEventListener('click', () => {
-    const t = window.crdTema.siguiente();
-    avisar(nodos.aviso, window.crdTema.nombre(t));
-  });
-}
+/* El botón ⚙️ Ajustes (tema y accesos) lo maneja js/tema.js. */
 
 nodos.botonPersonal.addEventListener('click', () => {
   actual.personal.push({ id: nuevoId(), empresa: '', oficio: '', numero: '' });

@@ -62,11 +62,14 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   y caja de sección (`js/cortes.js`), colorear por propiedad
   (`js/colores.js`), transparencias, rayos X, 6 fondos, aristas, vistas,
   realidad aumentada (WebXR).
-- **Modo claro** (`js/tema.js`, cargado en `<head>`): botón 🌙/☀️/◐ en la
-  cabecera, ciclo oscuro → claro → automático (según el teléfono);
+- **Ajustes y modo claro** (`js/tema.js`, cargado en `<head>`): botón ⚙️
+  (`#btn-tema` o `[data-ajustes]`) en todas las páginas, también en la
+  portada del visor 3D; abre la ventana de Ajustes (tema oscuro / claro /
+  como el teléfono y accesos a Visitas, Panel, Perfil y Modelo 3D).
   localStorage `crd-tema`. Paleta clara en `:root[data-tema="claro"]` de
   `css/estilos.css` (fondo `#eef1f6`, acento `#3d7cc4`); usar siempre los
-  tokens (`--velo-rgb`, `--peligro-texto`, …), nunca colores fijos.
+  tokens (`--velo-rgb`, `--peligro-texto`, `--portada-arriba`, …), nunca
+  colores fijos.
 - **Novedades del equipo** (`js/novedades.js`): al bajar, lo que otro crea o
   cambia en una obra compartida (visitas y repasos) queda como novedad en el
   teléfono (localStorage `crd-novedades:{uid}`); aviso al sincronizar,

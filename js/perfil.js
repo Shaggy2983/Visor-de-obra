@@ -328,11 +328,6 @@ function enrutar() {
   pintarBitacoras();
 }
 
-const botonTema = $('btn-tema');
-if (botonTema && window.crdTema) {
-  window.crdTema.pintarBoton();
-  botonTema.addEventListener('click', () => aviso(window.crdTema.nombre(window.crdTema.siguiente())));
-}
 
 async function obrasLocales() {
   const nombres = new Map();

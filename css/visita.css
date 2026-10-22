@@ -842,3 +842,26 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
     color: #22436f;
   }
 }
+
+/* ---------- dictado por voz (js/dictado.js) ---------- */
+
+.con-dictado { position: relative; display: block; }
+.con-dictado > textarea.campo { width: 100%; padding-right: 2.9rem; }
+.boton-dictado {
+  position: absolute; right: .35rem; bottom: .4rem;
+  width: 2.2rem; height: 2.2rem; padding: 0;
+  display: grid; place-items: center;
+  border: 1px solid var(--borde); border-radius: 50%;
+  background: var(--fondo-2); color: var(--acento);
+  cursor: pointer;
+}
+.boton-dictado svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.boton-dictado.escuchando {
+  background: #c62828; border-color: #c62828; color: #fff;
+  animation: dictado-pulso 1.2s ease-in-out infinite;
+}
+@keyframes dictado-pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(198,40,40,.55); }
+  50% { box-shadow: 0 0 0 .45rem rgba(198,40,40,0); }
+}
+@media (prefers-reduced-motion: reduce) { .boton-dictado.escuchando { animation: none; } }

@@ -89,6 +89,16 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   ficha pública (sin teléfono) va a `personas[uid]` de cada obra y equipo
   (regla `actualizaMiFicha`). `#/obra/<id>`: miembros, equipos, cifras y
   bitácoras recientes. Incluye «Cuenta y equipo» para entrar desde el PC.
+- **Planos DXF y medición** (`js/dxf.js`, lector en `js/dxf-worker.js` con
+  dxf-parser MIT en `vendor/dxf/`; DWG no: formato cerrado y las librerías
+  libres son GPL). En Modelo 3D, «Abrir» acepta `.dxf`: visor 2D con capas
+  y 📏 medir distancia/recorrido/área con enganche a extremos, centros y
+  puntos medios (unidades de `$INSUNITS`; sin ellas se suponen m o mm).
+  En la visita, «Planos y notas» acepta `.dxf` (se dibuja a imagen ya con
+  escala). **Medir en planos** (`js/medir-plano.js`, botón 📏 del visor
+  de planos): escala en `plano.mPorPx`; PDF guarda `papelMmPorPx` para
+  elegir 1:N; o «Calibrar con una cota». Medidas en `v.medidas` (0–1),
+  salen en el informe PDF e interactivo.
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
 

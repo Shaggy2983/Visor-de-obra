@@ -877,3 +877,70 @@ a.boton {
   box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
   cursor: pointer;
 }
+
+/* ---------- visor de planos DXF (Modelo 3D → abrir un .dxf; js/dxf.js) ---------- */
+
+.capa-dxf {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: var(--fondo);
+  color: var(--texto);
+}
+.capa-dxf[hidden] { display: none; }
+.capa-dxf .plano-barra {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: calc(var(--seguro-arriba) + .4rem) .6rem .4rem;
+  background: var(--fondo-2);
+  border-bottom: 1px solid var(--borde);
+}
+.capa-dxf .plano-nombre { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.capa-dxf .plano-ayuda { margin: 0; padding: .35rem .8rem; font-size: .8rem; color: var(--texto-tenue); background: var(--fondo-2); }
+.capa-dxf .plano-herramientas {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .7rem;
+  padding: .45rem .7rem; background: var(--fondo-2); border-bottom: 1px solid var(--borde);
+}
+.capa-dxf .plano-herramientas[hidden] { display: none; }
+.capa-dxf .plano-herramientas .boton { min-height: 2.2rem; padding: .35rem .6rem; }
+.capa-dxf .chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.dxf-marco { position: relative; flex: 1; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+.dxf-lienzo { display: block; cursor: grab; touch-action: none; }
+.dxf-lectura {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--seguro-abajo) + 1rem);
+  transform: translateX(-50%);
+  padding: .5rem .9rem;
+  border-radius: .6rem;
+  background: #ff6b2c;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+  pointer-events: none;
+}
+.dxf-lectura[hidden] { display: none; }
+.dxf-capas {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  max-height: calc(100% - 1rem);
+  width: min(18rem, calc(100% - 1rem));
+  overflow-y: auto;
+  padding: .5rem .7rem;
+  border: 1px solid var(--borde);
+  border-radius: .6rem;
+  background: rgba(var(--superficie-rgb), .97);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+}
+.dxf-capas[hidden] { display: none; }
+.dxf-capas .fila-botones { display: flex; gap: .8rem; margin-bottom: .3rem; }
+.dxf-capa { display: flex; align-items: center; gap: .45rem; padding: .3rem 0; font-size: .86rem; border-bottom: 1px solid var(--borde); }
+.dxf-muestra { width: .9rem; height: .9rem; border-radius: .2rem; border: 1px solid var(--borde); flex: 0 0 auto; }
+.dxf-unidades { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--texto-tenue); }
+.dxf-unidades .campo { width: auto; min-height: 2.2rem; padding: .25rem .4rem; }

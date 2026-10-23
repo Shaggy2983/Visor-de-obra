@@ -172,10 +172,10 @@
       </div>
       <div id="planos" class="planos"></div>
       <div class="fila-botones">
-        <button type="button" id="btn-plano" class="boton">+ Cargar plano (PDF o imagen)</button>
+        <button type="button" id="btn-plano" class="boton">+ Cargar plano (PDF, DXF o imagen)</button>
         <button type="button" id="btn-otros-planos" class="enlace" hidden></button>
       </div>
-      <input type="file" id="entrada-plano" accept="application/pdf,.pdf,image/*" hidden>
+      <input type="file" id="entrada-plano" accept="application/pdf,.pdf,image/*,.dxf" hidden>
       <p class="pie">Abre un plano, pulsa <strong>+ Nota</strong> y toca el sitio: cada nota lleva su
          número, su texto, las fotos de esa zona, tonos de pintura y enlaces. Con
          <strong>✎ Dibujar</strong> marcas a mano alzada encima.</p>
@@ -240,15 +240,19 @@
   <div class="plano-barra">
     <button type="button" id="plano-cerrar" class="boton">← Volver</button>
     <span id="plano-nombre" class="plano-nombre"></span>
+    <button type="button" id="plano-medir" class="boton" title="Medir distancias y áreas">📏</button>
     <button type="button" id="plano-dibujar" class="boton">✎ Dibujar</button>
     <button type="button" id="plano-modo" class="boton boton-destacado">+ Nota</button>
   </div>
   <p id="plano-ayuda" class="plano-ayuda"></p>
   <div id="plano-herramientas" class="plano-herramientas" hidden></div>
+  <div id="plano-medir-herr" class="plano-herramientas" hidden></div>
   <div id="plano-marco" class="plano-marco">
     <div id="plano-lienzo" class="plano-lienzo">
       <img id="plano-img" alt="" draggable="false">
       <svg id="plano-trazos" class="plano-trazos" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <svg id="plano-medidas" class="plano-trazos plano-medidas" preserveAspectRatio="none" aria-hidden="true"></svg>
+      <div id="plano-etiquetas" class="plano-etiquetas"></div>
       <div id="plano-pines" class="plano-pines"></div>
     </div>
   </div>

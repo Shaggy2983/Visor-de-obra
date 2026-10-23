@@ -6,6 +6,7 @@ import { Cortes } from './cortes.js';
 import { Colores } from './colores.js';
 import { arDisponible, RealidadAumentada } from './ar.js';
 import { guardarModelo, leerModelo } from './almacen.js';
+import { esDxf, leerDxf, crearVisorDxf } from './dxf.js';
 import {
   nombreDeClase, fila, filaResultado, pintarPropiedades, resumenAR, avisar
 } from './interfaz.js';
@@ -528,12 +529,36 @@ function abrirArchivo() { nodos.entrada.click(); }
 nodos.abrir.addEventListener('click', abrirArchivo);
 nodos.abrir2.addEventListener('click', abrirArchivo);
 
+/* Planos DXF: se ven en 2D, con capas y medición exacta (js/dxf.js). */
+let visorDxf = null;
+async function abrirDxf(archivo) {
+  avisar(nodos.aviso, 'Leyendo el plano DXF…', 60000);
+  try {
+    const geom = await leerDxf(archivo);
+    if (!visorDxf) {
+      visorDxf = crearVisorDxf(document.getElementById('capa-dxf'), {
+        alCerrar: () => visorDxf.cerrar(),
+        avisar: (t, ms) => avisar(nodos.aviso, t, ms)
+      });
+    }
+    nodos.aviso.hidden = true;
+    visorDxf.abrir(geom, archivo.name.replace(/\.dxf$/i, ''));
+  } catch (e) {
+    console.error(e);
+    avisar(nodos.aviso, `No se ha podido abrir el DXF: ${e.message || e}`, 6000);
+  }
+}
+
 nodos.entrada.addEventListener('change', async () => {
   const archivo = nodos.entrada.files && nodos.entrada.files[0];
   if (!archivo) return;
-  const datos = await archivo.arrayBuffer();
   nodos.entrada.value = '';
-  cargar(datos, archivo.name, true);
+  if (esDxf(archivo)) return abrirDxf(archivo);
+  if (/\.dwg$/i.test(archivo.name)) {
+    avisar(nodos.aviso, 'Los DWG no se pueden abrir aquí: en AutoCAD, Guardar como → «AutoCAD DXF» y abre el .dxf.', 7000);
+    return;
+  }
+  cargar(await archivo.arrayBuffer(), archivo.name, true);
 });
 
 nodos.ejemplo.addEventListener('click', async () => {
@@ -552,6 +577,8 @@ addEventListener('drop', async (ev) => {
   const archivo = ev.dataTransfer && ev.dataTransfer.files[0];
   if (archivo && /\.ifc$/i.test(archivo.name)) {
     cargar(await archivo.arrayBuffer(), archivo.name, true);
+  } else if (archivo && esDxf(archivo)) {
+    abrirDxf(archivo);
   }
 });
 

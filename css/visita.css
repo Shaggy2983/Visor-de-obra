@@ -1063,3 +1063,16 @@ a.foto-remota { color: var(--acento); }
 .afectacion .chips { margin-bottom: .45rem; }
 .afectacion-datos { display: grid; grid-template-columns: 7rem 1fr; gap: .5rem; }
 .afectacion-datos .campo { margin-top: .2rem; }
+
+/* repasos del punch list sobre el plano: cuadrados «R3» por estado */
+.pin-repaso { border-radius: .35rem; background: #c0392b; }
+.pin-repaso.estado-corregido { background: #c0601a; }
+.pin-repaso.estado-cerrado { background: #2e7d4f; }
+.repaso-ubicacion { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .8rem; margin: .2rem 0 .6rem; }
+.repaso-ubicacion .pie { margin: 0; }
+
+/* exportar a Excel (visita.html#/exportar) */
+.exportar-lista { display: flex; flex-direction: column; gap: .35rem; margin: .7rem 0; }
+.exportar-fila { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .45rem .6rem; border: 1px solid var(--borde); border-radius: .6rem; background: var(--fondo); }
+.exportar-fila > span { display: flex; flex-direction: column; }
+.exportar-fila .pie { margin: 0; }

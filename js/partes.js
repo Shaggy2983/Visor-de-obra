@@ -31,13 +31,14 @@ const INSPECCIONES = 'inspecciones';
 const VACIADOS = 'vaciados';
 const PROGRAMAS = 'programas';
 const MINUTAS = 'minutas';
+const CONTROL = { rfis: 'rfis', cambios: 'cambios', recepciones: 'recepciones', seguridad: 'seguridad' };
 
 function abrir() {
   return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 6);
+    const peticion = indexedDB.open(BASE, 7);
     peticion.onupgradeneeded = () => {
       const bd = peticion.result;
-      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS, PROGRAMAS, MINUTAS]) {
+      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS, PROGRAMAS, MINUTAS, ...Object.values(CONTROL)]) {
         if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
       }
       if (!bd.objectStoreNames.contains(SUBIDOS)) bd.createObjectStore(SUBIDOS, { keyPath: 'ruta' });
@@ -214,6 +215,26 @@ export async function guardarMinuta(r, { callado = false } = {}) {
 export function borrarMinuta(id, { callado = false } = {}) {
   return borrarConBaja(MINUTAS, 'minutas', id, callado);
 }
+
+/* --- control de obra: RFI, órdenes de cambio, recepción de materiales y
+   seguridad. Mismo patrón que las demás tablas de la obra. --- */
+
+function tablaControl(tabla) {
+  return {
+    listar: async () => ((await operar('readonly', (t) => t.getAll(), tabla)) || []).sort(porFecha),
+    leer: (id) => operar('readonly', (t) => t.get(id), tabla).then((r) => r || null),
+    guardar: async (r, { callado = false } = {}) => { await operar('readwrite', (t) => t.put(r), tabla); avisarCambio(callado); },
+    borrar: (id, { callado = false } = {}) => borrarConBaja(tabla, tabla, id, callado)
+  };
+}
+const rfis = tablaControl(CONTROL.rfis);
+const cambios = tablaControl(CONTROL.cambios);
+const recepciones = tablaControl(CONTROL.recepciones);
+const seguridad = tablaControl(CONTROL.seguridad);
+export const { listar: listarRfis, leer: leerRfi, guardar: guardarRfi, borrar: borrarRfi } = rfis;
+export const { listar: listarCambios, leer: leerCambio, guardar: guardarCambio, borrar: borrarCambio } = cambios;
+export const { listar: listarRecepciones, leer: leerRecepcion, guardar: guardarRecepcion, borrar: borrarRecepcion } = recepciones;
+export const { listar: listarSeguridad, leer: leerSeguridad, guardar: guardarSeguridad, borrar: borrarSeguridad } = seguridad;
 
 /* --- estado de la sincronización --- */
 

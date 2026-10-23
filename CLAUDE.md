@@ -68,9 +68,11 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   visor 3D). Al tocarlo los nodos giran y el centro late (sin animación con
   «reducir movimiento»); baja una hoja con Obra (Visitas, Modelo 3D),
   Calidad (Inspecciones, Vaciados), Seguimiento (Avance, Minutas, Días
-  afectados), Equipo (Novedades, Panel, Perfil), Datos (Cuentas vinculadas
-  `visita.html#/cuentas`, Copia `#/copia`), Aspecto y Guía. Punto rojo por
-  novedades, probetas por romper (`crd-roturas`) o acuerdos vencidos. API
+  afectados), Control (RFI, Cambios, Materiales, SST), Equipo (Novedades,
+  Panel, Perfil), Datos (Cuentas vinculadas `visita.html#/cuentas`, Copia
+  `#/copia`, Exportar `#/exportar`), Aspecto y Guía. Punto rojo por
+  novedades, probetas por romper (`crd-roturas`), acuerdos vencidos o
+  avisos de control. API
   `window.crdMenu` (`equipo(activo, n)`, `alNovedades`, `avisos()`). Ya no
   hay botones ⚙️ ni 👥; el inicio de Visitas sólo tiene cuenta, avisos de
   calidad, buscador y lista.
@@ -95,7 +97,7 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   con fecha de rotura (7/14/28…), resultado y % f'c, evaluación por edad;
   agenda de roturas y avisos en el inicio; registro PDF. El parte diario
   PDF lista la calidad de la misma obra y fecha. Se sincronizan como las
-  visitas y van en la copia de seguridad (formato v5, que añade programas y minutas).
+  visitas y van en la copia de seguridad (formato v6: añade programas, minutas y los registros de control).
   · PDF: firmas como fondo del recuadro (no `<img>`: Chrome partía el
   bloque de firmas); `@page acta`.
 - **Seguimiento** (`seguimiento.html`, `js/seguimiento.js`, cálculos en
@@ -119,8 +121,36 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   por obra y causa (sin actividad = 1 día; parcial = horas/8 o ½). PDF
   «Relación de días afectados» para prórrogas.
   · Piezas de PDF comunes en `js/impreso.js` (también las usa calidad).
+- **Control** (`control.html`, `js/control.js`, datos en
+  `js/control-datos.js`, estilos `css/control.css`; tablas IndexedDB
+  `rfis`, `cambios`, `recepciones`, `seguridad`, base v7). Rutas `#/rfi`,
+  `#/cambios`, `#/materiales`, `#/sst`, ficha `#/r/<sección>/<id>`.
+  · **RFI-NNN:** asunto, disciplina (ARQ, EST, HDS…), referencia, dirigida
+  a, requerida para; respuesta, días de espera, vencidas; impacto en
+  costo/plazo → «Crear orden de cambio» (`rfi.cambio` / `cambio.rfi`).
+  · **OC-NNN:** origen, tipo adicional/deductivo/sin costo, partidas
+  (cantidad × precio, RD$ o USD, antes de ITBIS), días de plazo, estado
+  borrador → enviada → aprobada/rechazada.
+  · **RM-NNN:** proveedor, conduce, líneas pedido/recibido/rechazo,
+  estado completa / faltante / con rechazo.
+  · **SST-NNN** por tipo: charla (tema, asistentes con firma en PDF), EPP
+  (8 puntos), permiso de trabajo (altura, caliente, confinado,
+  excavación, eléctrico, izaje con sus controles; abierto/cerrado; los de
+  otro día sin cerrar avisan) e incidente (clase, causas, acciones);
+  días sin accidentes. PDF de cada uno con `@page control`.
+  · Avisos en el inicio y punto rojo del menú (`crd-control-avisos`).
+- **Repasos en el plano** (`r.ubicacion = {plano, x, y}`): «📍 Marcar en el
+  plano» en el repaso (elige plano si hay varios) → modo `ubicar` del
+  visor (`visor.ubicar(r)`); cuadrados «R3» por estado; tocar uno abre su
+  ficha. Salen en el informe PDF y en el PDF del punch list
+  (`componerPlano(..., repasos)`).
+- **Exportar a Excel (CSV)** (`js/exportar.js`, `visita.html#/exportar`,
+  menú → Datos): 13 tablas (visitas, incidencias, personal, repasos,
+  inspecciones, vaciados, probetas, avance, acuerdos, RFI, cambios,
+  materiales, seguridad), por obra o todas; UTF-8 con BOM, coma y punto
+  decimal.
 - **Novedades del equipo** (`js/novedades.js`): al bajar, lo que otro crea o
-  cambia en una obra compartida (visitas, repasos, inspecciones, vaciados, programa y minutas) queda como novedad en el
+  cambia en una obra compartida (visitas, repasos y los registros de calidad, seguimiento y control) queda como novedad en el
   teléfono (localStorage `crd-novedades:{uid}`); aviso al sincronizar,
   etiqueta Nueva/Actualizada en la lista y «Novedades del equipo» en el menú
   del símbolo con contador (`visita.html#/novedades`). La primera bajada de una obra no cuenta.
@@ -151,7 +181,7 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - **Guía de uso y recorridos** (`ayuda.html` + `js/ayuda.js`: todas las
   funciones con pasos y buscador; `js/guia.js` en todas las páginas:
   recorridos que iluminan los botones reales — inicio, visita, plano,
-  modelo, calidad, seguimiento, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
+  modelo, calidad, seguimiento, control, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
   entre páginas (sessionStorage `crd-guia`). La visita de práctica es
   `guia-ejemplo` (se ofrece borrarla). Primer uso: se ofrece el de inicio
   (localStorage `crd-guia-ofrecida`). Acceso: menú del símbolo → Guía de uso; ❓ en
@@ -172,8 +202,8 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   `js/mis-repasos.js`). **Equipos de trabajo** reutilizables que se
   vinculan a obras con un papel.
 - Reglas: `firestore.rules` (colecciones visitas, repasos, planos,
-  inspecciones, vaciados, programas y minutas) y `storage.rules`, con 91
-  pruebas en
+  inspecciones, vaciados, programas, minutas, rfis, cambios, recepciones y
+  seguridad) y `storage.rules`, con 97 pruebas en
   `pruebas/` contra los emuladores (`?emulador=1` abre la app contra
   ellos).
 
@@ -220,15 +250,15 @@ Entra) en `js/cuentas-config.js`.
    revisores una cuenta de prueba verificada. Gmail (`gmail.send`) es un
    permiso sensible: para salir del modo de prueba de Google hace falta
    verificar la app.
-4. Hoja de ruta del supervisor (acordada el 22/10/2026), por PR:
-   hechos el menú del símbolo, inspecciones, vaciados, avance con curva S,
-   minutas y días afectados. Siguen: RFI y órdenes de cambio, recepción de
-   materiales, SST (charla de 5 min, EPP, permisos), repasos en el plano y
-   exportar CSV. Reglas con `inspecciones`, `vaciados`, `programas` y
-   `minutas` publicadas el 22/10/2026 (idénticas al repositorio). El programa es un documento por obra: si dos personas
-   anotan avance a la vez, gana la última escritura.
-5. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
-   repasos en el plano, papel de empresa por encima de los equipos.
+4. Hoja de ruta del supervisor (acordada el 22/10/2026): **hecha entera**
+   — menú del símbolo, inspecciones, vaciados, avance con curva S,
+   minutas, días afectados, RFI, órdenes de cambio, recepción de
+   materiales, SST, repasos en el plano y exportar CSV. Reglas publicadas
+   hasta `programas` y `minutas`; **`rfis`, `cambios`, `recepciones` y
+   `seguridad` hay que publicarlas**. El programa es un documento por
+   obra: si dos personas anotan avance a la vez, gana la última escritura.
+5. Ideas pendientes de decidir: borrar varias visitas a la vez, papel de
+   empresa por encima de los equipos.
 6. Notificación con la app cerrada y resumen semanal por correo automático:
    necesitan Cloud Functions (plan Blaze).
 

@@ -1,0 +1,41 @@
+/* Control de obra (control.html): RFI, órdenes de cambio, materiales y
+   seguridad. Se apoya en calidad.css y seguimiento.css (pestañas,
+   indicadores, checklist, agenda). */
+
+.pestanas-cuatro { grid-template-columns: repeat(4, 1fr); }
+.pestanas-cuatro .pestana-calidad { padding-inline: .2rem; font-size: .88rem; }
+
+/* Filas editables: cada columna con su ancho (--columnas lo pone el JS). */
+.filas-control { display: flex; flex-direction: column; gap: .35rem; margin-bottom: .3rem; }
+.fila-control { display: grid; grid-template-columns: var(--columnas); gap: .3rem; align-items: end; }
+.fila-control label { font-size: .7rem; min-width: 0; }
+.fila-control .campo { margin: 0; padding: .5rem .4rem; min-width: 0; }
+/* En el teléfono, la descripción va sola en la primera línea y los números
+   debajo, para que se lea entera. */
+@media (max-width: 560px) {
+  .fila-control.ancha {
+    grid-template-columns: repeat(var(--resto), minmax(0, 1fr)) 2.4rem;
+    padding: .4rem .45rem; border: 1px solid var(--borde); border-radius: .6rem; background: var(--fondo);
+  }
+  .fila-control.ancha > :first-child { grid-column: 1 / span var(--resto); grid-row: 1; }
+  .fila-control.ancha > :last-child { grid-column: calc(var(--resto) + 1); grid-row: 1; }
+  .filas-control:has(.ancha) { gap: .45rem; }
+}
+@media (max-width: 420px) {
+  .fila-control { gap: .2rem; }
+  .fila-control .campo { padding: .5rem .3rem; font-size: 15px; }
+}
+
+.total-cambio { margin: .5rem 0 0; font-size: 1.1rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.campo-moneda { width: auto; margin: 0; padding: .35rem .5rem; }
+.punto-valores-tres { grid-template-columns: 1fr 1.1fr .7fr; }
+
+@media print {
+  @page control {
+    size: A4;
+    margin: 14mm 13mm 16mm;
+    @bottom-left { content: "COORDINATE · Control de obra"; font: 7pt "Inter", sans-serif; color: #6b7a90; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 7pt "Inter", sans-serif; color: #6b7a90; }
+  }
+  .informe .informe-total td { background: #eef1f6; border-top: .8pt solid #1b3560; }
+}

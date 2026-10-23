@@ -74,7 +74,9 @@ export function historial(r, fecha) {
 /* La sección del punch list en la ficha de la visita. */
 /* contratistas(visita) → [{uid, nombre}]: quienes tienen papel de
    contratista en la obra compartida de la visita (vacío si no lo es). */
-export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, ladoFoto, calidadFoto, contratistas = () => [] }) {
+/* plano: { nombre(id) → nombre del plano o null, ubicar(r), ver(r) }:
+   situar el repaso en un plano de la obra y verlo allí. */
+export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, ladoFoto, calidadFoto, contratistas = () => [], plano = null }) {
   let todos = [];
   let filtro = 'abiertos';
   const desplegados = new Set();
@@ -347,6 +349,7 @@ export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, lado
         }, ...opciones(PRIORIDADES, r.prioridad)))
       ),
       asignacion(r, v),
+      ubicacion(r),
       filaFotos(r, 'antes', 'Antes (defecto)', antes),
       filaFotos(r, 'despues', 'Después (corregido)', despues),
       el('div', { class: 'repaso-pie' },
@@ -380,6 +383,22 @@ export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, lado
         pintar();
       }
     }, ...opciones.map((c) => el('option', { value: c.uid, selected: (r.asignado || '') === c.uid }, c.nombre))));
+  }
+
+  /* Dónde está el repaso en un plano de la obra («R3» sobre el plano). */
+  function ubicacion(r) {
+    if (!plano) return null;
+    const nombre = r.ubicacion && plano.nombre(r.ubicacion.plano);
+    return el('div', { class: 'repaso-ubicacion' },
+      r.ubicacion
+        ? [el('span', { class: 'pie' }, `📍 En el plano ${nombre ? `«${nombre}»` : ''}`),
+          el('button', { type: 'button', class: 'enlace', onclick: () => plano.ver(r) }, 'Ver'),
+          el('button', { type: 'button', class: 'enlace', onclick: () => plano.ubicar(r) }, 'Cambiar'),
+          el('button', {
+            type: 'button', class: 'enlace boton-peligro-texto',
+            onclick: () => { r.ubicacion = null; cambiado(r); pintar(); }
+          }, 'Quitar')]
+        : el('button', { type: 'button', class: 'boton', onclick: () => plano.ubicar(r) }, '📍 Marcar en el plano'));
   }
 
   function filaFotos(r, fase, titulo, fotos) {
@@ -451,6 +470,22 @@ export function crearPunchList({ nodos, visita, avisar, ampliar, alGuardar, lado
       return cargar();
     },
     liberar,
-    todos: () => todos
+    todos: () => todos,
+    /* Situar un repaso (lo llama el visor de planos). */
+    ubicar(r, datos) {
+      r.ubicacion = datos;
+      cambiado(r);
+      pintar();
+    },
+    /* Desplegar un repaso y llevarlo a la vista. */
+    mostrarRepaso(id) {
+      const r = todos.find((x) => x.id === id);
+      if (!r) return;
+      desplegados.add(id);
+      const v = visita();
+      if (v && filtro !== 'todos' && !visibles(v).includes(r)) filtro = 'todos';
+      pintar();
+      requestAnimationFrame(() => nodos.lista.querySelector(`[data-repaso="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'center' }));
+    }
   };
 }

@@ -6,14 +6,14 @@ rules_version = '2';
 //   obras/{obra}                   obra compartida: nombre, miembros con su
 //                                  papel, invitaciones pendientes por correo
 //                                  y equipos vinculados
-//   obras/{obra}/visitas|repasos|planos/{id}
+//   obras/{obra}/visitas|repasos|planos|inspecciones|vaciados/{id}
 //                                  lo que se sincroniza de cada obra
 //   equipos/{equipo}               equipo de trabajo reutilizable: miembros,
 //                                  invitaciones y las obras a las que está
 //                                  vinculado
 //
 // Papeles en una obra: admin (gestiona la obra y su equipo), editor
-// (escribe visitas, repasos y planos), lector (sólo ve) y contratista (sólo
+// (escribe visitas, repasos, planos, inspecciones y vaciados), lector (sólo ve) y contratista (sólo
 // ve y corrige los repasos del punch list asignados a él, sin cerrarlos).
 // Papeles en un equipo: admin (gestiona el equipo) y miembro.
 //
@@ -190,7 +190,7 @@ service cloud.firestore {
 
       allow delete: if firmado() && antes().miembros.get(uid(), '') == 'admin';
 
-      // Visitas, repasos y planos de la obra.
+      // Visitas, repasos, planos, inspecciones y vaciados de la obra.
       match /{coleccion}/{id} {
         function papel() { return get(/databases/$(base)/documents/obras/$(obra)).data.miembros.get(uid(), ''); }
         function esMiRepaso() {
@@ -202,7 +202,7 @@ service cloud.firestore {
 
         // El contratista sólo corrige sus repasos: no los crea, no los
         // borra, no los reasigna y no los cierra (eso es de quien verifica).
-        allow write: if firmado() && coleccion in ['visitas', 'repasos', 'planos']
+        allow write: if firmado() && coleccion in ['visitas', 'repasos', 'planos', 'inspecciones', 'vaciados']
           && (papel() in ['admin', 'editor']
               || (esMiRepaso()
                   && request.resource.data.asignado == uid()

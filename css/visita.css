@@ -990,7 +990,6 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
 textarea.campo.dictando { caret-color: transparent; }
 
 /* ---------- botón de tema (js/tema.js) ---------- */
-.boton-tema { min-width: 2.6rem; padding-inline: .5rem; font-size: 1.05rem; line-height: 1; }
 
 /* ---------- medir sobre el plano (js/medir-plano.js) ---------- */
 
@@ -1035,3 +1034,25 @@ a.foto-remota { color: var(--acento); }
 .plano-remoto { display: flex; flex-direction: column; gap: .25rem; padding: .7rem 0; text-decoration: none; color: var(--texto); }
 .plano-remoto-icono { font-size: 2rem; text-align: center; }
 .firma-remota a { color: var(--seleccion); }
+
+/* ---------- inicio limpio: cuentas y copia viven en su propia vista ----------
+   (menú → Datos; visita.html#/cuentas y #/copia) */
+.datos-barra, .grupo-datos { display: none; }
+.modo-datos > * { display: none !important; }
+.modo-datos > .datos-barra { display: flex !important; }
+.modo-datos > .grupo-datos.activo { display: block !important; }
+
+/* avisos de calidad en el inicio: roturas de probetas y protocolos abiertos */
+.avisos-calidad { display: flex; flex-direction: column; gap: .45rem; margin-bottom: .8rem; }
+.avisos-calidad[hidden] { display: none; }
+.aviso-calidad {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .6rem .75rem;
+  border: 1px solid var(--borde); border-left: 3px solid var(--aviso-texto);
+  border-radius: .7rem;
+  background: var(--fondo-2); color: var(--texto); text-decoration: none;
+}
+.aviso-calidad.urgente { border-left-color: var(--peligro-texto); }
+.aviso-calidad strong { display: block; font-size: .92rem; }
+.aviso-calidad .pie { margin: 0; }
+.aviso-calidad > span:first-child { font-size: 1.3rem; }

@@ -3,14 +3,15 @@
    1. Corrector: activa la revisión ortográfica del teclado en todos los
       campos de texto. El teclado del teléfono (Gboard) subraya y corrige en
       español e inglés si tiene los dos idiomas activados.
-   2. Predictivo: aprende de las visitas y repasos guardados en el teléfono.
+   2. Predictivo: aprende de las visitas, repasos y registros de calidad,
+      seguimiento y control guardados en el teléfono.
       - Empresa, oficio, obra, autor, zona y responsable: lista desplegable
         con lo ya escrito antes.
       - Cuadros de texto: al empezar a escribir una línea, propone hasta
         tres frases ya usadas que empiezan igual; al tocar una, se completa.
    Todo funciona sin señal: no sale nada del teléfono. */
 
-import { listarVisitas, listarRepasos } from './partes.js';
+import { listarVisitas, listarRepasos, listarInspecciones, listarVaciados, listarMinutas, listarRfis, listarCambios, listarRecepciones, listarSeguridad } from './partes.js';
 
 const MIN_LETRAS = 2;
 const MAX_SUGERENCIAS = 3;
@@ -64,6 +65,25 @@ async function leer() {
     for (const f of trozos(r.texto)) { anotar(campo('repasos'), f, t); anotar(campo('general'), f, t); }
     if (r.zona) anotar(l.zona, r.zona.trim(), t);
     if (r.responsable) { anotar(l.responsable, r.responsable.trim(), t); anotar(l.empresa, r.responsable.trim(), t); }
+  }
+  // Calidad, seguimiento y control: frases a «general» y nombres a las listas.
+  const vacio = () => Promise.resolve([]);
+  const [ins, vac, min, rfis, cam, rec, sst] = await Promise.all([listarInspecciones, listarVaciados, listarMinutas, listarRfis, listarCambios, listarRecepciones, listarSeguridad]
+    .map((f) => (f || vacio)().catch(() => [])));
+  const frases = (t, ...textos) => { for (const x of textos) for (const f of trozos(x)) anotar(campo('general'), f, t); };
+  const nombre = (lista, x, t) => { if (x && String(x).trim()) anotar(l[lista], String(x).trim(), t); };
+  for (const r of [...ins, ...vac, ...min, ...rfis, ...cam, ...rec, ...sst]) {
+    const t = r.modificado || r.creado || 0;
+    nombre('obra', r.obra, t);
+    nombre('zona', r.zona, t);
+    frases(t, r.observaciones, r.temas, r.asunto, r.pregunta, r.respuesta, r.descripcion, r.trabajo, r.causas, r.acciones, r.tema, r.elemento);
+    for (const p of r.puntos || []) frases(t, p.nota);
+    for (const a of r.acuerdos || []) { frases(t, a.texto); nombre('responsable', a.responsable, t); }
+    for (const a of r.asistentes || []) { nombre('autor', a.nombre, t); nombre('empresa', a.empresa, t); }
+    for (const x of [...(r.partidas || []), ...(r.lineas || [])]) frases(t, x.descripcion);
+    nombre('empresa', r.contratista, t);
+    nombre('empresa', r.proveedor, t);
+    nombre('autor', r.inspector, t);
   }
   corpus = c;
   listas = Object.fromEntries(Object.entries(l).map(([k, m]) => [k, ordenados(m).slice(0, 60).map((e) => e.texto)]));

@@ -19,6 +19,9 @@ import {
   nuevaMinuta, nuevoAcuerdo, numeroDe, codigo, vencido, acuerdosAbiertos, resumenSeguimiento
 } from './seguimiento-datos.js';
 import { documento, dato, cifra, cabecera, pie, cajaFirma, imprimir } from './impreso.js';
+import { seccionFirmas, firmasAsistentes, celdaFirmaAsistente, urlFirma } from './firmas.js';
+
+const papelesMinuta = (m) => [{ papel: 'convoca', titulo: 'Convoca', nombre: () => m.convoca }, { papel: 'contratista', titulo: 'Por la contratista' }];
 import { equipo } from './equipo.js';
 
 const $ = (id) => document.getElementById(id);
@@ -278,7 +281,7 @@ function editorPrograma(p) {
       el('label', {}, 'Fin', campoFecha(x, 'fin')),
       el('button', {
         type: 'button', class: 'boton quitar', 'aria-label': 'Quitar partida',
-        onclick: () => { if (!confirm(`¿Quitar «${x.nombre}» y su avance anotado?`)) return; p.partidas = p.partidas.filter((z) => z !== x); cambioPrograma(); pintarAvance([]); }
+        onclick: () => { if (!confirm(`¿Quitar «${x.nombre}» y su avance anotado?`)) return; p.partidas = p.partidas.filter((z) => z !== x); p.borradas = [...new Set([...(p.borradas || []), x.id])]; cambioPrograma(); pintarAvance([]); }
       }, '✕'));
   });
   const abierto = sessionStorage.getItem('crd-editar-programa') === '1';
@@ -596,6 +599,8 @@ function pintarMinuta() {
       el('h2', {}, 'Próxima reunión y observaciones'),
       el('label', {}, 'Próxima reunión', entrada(m, 'proxima', { placeholder: 'p. ej. jueves 29, 9:00, en obra' })),
       area(m, 'observaciones', 'Observaciones', 2)),
+    firmasAsistentes(m, m.asistentes.filter((a) => a.presente !== false), cambioMinuta),
+    seccionFirmas(m, papelesMinuta(m), { titulo: 'Conformidad', alCambiar: cambioMinuta }),
     el('section', { class: 'grupo acciones-ficha' },
       el('button', { type: 'button', class: 'boton boton-destacado grande', onclick: () => minutaPdf(m) }, 'Minuta en PDF'),
       el('button', {
@@ -627,7 +632,7 @@ async function minutaPdf(m) {
       titulo('Asistentes'),
       el('table', { class: 'informe-tabla informe-asistentes' },
         el('thead', {}, el('tr', {}, el('th', {}, 'Nombre'), el('th', {}, 'Empresa / cargo'), el('th', {}, 'Firma'))),
-        el('tbody', {}, ...presentes.map((a) => el('tr', {}, el('td', {}, a.nombre || '—'), el('td', {}, a.empresa || '—'), el('td', { class: 'informe-firma-celda' }, '')))))),
+        el('tbody', {}, ...presentes.map((a) => el('tr', {}, el('td', {}, a.nombre || '—'), el('td', {}, a.empresa || '—'), celdaFirmaAsistente(m, a)))))),
     m.temas?.trim() ? el('section', {}, titulo('Temas tratados'), el('ol', { class: 'informe-lista' }, ...m.temas.trim().split('\n').filter((t) => t.trim()).map((t) => el('li', {}, t.trim())))) : null,
     m.acuerdos.length ? el('section', {},
       titulo('Acuerdos'),
@@ -643,7 +648,7 @@ async function minutaPdf(m) {
     m.observaciones?.trim() ? el('section', {}, titulo('Observaciones'), el('p', { class: 'parrafo' }, m.observaciones.trim())) : null,
     el('section', { class: 'informe-firma' },
       titulo('Conformidad'),
-      el('div', { class: 'informe-firmas' }, cajaFirma(null, m.convoca, 'Convoca'), cajaFirma(null, '', 'Por la contratista'))),
+      el('div', { class: 'informe-firmas' }, ...papelesMinuta(m).map((p) => cajaFirma(urlFirma(m, p.papel), (p.nombre && p.nombre()) || (m.firmas && m.firmas[p.papel] && m.firmas[p.papel].nombre) || '', p.titulo)))),
     pie()
   ], { pagina: 'seguimiento' });
 }

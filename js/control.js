@@ -17,6 +17,7 @@ import {
   resumenControl
 } from './control-datos.js';
 import { documento, dato, cifra, cabecera, pie, cajaFirma, imprimir } from './impreso.js';
+import { seccionFirmas, firmasAsistentes, celdaFirmaAsistente, urlFirma } from './firmas.js';
 import { equipo } from './equipo.js';
 
 const $ = (id) => document.getElementById(id);
@@ -395,6 +396,18 @@ for (const entrada of [nodos.camara, nodos.galeria]) {
 }
 nodos.fotoGrande.addEventListener('click', () => { nodos.fotoGrande.hidden = true; });
 
+/* Quién firma cada registro: en la ficha (teléfono) y en el PDF. */
+function papeles(r) {
+  const sec = r.__seccion;
+  if (sec === 'rfi') return [{ papel: 'solicita', titulo: 'Solicita', nombre: () => r.solicita }, { papel: 'responde', titulo: 'Responde', nombre: () => r.respondePor }];
+  if (sec === 'cambios') return [{ papel: 'solicita', titulo: 'Solicita', nombre: () => r.solicita }, { papel: 'aprueba', titulo: 'Aprueba', nombre: () => r.aprueba }];
+  if (sec === 'materiales') return [{ papel: 'recibe', titulo: 'Recibe en obra', nombre: () => r.recibe }, { papel: 'entrega', titulo: `Entrega · ${r.proveedor || 'proveedor'}` }];
+  if (r.tipo === 'permiso') return [{ papel: 'solicita', titulo: 'Solicita', nombre: () => r.responsable }, { papel: 'autoriza', titulo: 'Autoriza', nombre: () => r.autoriza }];
+  return [{ papel: 'responsable', titulo: r.tipo === 'charla' ? 'Imparte' : 'Responsable', nombre: () => r.responsable }, { papel: 'supervision', titulo: 'Supervisión' }];
+}
+const firmasFicha = (r) => seccionFirmas(r, papeles(r), { alCambiar: cambiado });
+const firmasPdf = (r) => papeles(r).map((p) => cajaFirma(urlFirma(r, p.papel), (p.nombre && p.nombre()) || (r.firmas && r.firmas[p.papel] && r.firmas[p.papel].nombre) || '', p.titulo));
+
 function acciones(r, textoPdf, pdf) {
   return el('section', { class: 'grupo acciones-ficha' },
     el('button', { type: 'button', class: 'boton boton-destacado grande', onclick: async () => { await guardarYa(); pdf(r); } }, textoPdf),
@@ -478,6 +491,7 @@ function fichaRfi(r) {
       }, 'Crear orden de cambio')) : null,
       r.cambio ? el('p', { class: 'pie' }, el('a', { href: `#/r/cambios/${encodeURIComponent(r.cambio)}` }, '→ Ver la orden de cambio')) : null,
       el('p', { class: 'pie' }, `${esperaRfi(r)} días ${r.estado === 'abierta' ? 'esperando respuesta' : 'en responder'}.`)),
+    firmasFicha(r),
     acciones(r, 'RFI en PDF', pdfRfi)
   ];
 }
@@ -507,7 +521,7 @@ function pdfRfi(r) {
       el('p', { class: 'parrafo' }, r.respuesta?.trim() || '—'),
       el('p', { class: 'informe-nota' }, [r.respondePor && `Responde: ${r.respondePor}`, r.fechaRespuesta && `Fecha: ${r.fechaRespuesta}`, `Días en responder: ${esperaRfi(r)}`, r.costo && 'Impacta el costo', r.plazo && 'Impacta el plazo'].filter(Boolean).join(' · '))),
     el('section', { class: 'informe-firma' }, titulo('Firmas'),
-      el('div', { class: 'informe-firmas' }, cajaFirma(null, r.solicita, 'Solicita'), cajaFirma(null, r.respondePor, 'Responde'))),
+      el('div', { class: 'informe-firmas' }, ...firmasPdf(r))),
     pie()
   ], { pagina: 'control' });
 }
@@ -566,6 +580,7 @@ function fichaCambio(c) {
       campo(c, 'fechaAprobacion', { etiqueta: 'Fecha de aprobación', tipo: 'date' }),
       area(c, 'observaciones', { etiqueta: 'Observaciones', filas: 2 })),
     seccionFotos(c),
+    firmasFicha(c),
     acciones(c, 'Orden de cambio en PDF', pdfCambio)
   ];
 }
@@ -590,7 +605,7 @@ function pdfCambio(c) {
     c.observaciones?.trim() ? el('section', {}, titulo('Observaciones'), el('p', { class: 'parrafo' }, c.observaciones.trim())) : null,
     fotosPdf(c, titulo),
     el('section', { class: 'informe-firma' }, titulo('Aprobación'),
-      el('div', { class: 'informe-firmas' }, cajaFirma(null, c.solicita, 'Solicita'), cajaFirma(null, c.aprueba, 'Aprueba'))),
+      el('div', { class: 'informe-firmas' }, ...firmasPdf(c))),
     pie()
   ], { pagina: 'control' });
 }
@@ -629,6 +644,7 @@ function fichaRecepcion(r) {
       el('p', { class: 'pie' }, 'Haz foto del conduce firmado y de lo rechazado. Lo pendiente se ve en la lista como «Faltante».')),
     seccionFotos(r, 'Fotos (conduce y material)'),
     el('section', { class: 'grupo' }, el('h2', {}, 'Observaciones'), area(r, 'observaciones', { placeholder: 'Estado del material, motivo del rechazo, almacenamiento…', filas: 3 })),
+    firmasFicha(r),
     acciones(r, 'Recepción en PDF', pdfRecepcion)
   ];
 }
@@ -649,7 +665,7 @@ function pdfRecepcion(r) {
     r.observaciones?.trim() ? el('section', {}, titulo('Observaciones'), el('p', { class: 'parrafo' }, r.observaciones.trim())) : null,
     fotosPdf(r, titulo),
     el('section', { class: 'informe-firma' }, titulo('Conformidad'),
-      el('div', { class: 'informe-firmas' }, cajaFirma(null, r.recibe, 'Recibe en obra'), cajaFirma(null, '', `Entrega · ${r.proveedor || 'proveedor'}`))),
+      el('div', { class: 'informe-firmas' }, ...firmasPdf(r))),
     pie()
   ], { pagina: 'control' });
 }
@@ -668,6 +684,8 @@ function fichaSst(r) {
   const propio = { charla: fichaCharla, epp: fichaEpp, permiso: fichaPermiso, incidente: fichaIncidente }[r.tipo](r);
   return [...comunes, ...propio, seccionFotos(r),
     el('section', { class: 'grupo' }, el('h2', {}, 'Observaciones'), area(r, 'observaciones', { filas: 2 })),
+    r.tipo === 'charla' ? firmasAsistentes(r, r.asistentes, cambiado) : null,
+    firmasFicha(r),
     acciones(r, 'Registro en PDF', pdfSst)];
 }
 
@@ -682,7 +700,7 @@ function fichaCharla(r) {
       columnas: [{ clave: 'nombre', titulo: 'Nombre', ancho: '1.3fr' }, { clave: 'empresa', titulo: 'Empresa / oficio', ancho: '1fr' }],
       nueva: () => ({ id: nuevoId(), nombre: '', empresa: '' }), textoNuevo: '+ Asistente'
     }),
-    el('p', { class: 'pie' }, 'El PDF sale con una columna para que firme cada asistente.'))];
+    el('p', { class: 'pie' }, 'Cada asistente puede firmar en el teléfono (abajo, «Firmas de asistentes») o a mano en el PDF.'))];
 }
 
 function puntosChecklist(lista, conNota = true) {
@@ -758,7 +776,7 @@ function pdfSst(r) {
       el('section', { class: 'informe-larga' }, titulo('Asistentes', plural(r.asistentes.length, 'persona', 'personas')),
         el('table', { class: 'informe-tabla informe-asistentes' },
           el('thead', {}, el('tr', {}, el('th', { class: 'num' }, 'Nº'), el('th', {}, 'Nombre'), el('th', {}, 'Empresa / oficio'), el('th', {}, 'Firma'))),
-          el('tbody', {}, ...r.asistentes.map((a, i) => el('tr', {}, el('td', { class: 'num' }, String(i + 1)), el('td', {}, a.nombre || '—'), el('td', {}, a.empresa || '—'), el('td', { class: 'informe-firma-celda' }, ''))))))],
+          el('tbody', {}, ...r.asistentes.map((a, i) => el('tr', {}, el('td', { class: 'num' }, String(i + 1)), el('td', {}, a.nombre || '—'), el('td', {}, a.empresa || '—'), celdaFirmaAsistente(r, a))))))],
     epp: () => [el('section', {}, titulo('Equipo de protección personal', [r.zona, r.personas && `${r.personas} personas`].filter(Boolean).join(' · ')), tabla(r.puntos))],
     permiso: () => [
       el('div', { class: 'informe-ficha' }, dato('Tipo de trabajo', PERMISOS[r.clase]?.nombre), dato('Zona', r.zona), dato('Ejecuta', r.ejecuta),
@@ -772,8 +790,7 @@ function pdfSst(r) {
       el('section', {}, titulo('Acciones'), el('p', { class: 'parrafo' }, r.acciones || '—'),
         el('p', { class: 'informe-nota' }, [r.accionResponsable && `Responsable: ${r.accionResponsable}`, r.limite && `Fecha límite: ${r.limite}`].filter(Boolean).join(' · ')))]
   }[r.tipo]();
-  const firmas = r.tipo === 'permiso' ? [cajaFirma(null, r.responsable, 'Solicita'), cajaFirma(null, r.autoriza, 'Autoriza')]
-    : [cajaFirma(null, r.responsable, r.tipo === 'charla' ? 'Imparte' : 'Responsable'), cajaFirma(null, '', 'Supervisión')];
+  const firmas = firmasPdf(r);
   imprimir(nodos.informe, `${codigo('SST', r.numero)} ${r.obra} ${r.fecha}`, [
     ...cabecera(TIPOS_SST[r.tipo], `${codigo('SST', r.numero)}-${r.fecha.replaceAll('-', '')}`, TIPOS_SST[r.tipo], r.obra),
     r.tipo === 'permiso' || r.tipo === 'incidente' ? null : el('div', { class: 'informe-ficha' }, dato('Fecha', `${fechaLarga(r.fecha)}${r.hora ? ` · ${r.hora}` : ''}`), dato(r.tipo === 'charla' ? 'Imparte' : 'Responsable', r.responsable), dato('Obra', r.obra)),

@@ -151,6 +151,32 @@ export function anotarAvance(x, pct, fecha = hoy(), autor = '') {
   x.avances.sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 
+/* Dos copias del mismo programa (dos teléfonos anotando a la vez): se
+   juntan partida a partida. Los datos de cada partida, de la copia más
+   reciente; las anotaciones de avance, de las dos (por fecha, gana la
+   anotada más tarde). Las partidas quitadas en una copia no vuelven. */
+export function fusionarProgramas(a, b) {
+  const nuevo = (a.modificado || 0) >= (b.modificado || 0) ? a : b;
+  const viejo = nuevo === a ? b : a;
+  const borradas = new Set([...(a.borradas || []), ...(b.borradas || [])]);
+  const delViejo = new Map((viejo.partidas || []).map((x) => [x.id, x]));
+  const juntarAvances = (x, y) => {
+    const m = new Map();
+    for (const e of [...(y.avances || []), ...(x.avances || [])]) {
+      const previo = m.get(e.fecha);
+      if (!previo || (e.hora || '') >= (previo.hora || '')) m.set(e.fecha, e);
+    }
+    return [...m.values()].sort((u, v) => u.fecha.localeCompare(v.fecha));
+  };
+  const partidas = (nuevo.partidas || []).filter((x) => !borradas.has(x.id)).map((x) => {
+    const y = delViejo.get(x.id);
+    delViejo.delete(x.id);
+    return y ? { ...x, avances: juntarAvances(x, y) } : x;
+  });
+  for (const y of delViejo.values()) if (!borradas.has(y.id)) partidas.push(y);
+  return { ...nuevo, partidas, borradas: [...borradas], modificado: Math.max(a.modificado || 0, b.modificado || 0) };
+}
+
 export function indicadores(p, dia = hoy()) {
   const prog = programado(p, dia);
   const re = real(p, dia);

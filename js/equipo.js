@@ -106,6 +106,19 @@ async function separar(tipo, r, obraId) {
       datos.firmaEnlace = r.firmaRemota.enlace || null;
     }
   }
+  // Varias firmas por registro (minutas y control): { papel: { blob, nombre, en } }.
+  if (r.firmas) {
+    datos.firmas = {};
+    for (const [papel, f] of Object.entries(r.firmas)) {
+      if (!f) continue;
+      const { blob, ...resto } = f;
+      if (blob) {
+        const ruta = `${base}firma-${r.id}-${papel.replace(/[^\w-]/g, '_')}-${await huella(blob)}.png`;
+        archivos.push({ ruta, blob });
+        datos.firmas[papel] = { ...resto, ruta, enlace: enlaces[ruta] || null };
+      } else datos.firmas[papel] = resto;
+    }
+  }
   if (tipo === 'planos') {
     delete datos.blob;
     datos.ruta = `${base}plano-${r.id}.${extension(r.blob)}`;
@@ -141,6 +154,20 @@ async function juntar(tipo, datos, local, bajar) {
     }
     delete r.firmaRuta;
     delete r.firmaEnlace;
+  }
+  if (datos.firmas) {
+    r.firmas = {};
+    for (const [papel, f] of Object.entries(datos.firmas)) {
+      if (!f) continue;
+      if (!f.ruta) { r.firmas[papel] = f; continue; }
+      const previa = local && local.firmas && local.firmas[papel];
+      let blob = previa && previa.blob && f.ruta.endsWith(`-${await huella(previa.blob)}.png`) ? previa.blob : null;
+      if (!blob) blob = await intentar(f.ruta);
+      if (blob) {
+        const { ruta, enlace, ...resto } = f;
+        r.firmas[papel] = { ...resto, blob };
+      } else r.firmas[papel] = f;
+    }
   }
   if (tipo === 'planos') {
     r.blob = local && local.blob ? local.blob : await intentar(datos.ruta);
@@ -455,8 +482,14 @@ export class Equipo extends EventTarget {
           } catch (e) { return null; }
         }).filter(Boolean);
     };
-    const [visitas, repasos] = await Promise.all([leer('visitas'), leer('repasos')]);
-    const datos = { visitas, repasos };
+    // Además de bitácoras y repasos, los registros de calidad, seguimiento
+    // y control (sin fotos ni firmas: sólo los datos).
+    const tipos = ['visitas', 'repasos', 'inspecciones', 'vaciados', 'programas', 'minutas', 'rfis', 'cambios', 'recepciones', 'seguridad'];
+    const listas = await Promise.all(tipos.map((t) => leer(t).catch((e) => {
+      if (t === 'visitas' || t === 'repasos') throw e;
+      return [];
+    })));
+    const datos = Object.fromEntries(tipos.map((t, i) => [t, listas[i]]));
     this.cacheObras.set(obra.id, { cuando: Date.now(), datos });
     return datos;
   }
@@ -761,7 +794,15 @@ export class Equipo extends EventTarget {
           continue;
         }
         for (const tipo of Object.keys(TIPOS)) {
-          if (ESCRIBEN.includes(obra.miembros[uid])) await this.subir(obra, tipo);
+          const escribe = ESCRIBEN.includes(obra.miembros[uid]);
+          // El programa se baja primero para juntar el avance de otros
+          // teléfonos antes de subir el propio.
+          if (tipo === 'programas') {
+            await this.bajar(obra, tipo, cambiados, nuevas);
+            if (escribe) await this.subir(obra, tipo);
+            continue;
+          }
+          if (escribe) await this.subir(obra, tipo);
           await this.bajar(obra, tipo, cambiados, nuevas);
         }
       }
@@ -883,6 +924,7 @@ export class Equipo extends EventTarget {
       // Los enlaces conseguidos ahora, a los datos.
       if (datos.fotos) for (const f of datos.fotos) if (!f.enlace && enlaces[f.ruta]) f.enlace = enlaces[f.ruta];
       if (datos.firmaRuta && !datos.firmaEnlace && enlaces[datos.firmaRuta]) datos.firmaEnlace = enlaces[datos.firmaRuta];
+      if (datos.firmas) for (const f of Object.values(datos.firmas)) if (f && f.ruta && !f.enlace && enlaces[f.ruta]) f.enlace = enlaces[f.ruta];
       if (tipo === 'planos' && !datos.enlace && enlaces[datos.ruta]) datos.enlace = enlaces[datos.ruta];
       const carpeta = leerMapa('crd-carpetas')[obra.id];
       if (carpeta && tipo !== 'planos') datos.carpetaEnlace = carpeta;
@@ -951,6 +993,18 @@ export class Equipo extends EventTarget {
           await T.borrar(d.id, { callado: true });
           cambiados.add(d.id);
         }
+        continue;
+      }
+      // El programa de avance es un documento por obra: si este teléfono
+      // tiene cambios sin subir, se juntan partida a partida en vez de
+      // pisarse (gana la última escritura en todo lo demás).
+      if (tipo === 'programas' && local && version(local) !== x.version
+        && version(local) > await partes.versionSincronizada(tipo, d.id)) {
+        const { fusionarProgramas } = await import('./seguimiento-datos.js');
+        const junto = fusionarProgramas(local, JSON.parse(x.datos));
+        junto.modificado = Math.max(version(local), x.version) + 1;
+        await T.guardar(junto, { callado: true });
+        cambiados.add(d.id);
         continue;
       }
       if (local && version(local) >= x.version) continue;

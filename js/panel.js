@@ -82,13 +82,121 @@ function tabla(cabeceras, filas, clase = '') {
     el('tbody', {}, ...filas.map((f) => el('tr', {}, ...f.map((c) => el('td', {}, c)))))));
 }
 
+/* --- calidad, seguimiento y control --- */
+
+const pct = (x) => `${Math.round(x)} %`;
+const dinero = (moneda, n) => `${moneda} ${n.toLocaleString('es-DO', { maximumFractionDigits: 2 })}`;
+const corta = (f) => (f ? `${f.slice(8)}/${f.slice(5, 7)}` : '');
+const mitad = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace('.', ','));
+
+function lineaAviso(texto, clase = 'atencion') {
+  return el('li', {}, etiqueta(clase === 'gravedad-grave' ? 'Vencido' : 'Atención', clase), ' ', texto);
+}
+
+/* Lo que hay que mirar: vencidos y abiertos, en una sola lista. */
+function avisosRegistros(rg) {
+  const l = [];
+  if (rg.calidad.roturasVencidas) l.push(lineaAviso(`${plural(rg.calidad.roturasVencidas, 'probeta', 'probetas')} con la rotura vencida sin resultado`, 'gravedad-grave'));
+  if (rg.calidad.roturasHoy) l.push(lineaAviso(`${plural(rg.calidad.roturasHoy, 'probeta toca', 'probetas tocan')} romper`));
+  for (const b of rg.calidad.bajas) l.push(lineaAviso(`${b.codigo} ${b.elemento}: ${b.dias} días al ${pct(b.pct * 100)} de f'c, por debajo de lo esperado`, 'gravedad-grave'));
+  for (const a of rg.acuerdos.vencidos) l.push(lineaAviso(`Acuerdo vencido (${a.minuta}, ${corta(a.limite)}): ${a.texto}${a.responsable ? ` · ${a.responsable}` : ''}`, 'gravedad-grave'));
+  for (const q of rg.rfi.vencidas) l.push(lineaAviso(`${q.codigo} sin respuesta, requerida para el ${corta(q.requerida)}: ${q.asunto}${q.dirigidaA ? ` · ${q.dirigidaA}` : ''}`, 'gravedad-grave'));
+  if (rg.sst.permisosOlvidados) l.push(lineaAviso(`${plural(rg.sst.permisosOlvidados, 'permiso de trabajo', 'permisos de trabajo')} de días anteriores sin cerrar`, 'gravedad-grave'));
+  if (rg.sst.incidentesAbiertos) l.push(lineaAviso(`${plural(rg.sst.incidentesAbiertos, 'incidente', 'incidentes')} con acciones sin cerrar`));
+  if (rg.cambios.enviadas) l.push(lineaAviso(`${plural(rg.cambios.enviadas, 'orden de cambio enviada', 'órdenes de cambio enviadas')}, esperando aprobación`));
+  for (const m of rg.materiales.problemas) l.push(lineaAviso(`${m.codigo} ${m.proveedor}: ${m.estado.toLowerCase()}`));
+  return l.length ? el('ul', { class: 'panel-lista' }, ...l) : null;
+}
+
+function lineaAvance(av) {
+  if (!av) return null;
+  const clase = av.desviacion < -5 ? 'gravedad-grave' : av.desviacion < 0 ? 'atencion' : 'ok';
+  return el('p', { class: 'pie' }, 'Avance: ', el('strong', {}, `${pct(av.real)} real`), ` · ${pct(av.programado)} programado · `,
+    etiqueta(`${av.desviacion >= 0 ? '+' : ''}${Math.round(av.desviacion)} pts`, clase),
+    av.spi != null ? ` · índice ${av.spi.toFixed(2)}` : '');
+}
+
+/* Día: un bloque compacto bajo las bitácoras. */
+function registrosDia(rg) {
+  if (!rg.hay) return null;
+  const hechos = [
+    rg.calidad.inspecciones.length && `${plural(rg.calidad.inspecciones.length, 'inspección', 'inspecciones')} (${rg.calidad.inspecciones.map((i) => `${i.codigo} ${i.titulo}: ${i.texto.toLowerCase()}`).join('; ')})`,
+    rg.calidad.vaciados.length && `${plural(rg.calidad.vaciados.length, 'vaciado', 'vaciados')} (${rg.calidad.vaciados.map((v) => `${v.codigo} ${v.elemento}${v.m3 ? ` ${mitad(v.m3)} m³` : ''}`).join('; ')})`,
+    rg.acuerdos.reuniones && plural(rg.acuerdos.reuniones, 'reunión', 'reuniones'),
+    rg.rfi.nuevas && plural(rg.rfi.nuevas, 'RFI nueva', 'RFI nuevas'),
+    rg.rfi.respondidas && plural(rg.rfi.respondidas, 'RFI respondida', 'RFI respondidas'),
+    rg.cambios.aprobadas && `${plural(rg.cambios.aprobadas, 'orden de cambio aprobada', 'órdenes de cambio aprobadas')} (${rg.cambios.totales.map(([m, n]) => dinero(m, n)).join(' + ')})`,
+    rg.materiales.recepciones && plural(rg.materiales.recepciones, 'recepción de materiales', 'recepciones de materiales'),
+    rg.sst.charlas && `${plural(rg.sst.charlas, 'charla', 'charlas')} de seguridad (${plural(rg.sst.asistentes, 'asistente', 'asistentes')})`,
+    rg.sst.permisos.length && plural(rg.sst.permisos.length, 'permiso de trabajo', 'permisos de trabajo'),
+    rg.sst.incidentes.length && `${plural(rg.sst.incidentes.length, 'incidente', 'incidentes')} (${rg.sst.incidentes.map((i) => i.clase.toLowerCase()).join(', ')})`
+  ].filter(Boolean);
+  return el('div', { class: 'panel-registros' },
+    el('h3', { class: 'panel-sub' }, 'Calidad, seguimiento y control'),
+    lineaAvance(rg.avance),
+    hechos.length ? el('ul', { class: 'panel-trabajos' }, ...hechos.map((h) => el('li', {}, h))) : el('p', { class: 'pie' }, 'Sin registros nuevos este día.'),
+    avisosRegistros(rg));
+}
+
+/* Semana: secciones 6 a 9 del reporte. */
+function registrosSemana(rg) {
+  if (!rg.hay) return [];
+  const c = rg.calidad, s = rg.sst;
+  return [
+    el('h3', { class: 'panel-sub' }, '6. Calidad'),
+    c.inspecciones.length
+      ? tabla(['Inspección', 'Partida', 'Zona', 'Fecha', 'Resultado'], c.inspecciones.map((i) => [i.codigo, i.titulo, i.zona || '—', corta(i.fecha),
+        etiqueta(i.texto, i.resultado === 'rechazada' ? 'gravedad-grave' : i.resultado === 'liberada' ? 'ok' : 'atencion')]))
+      : el('p', { class: 'pie' }, 'Sin inspecciones esta semana.'),
+    c.vaciados.length > 0 && tabla(['Vaciado', 'Elemento', 'f\'c', 'm³', 'Probetas'], c.vaciados.map((v) => [v.codigo, [v.elemento, v.zona].filter(Boolean).join(' · ') || '—', v.fc || '—', v.m3 ? mitad(v.m3) : '—', String(v.probetas)])),
+    el('p', { class: 'pie' }, `Roturas: ${c.roturasVencidas} vencidas · ${c.roturasHoy} para hoy · ${c.roturasProximas} en los próximos 7 días`),
+
+    el('h3', { class: 'panel-sub' }, '7. Avance, reuniones y días afectados'),
+    lineaAvance(rg.avance) || el('p', { class: 'pie' }, 'Sin programa de avance para esta obra.'),
+    el('p', { class: 'pie' }, `${plural(rg.acuerdos.reuniones, 'reunión', 'reuniones')} · ${plural(rg.acuerdos.abiertos, 'acuerdo abierto', 'acuerdos abiertos')} · ${plural(rg.acuerdos.vencidos.length, 'vencido', 'vencidos')}`),
+    rg.dias.total > 0 && el('p', { class: 'pie' }, `Días afectados: ${mitad(rg.dias.total)} (${rg.dias.porCausa.map(([k, n]) => `${k.toLowerCase()} ${mitad(n)}`).join(', ')})`),
+
+    el('h3', { class: 'panel-sub' }, '8. RFI, cambios y materiales'),
+    el('p', { class: 'pie' }, [
+      `RFI: ${plural(rg.rfi.nuevas, 'nueva', 'nuevas')} · ${plural(rg.rfi.respondidas, 'respondida', 'respondidas')} · ${plural(rg.rfi.abiertas, 'abierta', 'abiertas')}`,
+      `órdenes de cambio: ${plural(rg.cambios.aprobadas, 'aprobada', 'aprobadas')}${rg.cambios.totales.length ? ` (${rg.cambios.totales.map(([m, n]) => dinero(m, n)).join(' + ')})` : ''} · ${rg.cambios.enviadas} por aprobar`,
+      `${plural(rg.materiales.recepciones, 'recepción', 'recepciones')} de materiales, ${rg.materiales.problemas.length} con faltante o rechazo`
+    ].join(' · ')),
+
+    el('h3', { class: 'panel-sub' }, '9. Seguridad'),
+    el('div', { class: 'cifras cifras-pequenas' },
+      cifra(s.charlas, s.charlas === 1 ? 'charla' : 'charlas'),
+      cifra(s.asistentes, 'asistentes'),
+      cifra(s.revisionesEpp, 'revisiones de EPP'),
+      cifra(s.permisos.length, 'permisos de trabajo'),
+      cifra(s.incidentes.length, 'incidentes', s.incidentes.length ? 'alerta' : ''),
+      s.sinAccidentes != null && cifra(s.sinAccidentes, 'días sin accidentes')),
+
+    avisosRegistros(rg) && el('h3', { class: 'panel-sub' }, 'Pendientes y vencidos'),
+    avisosRegistros(rg)
+  ];
+}
+
+function cifrasRegistros(t) {
+  if (!t.hay) return null;
+  return el('div', { class: 'cifras cifras-pequenas' },
+    cifra(t.inspecciones, t.inspecciones === 1 ? 'inspección' : 'inspecciones'),
+    cifra(t.vaciados, t.vaciados === 1 ? 'vaciado' : 'vaciados'),
+    cifra(t.roturas, 'probetas por romper', t.roturas ? 'alerta' : ''),
+    cifra(t.rfiAbiertas, 'RFI abiertas', t.rfiVencidas ? 'alerta' : ''),
+    cifra(t.acuerdosVencidos, 'acuerdos vencidos', t.acuerdosVencidos ? 'alerta' : ''),
+    cifra(t.cambiosPendientes, 'cambios por aprobar'),
+    cifra(t.permisosOlvidados, 'permisos sin cerrar', t.permisosOlvidados ? 'alerta' : ''),
+    t.diasAfectados > 0 && cifra(mitad(t.diasAfectados), 'días afectados'));
+}
+
 /* --- diario --- */
 
 function pintarDia(r) {
   const t = r.total;
   const sinVisita = r.sinVisita.length;
   return [
-    cabeceraImpresa('Resumen diario de bitácoras', fechaLarga(r.fecha)),
+    cabeceraImpresa('Resumen diario de obra', fechaLarga(r.fecha)),
     el('h2', { class: 'panel-titulo' }, fechaLarga(r.fecha)),
     el('div', { class: 'cifras' },
       cifra(t.visitas, t.visitas === 1 ? 'bitácora' : 'bitácoras'),
@@ -97,6 +205,7 @@ function pintarDia(r) {
       cifra(t.incNuevas, 'incidencias nuevas'),
       cifra(t.incAbiertas, 'incidencias abiertas', t.graves ? 'alerta' : ''),
       cifra(t.repAbiertos, 'repasos abiertos')),
+    cifrasRegistros(r.registros),
     sinVisita > 0 && r.obras.length > 1 && el('p', { class: 'aviso-lectura' },
       `Sin bitácora este día: ${r.sinVisita.map((o) => o.nombre).join(', ')}.`),
     ...r.obras.map((x) => el('section', { class: 'grupo panel-obra-tarjeta' },
@@ -126,7 +235,8 @@ function pintarDia(r) {
       x.incNuevas.length > 0 && el('h3', { class: 'panel-sub' }, 'Incidencias nuevas'),
       x.incNuevas.length > 0 && listaIncidencias(x.incNuevas, ''),
       x.incResueltas.length > 0 && el('h3', { class: 'panel-sub' }, 'Resueltas este día'),
-      x.incResueltas.length > 0 && listaIncidencias(x.incResueltas, ''))),
+      x.incResueltas.length > 0 && listaIncidencias(x.incResueltas, ''),
+      registrosDia(x.registros))),
     pieImpreso()
   ];
 }
@@ -137,7 +247,7 @@ function pintarSemana(r) {
   const t = r.total;
   const rango = `${fechaLarga(r.inicio)} – ${fechaLarga(r.fin)}`;
   return [
-    cabeceraImpresa('Resumen semanal de bitácoras', rango),
+    cabeceraImpresa('Resumen semanal de obra', rango),
     el('h2', { class: 'panel-titulo' }, `Semana del ${r.inicio.slice(8)}/${r.inicio.slice(5, 7)} al ${r.fin.slice(8)}/${r.fin.slice(5, 7)}/${r.fin.slice(0, 4)}`),
     el('div', { class: 'cifras' },
       cifra(t.visitas, 'bitácoras'),
@@ -148,6 +258,7 @@ function pintarSemana(r) {
       cifra(t.incAbiertas, 'siguen abiertas', t.incAbiertas ? 'alerta' : ''),
       cifra(t.repCerrados, 'repasos cerrados'),
       cifra(t.repAbiertos, 'repasos abiertos')),
+    cifrasRegistros(r.registros),
     ...r.obras.map((x) => el('section', { class: 'grupo panel-obra-tarjeta' },
       el('div', { class: 'grupo-cabecera' }, el('h2', {}, x.obra.nombre), enlaceObra(x.obra)),
       el('p', { class: 'pie' }, `${plural(x.visitas, 'bitácora', 'bitácoras')} en ${plural(x.diasConVisita, 'día', 'días')} · ${x.firmadas} firmadas`),
@@ -182,7 +293,8 @@ function pintarSemana(r) {
         cifra(x.personal.total, 'personas·día'),
         cifra(x.clima.lluvia, x.clima.lluvia === 1 ? 'día con lluvia' : 'días con lluvia'),
         cifra(x.clima.sinActividad, 'días sin actividad'),
-        cifra(x.clima.parcial, 'jornadas parciales')))),
+        cifra(x.clima.parcial, 'jornadas parciales')),
+      ...registrosSemana(x.registros))),
     pieImpreso()
   ];
 }

@@ -4,7 +4,7 @@
    En él se tocan los números del plano para ver cada nota con sus fotos. */
 
 import { aDatos, reducirImagen, fechaLarga, enlaceSeguro } from './utiles.js';
-import { TIPOS_NOTA, COLOR_NOTA, COLORES_TRAZO, puntosTrazo, grosorTrazo } from './planos.js';
+import { TIPOS_NOTA, COLOR_NOTA, COLORES_TRAZO, puntosTrazo, grosorTrazo, COLOR_REPASO } from './planos.js';
 import { CATEGORIAS, ESTADOS, PRIORIDADES, estadoEn, fotosEn, historial } from './repasos.js';
 
 const LADO_PLANO_INFORME = 3000;   // equilibrio entre detalle y peso del archivo
@@ -43,6 +43,9 @@ export async function generarInformeInteractivo(v, planos, { contacto, lema, rep
       numero: r.numero, zona: r.zona, tipo: CATEGORIAS[r.categoria] || r.categoria, texto: r.texto,
       responsable: r.responsable, alta: r.prioridad === 'alta', prioridad: PRIORIDADES[r.prioridad] || '',
       estado, estadoTexto: ESTADOS[estado], historial: historial(r, v.fecha),
+      // Dónde está en el plano (si se marcó y el plano va en el informe).
+      ubicacion: r.ubicacion && planos.some((p) => p.id === r.ubicacion.plano)
+        ? { plano: r.ubicacion.plano, x: r.ubicacion.x, y: r.ubicacion.y, color: COLOR_REPASO[estado] || COLOR_REPASO.pendiente } : null,
       antes: await fotosFase('antes'), despues: await fotosFase('despues')
     });
   }
@@ -174,6 +177,8 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
 .filtros{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .filtros .boton[aria-pressed=true]{background:var(--section);color:#fff;border-color:var(--section)}
 .repasos{display:grid;gap:10px}
+.marca-repaso{position:absolute;transform:translate(-50%,-50%);min-width:26px;height:22px;padding:0 4px;border:2px solid #fff;border-radius:4px;color:#fff;font:700 11px/18px Inter,system-ui,sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.4);cursor:pointer}
+.repaso:target{outline:3px solid var(--acento,#62a0e8)}
 .repaso{background:#fff;border:1px solid var(--borde);border-left:5px solid #d64545;border-radius:10px;padding:10px 12px}
 .repaso.corregido{border-left-color:#e0a526}.repaso.cerrado{border-left-color:#2f9e6a}
 .repaso-cab{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
@@ -305,7 +310,18 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
     D.notas.filter(function (n) { return n.plano === p.id; }).forEach(function (n) {
       fig.append(pin(n, { style: 'background:' + color(n) + ';left:' + (n.x * 100) + '%;top:' + (n.y * 100) + '%' }));
     });
+    D.repasos.filter(function (r) { return r.ubicacion && r.ubicacion.plano === p.id; }).forEach(function (r) {
+      fig.append(h('button', { class: 'marca-repaso', 'data-repaso': String(r.numero), title: 'Repaso ' + r.numero + ' · ' + r.estadoTexto,
+        style: 'background:' + r.ubicacion.color + ';left:' + (r.ubicacion.x * 100) + '%;top:' + (r.ubicacion.y * 100) + '%' }, 'R' + r.numero));
+    });
     fig.addEventListener('click', function (ev) {
+      var mr = ev.target.closest('.marca-repaso');
+      if (mr) {
+        ev.stopPropagation(); cerrarCapa();
+        var destino = document.getElementById('repaso-' + mr.getAttribute('data-repaso'));
+        if (destino) { location.hash = 'repaso-' + mr.getAttribute('data-repaso'); destino.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        return;
+      }
       var b = ev.target.closest('.pin');
       if (b) { ev.stopPropagation(); cerrarCapa(); abrirNota(b.getAttribute('data-nota'), false); }
       else if (alTocarFondo) alTocarFondo();
@@ -374,7 +390,7 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
         return h('button', { class: 'boton', 'aria-pressed': String(filtro === k), onclick: function () { filtro = k; pintarRepasos(); } }, FILTROS[k]);
       }));
       listaRepasos.replaceChildren.apply(listaRepasos, D.repasos.filter(function (r) { return filtro === 'todos' || r.estado === filtro; }).map(function (r) {
-        return h('div', { class: 'repaso ' + r.estado },
+        return h('div', { class: 'repaso ' + r.estado, id: 'repaso-' + r.numero },
           h('div', { class: 'repaso-cab' },
             h('span', { class: 'n' }, '#' + r.numero),
             h('strong', {}, [r.zona, r.tipo].filter(Boolean).join(' · ') || 'Sin zona'),

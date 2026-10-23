@@ -46,10 +46,14 @@ const TIPOS = {
   inspecciones: { listar: partes.listarInspecciones, leer: partes.leerInspeccion, guardar: partes.guardarInspeccion, borrar: partes.borrarInspeccion },
   vaciados: { listar: partes.listarVaciados, leer: partes.leerVaciado, guardar: partes.guardarVaciado, borrar: partes.borrarVaciado },
   programas: { listar: partes.listarProgramas, leer: partes.leerPrograma, guardar: partes.guardarPrograma, borrar: partes.borrarPrograma },
-  minutas: { listar: partes.listarMinutas, leer: partes.leerMinuta, guardar: partes.guardarMinuta, borrar: partes.borrarMinuta }
+  minutas: { listar: partes.listarMinutas, leer: partes.leerMinuta, guardar: partes.guardarMinuta, borrar: partes.borrarMinuta },
+  rfis: { listar: partes.listarRfis, leer: partes.leerRfi, guardar: partes.guardarRfi, borrar: partes.borrarRfi },
+  cambios: { listar: partes.listarCambios, leer: partes.leerCambio, guardar: partes.guardarCambio, borrar: partes.borrarCambio },
+  recepciones: { listar: partes.listarRecepciones, leer: partes.leerRecepcion, guardar: partes.guardarRecepcion, borrar: partes.borrarRecepcion },
+  seguridad: { listar: partes.listarSeguridad, leer: partes.leerSeguridad, guardar: partes.guardarSeguridad, borrar: partes.borrarSeguridad }
 };
 // Qué tipos llevan fotos y cuáles firma (como Blob dentro del registro).
-const CON_FOTOS = new Set(['visitas', 'repasos', 'inspecciones', 'vaciados']);
+const CON_FOTOS = new Set(['visitas', 'repasos', 'inspecciones', 'vaciados', 'rfis', 'cambios', 'recepciones', 'seguridad']);
 const CON_FIRMA = new Set(['visitas', 'inspecciones']);
 
 const version = (r) => r.modificada || r.modificado || r.creado || 0;
@@ -157,6 +161,10 @@ function tituloNovedad(tipo, r) {
   if (tipo === 'vaciados') return `Vaciado VH-${tresCifras(r.numero)} · ${r.elemento || ''}`;
   if (tipo === 'programas') return 'Programa y avance';
   if (tipo === 'minutas') return `Minuta MR-${tresCifras(r.numero)}`;
+  if (tipo === 'rfis') return `RFI-${tresCifras(r.numero)} · ${r.asunto || ''}`;
+  if (tipo === 'cambios') return `Orden de cambio OC-${tresCifras(r.numero)} · ${r.titulo || ''}`;
+  if (tipo === 'recepciones') return `Recepción RM-${tresCifras(r.numero)} · ${r.proveedor || ''}`;
+  if (tipo === 'seguridad') return `Seguridad SST-${tresCifras(r.numero)}`;
   return `Repaso ${r.numero || ''} ${r.zona ? `· ${r.zona}` : ''}`.trim();
 }
 

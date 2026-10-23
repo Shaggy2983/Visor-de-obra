@@ -36,6 +36,7 @@ const SECCIONES = [
     titulo: 'Punch list de terminaciones', icono: '✅', recorrido: 'visita',
     temas: [
       { t: 'Apuntar un repaso', p: ['En la visita: «+ Repaso con foto» (o sin foto).', 'Zona, tipo (pintura, pañete, cerámica…), qué corregir, responsable y prioridad.'] },
+      { t: 'Repasos en el plano', p: ['Abre el repaso y pulsa «📍 Marcar en el plano»; elige el plano si la obra tiene varios y toca el sitio.', 'En el plano salen como cuadrados «R3»: rojo por corregir, naranja corregido, verde cerrado. Tócalo para ir a su ficha.', 'Salen marcados en el informe PDF y en el PDF del punch list.'] },
       { t: 'Estados', p: ['Pendiente → Corregido (al subir la foto de después) → Cerrado (cuando lo verificas).', 'Los no cerrados siguen en las próximas visitas de la obra.'] },
       { t: 'PDF para contratistas', p: ['«Punch list en PDF» con fotos de antes y después.', 'Con papel de contratista, cada uno ve y corrige sólo sus repasos.'] }
     ]
@@ -62,6 +63,19 @@ const SECCIONES = [
       { t: 'Minutas de reunión', p: ['Menú → «Minutas de reunión» → «+ Minuta».', 'Trae los asistentes y los acuerdos abiertos de la reunión anterior de la obra.', 'Marca quién vino, escribe los temas (uno por línea) y los acuerdos con responsable y fecha límite.'] },
       { t: 'Seguimiento de acuerdos', p: ['Marca «Cumplido» cuando se cumpla; los demás pasan a la siguiente minuta.', 'Los vencidos salen en el inicio, en la lista de minutas y con un punto rojo en el menú.', '«Minuta en PDF» con hoja de firmas de asistentes y tabla de acuerdos.'] },
       { t: 'Días afectados', p: ['En la visita del día, en Tiempo y jornada, marca «Parcial» o «Sin actividad»: aparecen la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Menú → «Días afectados»: días equivalentes perdidos por obra y por causa, con la relación en PDF para pedir una prórroga.'] }
+    ]
+  },
+  {
+    titulo: 'Control: RFI, cambios, materiales y seguridad', icono: '🦺', recorrido: 'control',
+    temas: [
+      { t: 'Hacer una consulta (RFI)', p: ['Menú → «Consultas (RFI)» → «+ RFI».', 'Asunto, disciplina (ARQ, EST, HDS…), plano o especificación de referencia, a quién va dirigida y para cuándo necesitas la respuesta.', 'Escribe la pregunta, tu propuesta si la tienes y añade fotos. «RFI en PDF» para enviarla.'] },
+      { t: 'Anotar la respuesta', p: ['Marca «Respondida» o «Cerrada», copia la respuesta, quién responde y la fecha.', 'La app cuenta los días de espera; las vencidas avisan en el inicio y en el menú.', 'Si impacta el costo o el plazo: «Crear orden de cambio».'] },
+      { t: 'Orden de cambio', p: ['Menú → «Órdenes de cambio» → «+ Orden»: título, origen, tipo (adicional, deductivo o sin costo) y descripción.', 'Partidas con unidad, cantidad y precio (RD$ o USD); la app suma el total. Montos antes de ITBIS.', 'Días de impacto en el plazo, estado (borrador, enviada, aprobada, rechazada) y quién aprueba. PDF para firmar.'] },
+      { t: 'Recepción de materiales', p: ['Menú → «Recepción de materiales» → «+ Recepción»: proveedor, conduce y orden de compra.', 'Cada material con lo pedido, lo recibido y lo rechazado: la app marca los faltantes.', 'Haz foto del conduce firmado y de lo rechazado. PDF de recepción.'] },
+      { t: 'Charla de 5 minutos', p: ['Menú → «Seguridad (SST)» → «+ Registro» → Charla.', 'Tema, quién la imparte, duración y asistentes. El PDF trae una columna para que firme cada uno.'] },
+      { t: 'Revisión de EPP', p: ['Casco, chaleco, botas, guantes, lentes, protección auditiva, arnés y mascarilla: Cumple / No cumple / N/A.', 'Frente o zona y personas revisadas; nota en lo que falta.'] },
+      { t: 'Permisos de trabajo', p: ['Altura, caliente, espacio confinado, excavación, eléctrico o izaje: cada uno trae sus controles.', 'Trabajo, zona, quién ejecuta, horario y quién autoriza. Ciérralo al terminar: los de otro día sin cerrar avisan en el inicio.'] },
+      { t: 'Incidentes', p: ['Casi accidente, daño material o accidente (con o sin baja): qué pasó, causas, acciones, responsable y fecha.', 'La pestaña muestra los días sin accidentes de la obra.'] }
     ]
   },
   {
@@ -99,6 +113,7 @@ const SECCIONES = [
       { t: 'El menú', p: ['Toca el símbolo de COORDINATE (arriba a la izquierda): los nodos giran y se abre el menú con todas las funciones.', 'Obra: visitas, inspecciones, vaciados y modelo 3D. Equipo: novedades, panel y perfil. Datos: cuentas vinculadas y copia de seguridad.', 'Un punto rojo en el símbolo avisa de novedades o probetas por romper.'] },
       { t: 'Modo claro u oscuro', p: ['Menú → Aspecto: oscuro, claro o como el teléfono.', 'Si sigue oscuro, quita en el navegador del teléfono el «tema oscuro para sitios».'] },
       { t: 'Actualizaciones', p: ['Cuando sale «Hay una versión nueva · Tocar para actualizar», tócalo.'] },
+      { t: 'Exportar a Excel', p: ['Menú → «Exportar a Excel (CSV)»: elige una obra o todas.', 'Una tabla por tipo: visitas, incidencias, personal, repasos, inspecciones, vaciados, probetas, avance, acuerdos, RFI, cambios, materiales y seguridad.', '«Descargar todo» baja todas las tablas; se abren en Excel, Google Sheets o LibreOffice.'] },
       { t: 'Copia de seguridad', p: ['Menú → «Copia de seguridad» → «Exportar copia»: un archivo con todo (visitas, fotos, planos, repasos, inspecciones y vaciados).', '«Importar copia» en otro teléfono, o «En la nube…» con tu cuenta vinculada.'] },
       { t: 'Cuentas vinculadas', p: ['Menú → «Cuentas vinculadas»: Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar y guardar los partes.'] }
     ]

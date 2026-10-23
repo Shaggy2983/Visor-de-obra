@@ -32,6 +32,12 @@
       ['seguimiento.html#/minutas', '🗒️', 'Minutas de reunión', 'Asistentes, temas y acuerdos', 'acuerdos'],
       ['seguimiento.html#/dias', '🌧️', 'Días afectados', 'Lluvia, paros y horas perdidas']
     ]],
+    ['Control', [
+      ['control.html#/rfi', '❓', 'Consultas (RFI)', 'Preguntas al proyectista con su respuesta', 'control'],
+      ['control.html#/cambios', '📝', 'Órdenes de cambio', 'Adicionales, deductivos y plazo'],
+      ['control.html#/materiales', '📦', 'Recepción de materiales', 'Conduces, faltantes y rechazos'],
+      ['control.html#/sst', '🦺', 'Seguridad (SST)', 'Charlas, EPP, permisos e incidentes']
+    ]],
     ['Equipo', [
       ['#novedades', '👥', 'Novedades del equipo', 'Bitácoras nuevas o cambiadas', 'novedades'],
       ['panel.html', '📊', 'Panel diario y semanal', 'Resumen y reporte en PDF'],
@@ -39,7 +45,8 @@
     ]],
     ['Datos', [
       ['visita.html#/cuentas', '🔗', 'Cuentas vinculadas', 'Gmail, Drive, Outlook y OneDrive'],
-      ['visita.html#/copia', '💾', 'Copia de seguridad', 'Exportar o importar todo']
+      ['visita.html#/copia', '💾', 'Copia de seguridad', 'Exportar o importar todo'],
+      ['visita.html#/exportar', '📊', 'Exportar a Excel (CSV)', 'Tablas de todos los registros']
     ]]
   ];
   var TEMAS = [['oscuro', '🌙', 'Oscuro'], ['claro', '☀️', 'Claro'], ['auto', '◐', 'Teléfono']];
@@ -68,14 +75,20 @@
     try { return Number(localStorage.getItem('crd-acuerdos-vencidos')) || 0; } catch (e) { return 0; }
   }
 
+  function control() {
+    // control-datos.js: RFI vencidas y permisos de trabajo sin cerrar.
+    try { return Number(localStorage.getItem('crd-control-avisos')) || 0; } catch (e) { return 0; }
+  }
+
   function pagina() { return location.pathname.split('/').pop() || 'index.html'; }
 
   function esActual(href) {
     var partes = href.split('#');
     if ((partes[0] || pagina()) !== pagina()) return false;
     var h = partes[1] ? '#' + partes[1] : '';
+    if (pagina() === 'control.html') return location.hash.indexOf(h) === 0 || location.hash.indexOf('#/r/' + h.slice(2) + '/') === 0;
     if (pagina() === 'calidad.html' || pagina() === 'seguimiento.html') return location.hash.indexOf(h) === 0 || (h === '#/minutas' && location.hash.indexOf('#/minuta/') === 0);
-    return h ? location.hash === h : !/^#\/(cuentas|copia)/.test(location.hash);
+    return h ? location.hash === h : !/^#\/(cuentas|copia|exportar)/.test(location.hash);
   }
 
   function construir() {
@@ -125,10 +138,10 @@
         textos.appendChild(nodo('strong', '', a[2]));
         textos.appendChild(nodo('span', 'menu-ayuda', a[3]));
         enlace.appendChild(textos);
-        var n = a[4] === 'novedades' ? estado.novedades : a[4] === 'roturas' ? roturas() : a[4] === 'acuerdos' ? acuerdos() : 0;
+        var n = a[4] === 'novedades' ? estado.novedades : a[4] === 'roturas' ? roturas() : a[4] === 'acuerdos' ? acuerdos() : a[4] === 'control' ? control() : 0;
         if (n) {
           var c = nodo('span', 'menu-contador', n > 99 ? '99+' : String(n));
-          c.title = a[4] === 'roturas' ? 'Probetas por romper hoy o vencidas' : a[4] === 'acuerdos' ? 'Acuerdos vencidos' : 'Novedades sin abrir';
+          c.title = a[4] === 'roturas' ? 'Probetas por romper hoy o vencidas' : a[4] === 'acuerdos' ? 'Acuerdos vencidos' : a[4] === 'control' ? 'RFI vencidas y permisos sin cerrar' : 'Novedades sin abrir';
           enlace.appendChild(c);
         }
         hoja.appendChild(enlace);
@@ -169,7 +182,7 @@
   }
 
   function pintarBotones() {
-    var n = estado.novedades + roturas() + acuerdos();
+    var n = estado.novedades + roturas() + acuerdos() + control();
     botones.forEach(function (b) {
       b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
       b.classList.toggle('abierto', abierto);
@@ -243,7 +256,7 @@
     pintarBotones();
     addEventListener('resize', function () { if (abierto) cerrar(true); });
     addEventListener('hashchange', function () { if (abierto) cerrar(true); });
-    addEventListener('storage', function (ev) { if (ev.key === 'crd-roturas' || ev.key === 'crd-acuerdos-vencidos') pintarBotones(); });
+    addEventListener('storage', function (ev) { if (ev.key === 'crd-roturas' || ev.key === 'crd-acuerdos-vencidos' || ev.key === 'crd-control-avisos') pintarBotones(); });
   }
 
   window.crdMenu = {

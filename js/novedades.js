@@ -63,7 +63,9 @@ export function frase(items) {
   const calidad = items.filter((x) => x.tipo === 'inspecciones' || x.tipo === 'vaciados');
   if (calidad.length) partes.push(`${calidad.length} ${calidad.length === 1 ? 'registro' : 'registros'} de calidad`);
   const seg = items.filter((x) => x.tipo === 'programas' || x.tipo === 'minutas');
-  if (seg.length) partes.push(`${seg.length} ${seg.length === 1 ? 'cambio' : 'cambios'} de seguimiento`);
+  const ctl = items.filter((x) => ['rfis', 'cambios', 'recepciones', 'seguridad'].includes(x.tipo));
+  if (ctl.length) partes.push(`${ctl.length} ${ctl.length === 1 ? 'registro' : 'registros'} de control`);
+    if (seg.length) partes.push(`${seg.length} ${seg.length === 1 ? 'cambio' : 'cambios'} de seguimiento`);
   if (!partes.length) return '';
   const donde = obras.length === 1 ? ` en ${obras[0]}` : ` en ${obras.length} obras`;
   const de = quienes.length ? ` · de ${quienes.length > 2 ? `${quienes.slice(0, 2).join(', ')} y otros` : quienes.join(' y ')}` : '';

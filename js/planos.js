@@ -127,7 +127,11 @@ export async function leerArchivoPlano(archivo, obra, alProgreso = () => {}) {
 /* plano con sus notas pintadas, para el informe                       */
 /* ------------------------------------------------------------------ */
 
-export async function componerPlano(plano, notas, trazos = [], lado = 2400, medidas = []) {
+/* Color de los repasos en el plano según su estado (los de la pantalla
+   salen de css/visita.css con los mismos tonos). */
+export const COLOR_REPASO = { pendiente: '#c0392b', corregido: '#c0601a', cerrado: '#2e7d4f' };
+
+export async function componerPlano(plano, notas, trazos = [], lado = 2400, medidas = [], repasos = []) {
   const imagen = await decodificar(plano.blob);
   const escala = Math.min(1, lado / Math.max(imagen.width, imagen.height));
   const lienzo = document.createElement('canvas');
@@ -162,6 +166,20 @@ export async function componerPlano(plano, notas, trazos = [], lado = 2400, medi
     ctx.fillStyle = '#fff';
     ctx.fillText(String(n.numero), x, y + radio * 0.05);
   }
+  // Repasos del punch list: cuadrados «R3», del color de su estado.
+  ctx.font = `700 ${Math.round(radio * 0.85)}px Inter, system-ui, sans-serif`;
+  for (const r of repasos) {
+    const x = r.x * lienzo.width, y = r.y * lienzo.height, l = radio * 1.15;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x - l, y - l, l * 2, l * 2, l * 0.3) : ctx.rect(x - l, y - l, l * 2, l * 2);
+    ctx.fillStyle = COLOR_REPASO[r.estado] || COLOR_REPASO.pendiente;
+    ctx.fill();
+    ctx.lineWidth = radio * 0.22;
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`R${r.numero}`, x, y + radio * 0.05);
+  }
   return new Promise((cumplir) => lienzo.toBlob(cumplir, 'image/jpeg', 0.88));
 }
 
@@ -175,7 +193,10 @@ export async function componerPlano(plano, notas, trazos = [], lado = 2400, medi
      anadirFotos(archivos, id) guardar fotos nuevas ligadas a la nota id
      ampliar(url)              ver una foto en grande
      alCerrar()                el usuario pide salir del plano
-     guardarPlano(plano)       guardar el plano (su escala, al calibrar) */
+     guardarPlano(plano)       guardar el plano (su escala, al calibrar)
+     repasos(planoId)          repasos situados en ese plano [{id, numero, x, y, estado}]
+     alUbicar(r, planoId, x, y) el usuario ha situado el repaso r
+     alTocarRepaso(id)         el usuario toca un repaso en el plano */
 export function crearVisorPlano(opciones) {
   const $ = (id) => document.getElementById(id);
   const n = {
@@ -202,7 +223,8 @@ export function crearVisorPlano(opciones) {
   let urlPlano = null;
   let urlsHoja = [];
   let seleccionada = null;   // id de la nota abierta en la hoja
-  let modo = 'ver';          // 'ver' | 'anadir' | 'mover' | 'dibujar' | 'medir' | 'calibrar'
+  let modo = 'ver';          // 'ver' | 'anadir' | 'mover' | 'ubicar' | 'dibujar' | 'medir' | 'calibrar'
+  let repasoUbicar = null;   // repaso que se está situando en el plano
   let tipoMedida = 'distancia';
   let enCurso = [];          // puntos de la medida que se está tomando (0–1)
   let arrastre = null;       // índice del punto de la medida en curso que se arrastra
@@ -506,6 +528,14 @@ export function crearVisorPlano(opciones) {
       anadirPunto([x, y]);
       return;
     }
+    if (modo === 'ubicar') {
+      if (!dentro || !repasoUbicar) return;
+      opciones.alUbicar(repasoUbicar, plano.id, x, y);
+      repasoUbicar = null;
+      ponerModo('ver');
+      pintarPines();
+      return;
+    }
     if (modo === 'anadir') {
       if (!dentro) return;
       const v = visita();
@@ -528,6 +558,7 @@ export function crearVisorPlano(opciones) {
       pintarPines();
       return;
     }
+    if (pin && pin.dataset.repaso) { if (opciones.alTocarRepaso) opciones.alTocarRepaso(pin.dataset.repaso); return; }
     if (pin) seleccionar(pin.dataset.id);
     else if (seleccionada) seleccionar(null);
   }
@@ -536,11 +567,13 @@ export function crearVisorPlano(opciones) {
     descartarTrazo();
     const arriba = n.marco.getBoundingClientRect().top;
     modo = nuevo;
-    n.capa.classList.toggle('anadiendo', modo === 'anadir' || modo === 'mover');
+    const situando = modo === 'anadir' || modo === 'mover' || modo === 'ubicar';
+    if (modo !== 'ubicar') repasoUbicar = null;
+    n.capa.classList.toggle('anadiendo', situando);
     n.capa.classList.toggle('dibujando', modo === 'dibujar');
     const midiendo = modo === 'medir' || modo === 'calibrar';
     n.capa.classList.toggle('midiendo', midiendo);
-    n.medir.hidden = modo === 'dibujar' || modo === 'anadir' || modo === 'mover';
+    n.medir.hidden = modo === 'dibujar' || situando;
     n.medir.textContent = midiendo ? 'Listo' : '📏';
     n.medir.classList.toggle('boton-destacado', midiendo);
     n.medirHerr.hidden = !midiendo;
@@ -548,7 +581,7 @@ export function crearVisorPlano(opciones) {
     n.modo.hidden = modo === 'dibujar' || midiendo;
     n.modo.textContent = modo === 'ver' ? '+ Nota' : 'Cancelar';
     n.modo.classList.toggle('boton-destacado', modo === 'ver');
-    n.dibujar.hidden = modo === 'anadir' || modo === 'mover' || midiendo;
+    n.dibujar.hidden = situando || midiendo;
     n.dibujar.textContent = modo === 'dibujar' ? 'Listo' : '✎ Dibujar';
     n.dibujar.classList.toggle('boton-destacado', modo === 'dibujar');
     n.herramientas.hidden = modo !== 'dibujar';
@@ -563,7 +596,9 @@ export function crearVisorPlano(opciones) {
     }
     if (midiendo) return herramientasMedir();
     const k = nota(seleccionada);
-    n.ayuda.textContent = modo === 'anadir'
+    n.ayuda.textContent = modo === 'ubicar' && repasoUbicar
+      ? `Toca el plano donde está el repaso ${repasoUbicar.numero}.`
+      : modo === 'anadir'
       ? 'Toca el plano donde quieras la nota.'
       : modo === 'mover' && k
         ? `Toca el nuevo sitio de la nota ${k.numero}.`
@@ -740,13 +775,20 @@ export function crearVisorPlano(opciones) {
   /* --- pines y hoja de la nota --- */
 
   function pintarPines() {
+    const repasos = opciones.repasos ? opciones.repasos(plano.id) : [];
     n.pines.replaceChildren(...notasDelPlano().map((k) => el('button', {
       type: 'button',
       class: `pin tipo-${k.tipo}${k.id === seleccionada ? ' activo' : ''}`,
       'data-id': k.id,
       style: `left:${k.x * 100}%;top:${k.y * 100}%`,
       'aria-label': `Nota ${k.numero}`
-    }, String(k.numero))));
+    }, String(k.numero))), ...repasos.map((r) => el('button', {
+      type: 'button',
+      class: `pin pin-repaso estado-${r.estado}`,
+      'data-repaso': r.id,
+      style: `left:${r.x * 100}%;top:${r.y * 100}%`,
+      'aria-label': `Repaso ${r.numero}`
+    }, `R${r.numero}`)));
   }
 
   function liberarHoja() {
@@ -1003,6 +1045,17 @@ export function crearVisorPlano(opciones) {
       descartarTrazo();
       document.documentElement.classList.remove('con-plano');
     },
+
+    /* Situar un repaso del punch list: el siguiente toque en el plano
+       lo deja ahí (opciones.alUbicar). */
+    ubicar(repaso) {
+      if (!plano) return;
+      seleccionar(null);
+      repasoUbicar = repaso;
+      ponerModo('ubicar');
+    },
+
+    centrar(x, y) { if (plano) centrarEn(x, y); },
 
     /* Repintar tras un cambio hecho fuera del visor (fotos nuevas…). */
     refrescar() {

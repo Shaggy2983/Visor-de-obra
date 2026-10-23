@@ -180,6 +180,18 @@ const RECORRIDOS = {
     ]
   },
 
+  control: {
+    pagina: 'control.html',
+    titulo: 'RFI, cambios, materiales y seguridad',
+    pasos: [
+      { sel: '.pestanas-calidad', titulo: 'Control de obra', texto: 'Cuatro registros por obra: consultas al proyectista (RFI), órdenes de cambio, recepción de materiales y seguridad.', antes: async () => { if (location.hash !== '#/rfi') location.hash = '#/rfi'; await esperar(500); } },
+      { sel: '#btn-nuevo', titulo: 'Nueva RFI', texto: 'Asunto, disciplina, plano de referencia, la pregunta con fotos y para cuándo necesitas la respuesta. La app cuenta los días de espera y avisa de las vencidas.' },
+      { sel: '#pestana-cambios', titulo: 'Órdenes de cambio', texto: 'Adicionales y deductivos con sus partidas, total, impacto en plazo y aprobación. Se pueden crear desde la respuesta de una RFI.', antes: async () => { location.hash = '#/cambios'; await esperar(500); } },
+      { sel: '#pestana-materiales', titulo: 'Recepción de materiales', texto: 'Proveedor, conduce, lo pedido frente a lo recibido y lo rechazado, con foto del conduce.', antes: async () => { location.hash = '#/materiales'; await esperar(500); } },
+      { sel: '#pestana-sst', titulo: 'Seguridad', texto: 'Charlas de 5 minutos con asistentes, revisión de EPP, permisos de trabajo con sus controles e incidentes. Días sin accidentes de la obra.', antes: async () => { location.hash = '#/sst'; await esperar(500); } }
+    ]
+  },
+
   perfil: {
     pagina: 'perfil.html',
     titulo: 'Perfil y obras',

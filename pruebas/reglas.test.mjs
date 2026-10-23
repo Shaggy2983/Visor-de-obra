@@ -136,6 +136,13 @@ await prueba('ana escribe minuta', assertSucceeds(setDoc(doc(dA, 'obras/o2/minut
 await prueba('pepe (contratista) no lee minutas', assertFails(getDoc(doc(dP, 'obras/o2/minutas/m1'))));
 await prueba('extraño no lee el programa', assertFails(getDoc(doc(dX, 'obras/o2/programas/prog-o2'))));
 
+// --- control: RFI, órdenes de cambio, recepciones y seguridad ---
+for (const c of ['rfis', 'cambios', 'recepciones', 'seguridad']) {
+  await prueba(`ana escribe ${c}`, assertSucceeds(setDoc(doc(dA, `obras/o2/${c}/x1`), { datos: '{}', version: 1, borrado: false })));
+}
+await prueba('pepe (contratista) no lee RFI', assertFails(getDoc(doc(dP, 'obras/o2/rfis/x1'))));
+await prueba('pepe (contratista) no escribe seguridad', assertFails(setDoc(doc(dP, 'obras/o2/seguridad/x2'), { datos: '{}', version: 1, borrado: false })));
+
 console.log(`reglas: ${ok} bien, ${mal} mal`);
 await env.cleanup();
 process.exit(mal ? 1 : 0);

@@ -8,7 +8,9 @@ import {
   listarPlanos, leerPlano, guardarPlano, borrarPlano,
   listarRepasos, leerRepaso, guardarRepaso,
   listarInspecciones, leerInspeccion, guardarInspeccion, listarVaciados, leerVaciado, guardarVaciado,
-  listarProgramas, leerPrograma, guardarPrograma, listarMinutas, leerMinuta, guardarMinuta
+  listarProgramas, leerPrograma, guardarPrograma, listarMinutas, leerMinuta, guardarMinuta,
+  listarRfis, leerRfi, guardarRfi, listarCambios, leerCambio, guardarCambio,
+  listarRecepciones, leerRecepcion, guardarRecepcion, listarSeguridad, leerSeguridad, guardarSeguridad
 } from './partes.js';
 import { avisar } from './interfaz.js';
 import {
@@ -29,8 +31,15 @@ import { crearMisRepasos } from './mis-repasos.js';
 import { climaActual, permisoUbicacion } from './clima.js';
 import { resumenCalidad } from './calidad-datos.js';
 import { CAUSAS, resumenSeguimiento } from './seguimiento-datos.js';
+import { resumenControl } from './control-datos.js';
 
 const $ = (id) => document.getElementById(id);
+const TABLAS_CONTROL = {
+  rfis: { listar: listarRfis, leer: leerRfi, guardar: guardarRfi },
+  cambios: { listar: listarCambios, leer: leerCambio, guardar: guardarCambio },
+  recepciones: { listar: listarRecepciones, leer: leerRecepcion, guardar: guardarRecepcion },
+  seguridad: { listar: listarSeguridad, leer: leerSeguridad, guardar: guardarSeguridad }
+};
 
 const CLIMAS = ['Soleado', 'Nublado', 'Lluvia', 'Viento', 'Niebla', 'Helada', 'Calor'];
 const JORNADAS = ['Normal', 'Parcial', 'Sin actividad'];
@@ -165,7 +174,10 @@ async function enrutar() {
       if (plano) {
         const nota = notaAlAbrir;
         notaAlAbrir = null;
-        return visor.abrir(plano, nota);
+        await visor.abrir(plano, nota);
+        if (repasoAUbicar) { visor.ubicar(repasoAUbicar); repasoAUbicar = null; }
+        if (repasoAVer && repasoAVer.ubicacion) { visor.centrar(repasoAVer.ubicacion.x, repasoAVer.ubicacion.y); repasoAVer = null; }
+        return;
       }
     }
     if (visor.abierto) {
@@ -173,10 +185,11 @@ async function enrutar() {
       pintarPlanos();
       pintarFotos();
     }
+    if (repasoAMostrar) { punch.mostrarRepaso(repasoAMostrar); repasoAMostrar = null; }
     return;
   }
   // Vistas del menú: cuentas vinculadas, copia de seguridad y novedades.
-  const vista = (location.hash.match(/^#\/(cuentas|copia|novedades)$/) || [])[1] || '';
+  const vista = (location.hash.match(/^#\/(cuentas|copia|exportar|novedades)$/) || [])[1] || '';
   visor.cerrar();
   await mostrarLista(vista === 'novedades' ? '' : vista);
   if (vista === 'novedades') {
@@ -208,6 +221,10 @@ async function mostrarLista(vista = '') {
   nodos.vistaLista.classList.toggle('modo-datos', Boolean(vista));
   $('grupo-cuentas').classList.toggle('activo', vista === 'cuentas');
   $('grupo-copia').classList.toggle('activo', vista === 'copia');
+  $('grupo-exportar').classList.toggle('activo', vista === 'exportar');
+  if (vista === 'exportar') {
+    import('./exportar.js').then(async ({ pintarExportar }) => pintarExportar($('exportar'), await obrasLocales(), (t, ms) => avisar(nodos.aviso, t, ms)));
+  }
   if (vista) nodos.vistaLista.scrollTop = 0;
   pintarAvisosCalidad();
   liberarUrls();
@@ -245,6 +262,11 @@ async function pintarAvisosCalidad() {
   let seg = null;
   try { seg = await resumenSeguimiento(); } catch (e) { /* sin minutas */ }
   if (seg && seg.vencidos) avisos.push(tarjeta('./seguimiento.html#/minutas', '🗒️', `${plural(seg.vencidos, 'acuerdo vencido', 'acuerdos vencidos')} de las reuniones`, 'Revisa con los responsables en la próxima reunión.', true));
+  let ctl = null;
+  try { ctl = await resumenControl(); } catch (e) { /* sin registros */ }
+  if (ctl && ctl.rfiVencidas) avisos.push(tarjeta('./control.html#/rfi', '❓', `${plural(ctl.rfiVencidas, 'RFI vencida', 'RFI vencidas')} sin respuesta`, 'Reclama la respuesta al proyectista o a la dirección.', true));
+  if (ctl && ctl.permisos) avisos.push(tarjeta('./control.html#/sst', '📄', `${plural(ctl.permisos, 'permiso de trabajo', 'permisos de trabajo')} de otro día sin cerrar`, 'Ciérralos cuando el trabajo haya terminado.', true));
+  if (ctl && ctl.incidentes) avisos.push(tarjeta('./control.html#/sst', '⚠️', `${plural(ctl.incidentes, 'incidente con acciones abiertas', 'incidentes con acciones abiertas')}`, 'Sigue las acciones hasta cerrarlas.', false));
   if (r.abiertas) avisos.push(tarjeta('./calidad.html#/inspecciones', '✅', `${plural(r.abiertas, 'inspección abierta', 'inspecciones abiertas')}`, 'Falta el resultado o la firma de liberación.', false));
   caja.replaceChildren(...avisos);
   caja.hidden = !avisos.length;
@@ -664,6 +686,7 @@ async function pintarPlanos() {
   liberarUrlsPlanos();
   const usado = (p) => visita.notas.some((n) => n.plano === p.id) || visita.trazos.some((t) => t.plano === p.id)
     || visita.medidas.some((m) => m.plano === p.id);
+  for (const p of planos) nombresPlanos.set(p.id, p.nombre);
   const propios = planos.filter((p) => mismaObra(p.obra, visita.obra) || usado(p));
   const visibles = verTodosPlanos ? planos : propios;
   nodos.otrosPlanos.hidden = verTodosPlanos || planos.length === propios.length;
@@ -742,7 +765,38 @@ async function quitarPlano(plano) {
   pintarPlanos();
 }
 
+/* Repasos del punch list en los planos: situarlos, verlos y saltar del
+   plano a su ficha. */
+let repasoAUbicar = null, repasoAVer = null, repasoAMostrar = null;
+const nombresPlanos = new Map();
+
+function repasosEnPlano(planoId, v = actual) {
+  if (!v) return [];
+  return punch.lista(v).filter((r) => r.ubicacion && r.ubicacion.plano === planoId)
+    .map((r) => ({ id: r.id, numero: r.numero, x: r.ubicacion.x, y: r.ubicacion.y, estado: estadoEn(r, v.fecha) }));
+}
+
+async function ubicarRepaso(r) {
+  const v = actual;
+  let planos = [];
+  try { planos = (await listarPlanos()).filter((p) => mismaObra(p.obra, v.obra)); } catch (e) { /* sin planos */ }
+  if (!planos.length) return avisar(nodos.aviso, 'Esta obra no tiene planos. Carga uno en «Planos y notas» y vuelve a marcar el repaso.', 5000);
+  const ir = (p) => { repasoAUbicar = r; abrirPlano(p.id); };
+  if (planos.length === 1) return ir(planos[0]);
+  const dialogo = document.getElementById('dialogo');
+  return nube.abrir(`Repaso ${r.numero}: ¿en qué plano?`,
+    el('div', { class: 'obras-compartidas' }, ...planos.map((p) => el('button', {
+      type: 'button', class: 'obra-compartida', onclick: () => { dialogo.close(); ir(p); }
+    }, el('span', { class: 'obra-nombre' }, p.nombre)))));
+}
+
 const visor = crearVisorPlano({
+  repasos: (planoId) => repasosEnPlano(planoId),
+  alUbicar: (r, planoId, x, y) => {
+    punch.ubicar(r, { plano: planoId, x, y });
+    avisar(nodos.aviso, `Repaso ${r.numero} marcado en el plano.`, 2500);
+  },
+  alTocarRepaso: (id) => { repasoAMostrar = id; cerrarPlano(); },
   visita: () => actual,
   cambiado,
   anadirFotos,
@@ -768,7 +822,12 @@ const punch = crearPunchList({
   alGuardar: (texto) => { nodos.estadoGuardado.textContent = texto; },
   ladoFoto: LADO_FOTO,
   calidadFoto: CALIDAD_FOTO,
-  contratistas: (v) => equipo.contratistas(v.obraId)
+  contratistas: (v) => equipo.contratistas(v.obraId),
+  plano: {
+    nombre: (id) => nombresPlanos.get(id) || null,
+    ubicar: (r) => ubicarRepaso(r),
+    ver: (r) => { repasoAVer = r; abrirPlano(r.ubicacion.plano); }
+  }
 });
 
 const misRepasos = crearMisRepasos({
@@ -1144,7 +1203,7 @@ async function imprimir() {
     const notas = v.notas.filter((k) => k.plano === plano.id).sort((a, b) => a.numero - b.numero);
     const trazos = v.trazos.filter((t) => t.plano === plano.id);
     const medidas = v.medidas.filter((m) => m.plano === plano.id);
-    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas, trazos, 2400, medidas) });
+    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas, trazos, 2400, medidas, repasosEnPlano(plano.id, v)) });
   }
   nodos.aviso.hidden = true;
 
@@ -1257,6 +1316,14 @@ async function imprimirPunch() {
   const urls = [];
   const url = (blob) => { const u = URL.createObjectURL(blob); urls.push(u); return u; };
   const responsables = [...new Set(lista.map((r) => r.responsable.trim()).filter(Boolean))];
+  // Los planos con repasos marcados, con sus «R3» encima.
+  const planosPunch = [];
+  for (const id of [...new Set(lista.filter((r) => r.ubicacion).map((r) => r.ubicacion.plano))]) {
+    const plano = await leerPlano(id);
+    if (!plano) continue;
+    const marcas = repasosEnPlano(id, v);
+    planosPunch.push({ plano, n: marcas.length, imagen: await componerPlano(plano, [], [], 2400, [], marcas) });
+  }
   seccionN = 0;
   const dato = (t, valor) => el('div', { class: 'informe-dato' }, el('span', {}, t), el('strong', {}, valor || '—'));
   nodos.informe.replaceChildren(...el('div', {},
@@ -1278,6 +1345,9 @@ async function imprimirPunch() {
       dato('Revisado por', v.autor),
       dato('Responsables', responsables.join(', '))),
     seccionRepasos(lista, v.fecha, url, 'Repasos'),
+    ...planosPunch.map(({ plano, imagen, n }) => el('section', { class: 'informe-plano' },
+      titulo(`Plano · ${plano.nombre}`, plural(n, 'repaso', 'repasos')),
+      el('img', { src: url(imagen), alt: plano.nombre }))),
     el('section', { class: 'informe-firma' },
       titulo('Conformidad'),
       el('div', { class: 'informe-firmas' },
@@ -1312,7 +1382,8 @@ function detallesInforme(k) {
 
 /* Planos que salen en los informes: los que tienen notas o dibujos. */
 async function planosConNotas(v) {
-  const ids = [...new Set([...v.notas.map((k) => k.plano), ...v.trazos.map((t) => t.plano), ...v.medidas.map((m) => m.plano)])];
+  const enRepasos = punch.lista(v).filter((r) => r.ubicacion).map((r) => r.ubicacion.plano);
+  const ids = [...new Set([...v.notas.map((k) => k.plano), ...v.trazos.map((t) => t.plano), ...v.medidas.map((m) => m.plano), ...enRepasos])];
   const planos = await Promise.all(ids.map((id) => leerPlano(id)));
   return planos.filter(Boolean);
 }
@@ -1451,8 +1522,11 @@ async function generarCopia() {
   // Seguimiento (desde la versión 5): programas de avance y minutas.
   const programas = await listarProgramas();
   const minutas = await listarMinutas();
+  // Control (desde la versión 6): RFI, cambios, recepciones y seguridad.
+  const control = {};
+  for (const [k, listar] of Object.entries(TABLAS_CONTROL)) control[k] = await Promise.all((await listar.listar()).map(conFotos));
   const json = JSON.stringify({
-    formato: 'visitas-obra-e04', version: 5, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados, programas, minutas
+    formato: 'visitas-obra-e04', version: 6, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados, programas, minutas, ...control
   });
   nodos.aviso.hidden = true;
   return {
@@ -1460,8 +1534,8 @@ async function generarCopia() {
     nombre: `copia-visitas-${hoy()}-${ahora().replace(':', '')}.json`,
     resumen: `${plural(visitas.length, 'visita', 'visitas')}, ${plural(planos.length, 'plano', 'planos')}, `
       + `${plural(repasos.length, 'repaso', 'repasos')}, ${plural(inspecciones.length, 'inspección', 'inspecciones')}, `
-      + `${plural(vaciados.length, 'vaciado', 'vaciados')}, ${plural(programas.length, 'programa', 'programas')} y `
-      + plural(minutas.length, 'minuta', 'minutas')
+      + `${plural(vaciados.length, 'vaciado', 'vaciados')}, ${plural(programas.length, 'programa', 'programas')}, `
+      + `${plural(minutas.length, 'minuta', 'minutas')} y ${plural(Object.values(control).reduce((n, l) => n + l.length, 0), 'registro de control', 'registros de control')}`
   };
 }
 
@@ -1501,6 +1575,13 @@ async function importar(archivo) {
         const existente = await leer(r.id);
         if (existente && existente.modificado >= r.modificado) continue;
         await guardar(r);
+      }
+    }
+    for (const [k, t] of Object.entries(TABLAS_CONTROL)) {
+      for (const r of datos[k] || []) {
+        const existente = await t.leer(r.id);
+        if (existente && existente.modificado >= r.modificado) continue;
+        await t.guardar(await deCopia(r));
       }
     }
     for (const [lista, leer, guardar] of [[datos.inspecciones, leerInspeccion, guardarInspeccion], [datos.vaciados, leerVaciado, guardarVaciado]]) {
@@ -1658,6 +1739,11 @@ function menuEquipo() {
         type: 'button', class: 'obra-compartida',
         onclick: () => {
           if (n.tipo === 'visitas') return ir(`#/v/${encodeURIComponent(n.id)}`);
+          if (['rfis', 'cambios', 'recepciones', 'seguridad'].includes(n.tipo)) {
+            novedades.quitar(uid, n.id);
+            const sec = { rfis: 'rfi', cambios: 'cambios', recepciones: 'materiales', seguridad: 'sst' }[n.tipo];
+            return ir(`./control.html#/r/${sec}/${encodeURIComponent(n.id)}`);
+          }
           if (n.tipo === 'programas' || n.tipo === 'minutas') {
             novedades.quitar(uid, n.id);
             return ir(n.tipo === 'minutas' ? `./seguimiento.html#/minuta/${encodeURIComponent(n.id)}` : './seguimiento.html#/avance');

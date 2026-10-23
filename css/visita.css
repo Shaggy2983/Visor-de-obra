@@ -991,3 +991,35 @@ textarea.campo.dictando { caret-color: transparent; }
 
 /* ---------- botón de tema (js/tema.js) ---------- */
 .boton-tema { min-width: 2.6rem; padding-inline: .5rem; font-size: 1.05rem; line-height: 1; }
+
+/* ---------- medir sobre el plano (js/medir-plano.js) ---------- */
+
+.plano-medidas { z-index: 1; }
+.plano-medidas .medida { fill: none; stroke: #ff6b2c; stroke-linecap: round; stroke-linejoin: round; }
+.plano-medidas .medida-area { fill: rgba(255, 107, 44, .14); }
+.plano-medidas .medida.en-curso { stroke: #ff3d00; }
+.plano-medidas .medida-punto { fill: #ff6b2c; stroke: #fff; stroke-width: 1; }
+.plano-medidas .medida-punto.en-curso { fill: #ff3d00; }
+
+.plano-etiquetas { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.medida-etiqueta {
+  position: absolute;
+  pointer-events: auto;
+  padding: .15rem .5rem;
+  border: 2px solid #ff6b2c;
+  border-radius: .5rem;
+  background: #fff;
+  color: #121826;
+  font: 700 .82rem/1.2 "Inter", system-ui, sans-serif;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) scale(var(--inversa));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+  cursor: pointer;
+}
+.medida-etiqueta.en-curso { border-color: #ff3d00; cursor: default; }
+
+.midiendo .plano-marco { cursor: crosshair; }
+.midiendo .plano-ayuda { background: #ff6b2c; color: #fff; font-weight: 600; }
+.midiendo .pin { pointer-events: none; opacity: .6; }
+.escala-plano { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--texto-tenue); }
+.escala-plano .campo { width: auto; min-height: 2.2rem; padding: .25rem .4rem; font-size: .9rem; }

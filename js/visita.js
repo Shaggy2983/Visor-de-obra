@@ -117,6 +117,7 @@ let verTodosPlanos = false;
 function normalizar(v) {
   if (!Array.isArray(v.notas)) v.notas = [];
   if (!Array.isArray(v.trazos)) v.trazos = [];
+  if (!Array.isArray(v.medidas)) v.medidas = [];
   for (const f of v.fotos) if (f.nota === undefined) f.nota = null;
   return v;
 }
@@ -283,6 +284,7 @@ async function nuevaVisita() {
     fotos: [],
     notas: [],
     trazos: [],
+    medidas: [],
     observaciones: '',
     firma: null,
     creada: Date.now(),
@@ -576,7 +578,8 @@ async function pintarPlanos() {
   } catch (e) { /* sin planos */ }
   if (actual !== visita) return;
   liberarUrlsPlanos();
-  const usado = (p) => visita.notas.some((n) => n.plano === p.id) || visita.trazos.some((t) => t.plano === p.id);
+  const usado = (p) => visita.notas.some((n) => n.plano === p.id) || visita.trazos.some((t) => t.plano === p.id)
+    || visita.medidas.some((m) => m.plano === p.id);
   const propios = planos.filter((p) => mismaObra(p.obra, visita.obra) || usado(p));
   const visibles = verTodosPlanos ? planos : propios;
   nodos.otrosPlanos.hidden = verTodosPlanos || planos.length === propios.length;
@@ -585,6 +588,7 @@ async function pintarPlanos() {
   nodos.planos.replaceChildren(...visibles.map((p) => {
     const notas = visita.notas.filter((n) => n.plano === p.id);
     const dibujos = visita.trazos.filter((t) => t.plano === p.id).length;
+    const medidas = visita.medidas.filter((m) => m.plano === p.id).length;
     const url = URL.createObjectURL(p.blob);
     urlsPlanos.push(url);
     return el('div', { class: 'plano-ficha' },
@@ -592,7 +596,8 @@ async function pintarPlanos() {
         el('img', { src: url, alt: '', loading: 'lazy' }),
         el('span', { class: 'plano-titulo' }, p.nombre),
         el('span', { class: 'pie' },
-          [notas.length && plural(notas.length, 'nota', 'notas'), dibujos && plural(dibujos, 'trazo', 'trazos')]
+          [notas.length && plural(notas.length, 'nota', 'notas'), dibujos && plural(dibujos, 'trazo', 'trazos'),
+            medidas && plural(medidas, 'medida', 'medidas'), p.mPorPx && `📏 ${p.escalaTexto || 'con escala'}`]
             .filter(Boolean).join(' · ') || 'Sin notas en esta visita',
           !mismaObra(p.obra, visita.obra) && p.obra ? ` · ${p.obra}` : '')
       ),
@@ -603,7 +608,7 @@ async function pintarPlanos() {
     );
   }));
   if (!visibles.length) {
-    nodos.planos.append(el('p', { class: 'pie' }, 'Carga un plano (PDF o imagen) para marcar notas sobre él.'));
+    nodos.planos.append(el('p', { class: 'pie' }, 'Carga un plano (PDF, DXF o imagen) para marcar notas y medir sobre él.'));
   }
 }
 
@@ -618,7 +623,10 @@ async function cargarPlano(archivo) {
     await pintarPlanos();
     if (planos.length === 1) abrirPlano(planos[0].id);
   } catch (e) {
-    avisar(nodos.aviso, 'No se ha podido leer ese plano. Prueba con un PDF o una imagen.', 5000);
+    console.error(e);
+    avisar(nodos.aviso, /\.dxf$/i.test(archivo.name || '') && e && e.message
+      ? `No se ha podido leer el DXF: ${e.message}`
+      : 'No se ha podido leer ese plano. Prueba con un PDF, un DXF o una imagen.', 6000);
   }
 }
 
@@ -627,9 +635,10 @@ async function cargarPlano(archivo) {
 async function quitarPlano(plano) {
   await guardarYa();
   const usos = (await listarVisitas()).filter((v) =>
-    (v.notas || []).some((n) => n.plano === plano.id) || (v.trazos || []).some((t) => t.plano === plano.id));
+    (v.notas || []).some((n) => n.plano === plano.id) || (v.trazos || []).some((t) => t.plano === plano.id)
+    || (v.medidas || []).some((m) => m.plano === plano.id));
   if (usos.length) {
-    alert(`«${plano.nombre}» tiene notas o dibujos en ${plural(usos.length, 'visita', 'visitas')}. Bórralos antes si quieres quitarlo.`);
+    alert(`«${plano.nombre}» tiene notas, dibujos o medidas en ${plural(usos.length, 'visita', 'visitas')}. Bórralos antes si quieres quitarlo.`);
     return;
   }
   if (!confirm(`¿Quitar el plano «${plano.nombre}» del teléfono?`)) return;
@@ -642,7 +651,8 @@ const visor = crearVisorPlano({
   cambiado,
   anadirFotos,
   ampliar: (url) => ampliar(url),
-  alCerrar: cerrarPlano
+  alCerrar: cerrarPlano,
+  guardarPlano: (p) => guardarPlano(p).catch(() => avisar(nodos.aviso, 'No se ha podido guardar la escala del plano.', 4000))
 });
 
 const punch = crearPunchList({
@@ -1010,7 +1020,8 @@ async function imprimir() {
   for (const plano of await planosConNotas(v)) {
     const notas = v.notas.filter((k) => k.plano === plano.id).sort((a, b) => a.numero - b.numero);
     const trazos = v.trazos.filter((t) => t.plano === plano.id);
-    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas, trazos) });
+    const medidas = v.medidas.filter((m) => m.plano === plano.id);
+    planosInforme.push({ plano, notas, imagen: await componerPlano(plano, notas, trazos, 2400, medidas) });
   }
   nodos.aviso.hidden = true;
 
@@ -1169,7 +1180,7 @@ function detallesInforme(k) {
 
 /* Planos que salen en los informes: los que tienen notas o dibujos. */
 async function planosConNotas(v) {
-  const ids = [...new Set([...v.notas.map((k) => k.plano), ...v.trazos.map((t) => t.plano)])];
+  const ids = [...new Set([...v.notas.map((k) => k.plano), ...v.trazos.map((t) => t.plano), ...v.medidas.map((m) => m.plano)])];
   const planos = await Promise.all(ids.map((id) => leerPlano(id)));
   return planos.filter(Boolean);
 }

@@ -5,6 +5,10 @@
    dependen de la resolución con que se cargó. */
 
 import { el, nuevoId, ahora, reducirImagen, decodificar, enlaceSeguro } from './utiles.js';
+import { esDxf, leerDxf, dxfAImagen } from './dxf.js';
+import {
+  ESCALAS, TIPOS_MEDIDA, textoMedida, formatoMedida, puntoEtiqueta, pintarMedidas, enPx, longitud
+} from './medir-plano.js';
 
 export const TIPOS_NOTA = {
   observacion: 'Observación',
@@ -81,7 +85,9 @@ async function paginasDePdf(archivo, alProgreso) {
     ctx.fillRect(0, 0, lienzo.width, lienzo.height);
     await pagina.render({ canvasContext: ctx, viewport: vista }).promise;
     const imagen = await reducirImagen(lienzo, LADO_PLANO, CALIDAD_PLANO);
-    salida.push({ ...imagen, nombre: total > 1 ? `${nombreBase(archivo)} · p. ${n}` : nombreBase(archivo) });
+    // Milímetros de papel por píxel: con la escala del plano (1:100…) se mide.
+    const papelMmPorPx = (base.width * 25.4 / 72) / imagen.ancho;
+    salida.push({ ...imagen, papelMmPorPx, nombre: total > 1 ? `${nombreBase(archivo)} · p. ${n}` : nombreBase(archivo) });
     lienzo.width = lienzo.height = 0;
     pagina.cleanup();
   }
@@ -92,9 +98,18 @@ async function paginasDePdf(archivo, alProgreso) {
 /* Devuelve los planos listos para guardar (uno por página si es un PDF). */
 export async function leerArchivoPlano(archivo, obra, alProgreso = () => {}) {
   const esPdf = archivo.type === 'application/pdf' || /\.pdf$/i.test(archivo.name || '');
-  const imagenes = esPdf
-    ? await paginasDePdf(archivo, alProgreso)
-    : [{ ...(await reducirImagen(archivo, LADO_PLANO, CALIDAD_PLANO)), nombre: nombreBase(archivo) }];
+  let imagenes;
+  if (esDxf(archivo)) {
+    alProgreso('Leyendo el DXF…');
+    const geom = await leerDxf(archivo);
+    alProgreso('Dibujando el plano…');
+    const imagen = await dxfAImagen(geom, LADO_PLANO, AREA_MAXIMA);
+    imagenes = [{ ...imagen, nombre: nombreBase(archivo), escalaTexto: `DXF en ${geom.unidades}${geom.unidadesDeclaradas ? '' : ' (supuestas)'}` }];
+  } else {
+    imagenes = esPdf
+      ? await paginasDePdf(archivo, alProgreso)
+      : [{ ...(await reducirImagen(archivo, LADO_PLANO, CALIDAD_PLANO)), nombre: nombreBase(archivo) }];
+  }
   return imagenes.map((i) => ({
     id: nuevoId(),
     nombre: i.nombre,
@@ -102,6 +117,8 @@ export async function leerArchivoPlano(archivo, obra, alProgreso = () => {}) {
     blob: i.blob,
     ancho: i.ancho,
     alto: i.alto,
+    ...(i.mPorPx ? { mPorPx: i.mPorPx, escalaTexto: i.escalaTexto } : {}),
+    ...(i.papelMmPorPx ? { papelMmPorPx: i.papelMmPorPx } : {}),
     creado: Date.now()
   }));
 }
@@ -110,7 +127,7 @@ export async function leerArchivoPlano(archivo, obra, alProgreso = () => {}) {
 /* plano con sus notas pintadas, para el informe                       */
 /* ------------------------------------------------------------------ */
 
-export async function componerPlano(plano, notas, trazos = [], lado = 2400) {
+export async function componerPlano(plano, notas, trazos = [], lado = 2400, medidas = []) {
   const imagen = await decodificar(plano.blob);
   const escala = Math.min(1, lado / Math.max(imagen.width, imagen.height));
   const lienzo = document.createElement('canvas');
@@ -128,6 +145,7 @@ export async function componerPlano(plano, notas, trazos = [], lado = 2400) {
     t.puntos.forEach(([x, y], i) => ctx[i ? 'lineTo' : 'moveTo'](x * lienzo.width, y * lienzo.height));
     ctx.stroke();
   }
+  pintarMedidas(ctx, plano, medidas, lienzo.width, lienzo.height);
   const radio = Math.max(16, Math.max(lienzo.width, lienzo.height) * 0.017);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -156,7 +174,8 @@ export async function componerPlano(plano, notas, trazos = [], lado = 2400) {
      cambiado()                avisar de que hay que guardar
      anadirFotos(archivos, id) guardar fotos nuevas ligadas a la nota id
      ampliar(url)              ver una foto en grande
-     alCerrar()                el usuario pide salir del plano          */
+     alCerrar()                el usuario pide salir del plano
+     guardarPlano(plano)       guardar el plano (su escala, al calibrar) */
 export function crearVisorPlano(opciones) {
   const $ = (id) => document.getElementById(id);
   const n = {
@@ -165,6 +184,10 @@ export function crearVisorPlano(opciones) {
     cerrar: $('plano-cerrar'),
     modo: $('plano-modo'),
     dibujar: $('plano-dibujar'),
+    medir: $('plano-medir'),
+    medirHerr: $('plano-medir-herr'),
+    medidas: $('plano-medidas'),
+    etiquetas: $('plano-etiquetas'),
     herramientas: $('plano-herramientas'),
     trazos: $('plano-trazos'),
     ayuda: $('plano-ayuda'),
@@ -179,7 +202,10 @@ export function crearVisorPlano(opciones) {
   let urlPlano = null;
   let urlsHoja = [];
   let seleccionada = null;   // id de la nota abierta en la hoja
-  let modo = 'ver';          // 'ver' | 'anadir' | 'mover' | 'dibujar'
+  let modo = 'ver';          // 'ver' | 'anadir' | 'mover' | 'dibujar' | 'medir' | 'calibrar'
+  let tipoMedida = 'distancia';
+  let enCurso = [];          // puntos de la medida que se está tomando (0–1)
+  let arrastre = null;       // índice del punto de la medida en curso que se arrastra
   const vista = { escala: 1, tx: 0, ty: 0, minimo: 0.1, maximo: 4 };
   const pluma = { color: 'rojo', grosor: 'medio', goma: false };
   let trazo = null;          // el trazo que se está dibujando: {datos, nodo}
@@ -187,6 +213,7 @@ export function crearVisorPlano(opciones) {
   const visita = () => opciones.visita();
   const trazosDelPlano = () => visita().trazos.filter((t) => t.plano === plano.id);
   const notasDelPlano = () => visita().notas.filter((x) => x.plano === plano.id);
+  const medidasDelPlano = () => (visita().medidas || []).filter((x) => x.plano === plano.id);
   const nota = (id) => visita().notas.find((x) => x.id === id);
 
   /* --- transformaciones --- */
@@ -251,6 +278,10 @@ export function crearVisorPlano(opciones) {
     punteros.set(ev.pointerId, p);
     if (punteros.size === 1) {
       gesto = { inicio: p, ultimo: p, tiempo: performance.now(), movido: false, pin: ev.target.closest('.pin') };
+      if ((modo === 'medir' || modo === 'calibrar') && enCurso.length) {
+        arrastre = puntoCerca(p);
+        if (arrastre != null) gesto.movido = true;
+      }
       if (modo === 'dibujar') {
         gesto.movido = true;   // en modo dibujo un toque no es un toque
         if (pluma.goma) borrarEn(p);
@@ -259,6 +290,7 @@ export function crearVisorPlano(opciones) {
     } else if (punteros.size === 2) {
       // El segundo dedo convierte el gesto en pellizco: el trazo a medias se descarta.
       descartarTrazo();
+      arrastre = null;
       gesto.movido = true;
       const d = datosPinza();
       gesto.pinza = { ...d, escala: vista.escala, tx: vista.tx, ty: vista.ty };
@@ -269,7 +301,11 @@ export function crearVisorPlano(opciones) {
     if (!punteros.has(ev.pointerId) || !gesto) return;
     const p = local(ev);
     punteros.set(ev.pointerId, p);
-    if (punteros.size === 1 && modo === 'dibujar' && !gesto.pinzado) {
+    if (punteros.size === 1 && arrastre != null) {
+      const [x, y] = aPlano(p);
+      enCurso[arrastre] = [Math.min(1, Math.max(0, x)), Math.min(1, Math.max(0, y))];
+      pintarMedidas2();
+    } else if (punteros.size === 1 && modo === 'dibujar' && !gesto.pinzado) {
       if (pluma.goma) borrarEn(p);
       else seguirTrazo(p);
     } else if (punteros.size === 1) {
@@ -300,6 +336,7 @@ export function crearVisorPlano(opciones) {
       gesto.pinza = null;
       gesto.pinzado = true;
     } else if (punteros.size === 0) {
+      arrastre = null;
       terminarTrazo();
       const toque = !gesto.movido && performance.now() - gesto.tiempo < 600 && ev.type === 'pointerup';
       const g = gesto;
@@ -464,6 +501,11 @@ export function crearVisorPlano(opciones) {
     const y = (p.y - vista.ty) / vista.escala / plano.alto;
     const dentro = x >= 0 && x <= 1 && y >= 0 && y <= 1;
 
+    if (modo === 'medir' || modo === 'calibrar') {
+      if (!dentro) return;
+      anadirPunto([x, y]);
+      return;
+    }
     if (modo === 'anadir') {
       if (!dentro) return;
       const v = visita();
@@ -496,10 +538,17 @@ export function crearVisorPlano(opciones) {
     modo = nuevo;
     n.capa.classList.toggle('anadiendo', modo === 'anadir' || modo === 'mover');
     n.capa.classList.toggle('dibujando', modo === 'dibujar');
-    n.modo.hidden = modo === 'dibujar';
+    const midiendo = modo === 'medir' || modo === 'calibrar';
+    n.capa.classList.toggle('midiendo', midiendo);
+    n.medir.hidden = modo === 'dibujar' || modo === 'anadir' || modo === 'mover';
+    n.medir.textContent = midiendo ? 'Listo' : '📏';
+    n.medir.classList.toggle('boton-destacado', midiendo);
+    n.medirHerr.hidden = !midiendo;
+    if (!midiendo) { enCurso = []; pintarMedidas2(); }
+    n.modo.hidden = modo === 'dibujar' || midiendo;
     n.modo.textContent = modo === 'ver' ? '+ Nota' : 'Cancelar';
     n.modo.classList.toggle('boton-destacado', modo === 'ver');
-    n.dibujar.hidden = modo === 'anadir' || modo === 'mover';
+    n.dibujar.hidden = modo === 'anadir' || modo === 'mover' || midiendo;
     n.dibujar.textContent = modo === 'dibujar' ? 'Listo' : '✎ Dibujar';
     n.dibujar.classList.toggle('boton-destacado', modo === 'dibujar');
     n.herramientas.hidden = modo !== 'dibujar';
@@ -512,6 +561,7 @@ export function crearVisorPlano(opciones) {
       pluma.goma = false;
       return actualizarHerramientas();
     }
+    if (midiendo) return herramientasMedir();
     const k = nota(seleccionada);
     n.ayuda.textContent = modo === 'anadir'
       ? 'Toca el plano donde quieras la nota.'
@@ -525,10 +575,167 @@ export function crearVisorPlano(opciones) {
     if (modo === 'anadir') seleccionar(null);
   });
 
+  n.medir.addEventListener('click', () => {
+    const entrar = !(modo === 'medir' || modo === 'calibrar');
+    ponerModo(entrar ? 'medir' : 'ver');
+    if (entrar) {
+      seleccionar(null);
+      if (!plano.mPorPx) ofrecerCalibrar();
+    }
+  });
+
   n.dibujar.addEventListener('click', () => {
     ponerModo(modo === 'dibujar' ? 'ver' : 'dibujar');
     if (modo === 'dibujar') seleccionar(null);
   });
+
+  /* --- medir: distancias, recorridos y áreas, con la escala del plano --- */
+
+  const SVG = 'http://www.w3.org/2000/svg';
+
+  function puntoCerca(p) {
+    let mejor = null, md = 22;
+    enCurso.forEach(([x, y], i) => {
+      const sx = x * plano.ancho * vista.escala + vista.tx, sy = y * plano.alto * vista.escala + vista.ty;
+      const d = Math.hypot(sx - p.x, sy - p.y);
+      if (d < md) { md = d; mejor = i; }
+    });
+    return mejor;
+  }
+
+  function pintarMedidas2() {
+    if (!plano) return;
+    n.medidas.setAttribute('viewBox', `0 0 ${plano.ancho} ${plano.alto}`);
+    const grosor = Math.max(plano.ancho, plano.alto) * 0.0016;
+    const lista = medidasDelPlano();
+    const actual = enCurso.length ? [{ id: '', tipo: modo === 'calibrar' ? 'distancia' : tipoMedida, puntos: enCurso, enCurso: true }] : [];
+    const nodos = [];
+    for (const m of [...lista, ...actual]) {
+      const pts = enPx(plano, m.puntos);
+      const forma = document.createElementNS(SVG, m.tipo === 'area' && pts.length > 2 ? 'polygon' : 'polyline');
+      forma.setAttribute('points', pts.map((q) => q.join(',')).join(' '));
+      forma.setAttribute('class', `medida medida-${m.tipo}${m.enCurso ? ' en-curso' : ''}`);
+      forma.setAttribute('stroke-width', (grosor * (m.enCurso ? 1.3 : 1)).toFixed(1));
+      if (m.tipo !== 'area') forma.setAttribute('stroke-dasharray', `${(grosor * 3).toFixed(1)} ${(grosor * 2).toFixed(1)}`);
+      nodos.push(forma);
+      for (const [x, y] of pts) {
+        const c = document.createElementNS(SVG, 'circle');
+        c.setAttribute('cx', x); c.setAttribute('cy', y);
+        c.setAttribute('r', (grosor * (m.enCurso ? 3.2 : 1.8)).toFixed(1));
+        c.setAttribute('class', `medida-punto${m.enCurso ? ' en-curso' : ''}`);
+        nodos.push(c);
+      }
+    }
+    n.medidas.replaceChildren(...nodos);
+    n.etiquetas.replaceChildren(...[...lista, ...actual].filter((m) => m.puntos.length > (m.tipo === 'area' ? 2 : 1)).map((m) => {
+      const [x, y] = puntoEtiqueta(m);
+      return el('button', {
+        type: 'button', class: `medida-etiqueta${m.enCurso ? ' en-curso' : ''}`,
+        style: `left:${x * 100}%;top:${y * 100}%`,
+        title: m.enCurso ? '' : 'Tocar para borrar esta medida',
+        onclick: (ev) => {
+          ev.stopPropagation();
+          if (m.enCurso) return;
+          if (!confirm(`¿Borrar la medida de ${textoMedida(plano, m)}?`)) return;
+          visita().medidas = visita().medidas.filter((x2) => x2.id !== m.id);
+          opciones.cambiado();
+          pintarMedidas2();
+          if (modo === 'medir') herramientasMedir();
+        }
+      }, m.enCurso && modo === 'calibrar' ? 'Cota' : textoMedida(plano, m));
+    }));
+  }
+
+  function anadirPunto(q) {
+    const redondo = [redondear(q[0]), redondear(q[1])];
+    if (modo === 'calibrar') {
+      enCurso.push(redondo);
+      if (enCurso.length === 2) {
+        pintarMedidas2();
+        setTimeout(terminarCalibrado, 30);
+        return;
+      }
+    } else {
+      if (tipoMedida === 'distancia' && enCurso.length >= 2) enCurso = [];
+      enCurso.push(redondo);
+      if (tipoMedida === 'distancia' && enCurso.length === 2) guardarMedida();
+    }
+    pintarMedidas2();
+    herramientasMedir();
+  }
+
+  function guardarMedida() {
+    const minimo = tipoMedida === 'area' ? 3 : 2;
+    if (enCurso.length < minimo) return;
+    const v = visita();
+    if (!Array.isArray(v.medidas)) v.medidas = [];
+    v.medidas.push({ id: nuevoId(), plano: plano.id, tipo: tipoMedida, puntos: enCurso, hora: ahora() });
+    opciones.cambiado();
+    enCurso = [];
+    pintarMedidas2();
+    herramientasMedir();
+  }
+
+  function ponerEscala(mPorPx, texto) {
+    plano.mPorPx = mPorPx;
+    plano.escalaTexto = texto;
+    plano.modificado = Date.now();
+    if (opciones.guardarPlano) opciones.guardarPlano(plano);
+    pintarMedidas2();
+  }
+
+  function terminarCalibrado() {
+    const px = longitud(enPx(plano, enCurso));
+    const escrito = prompt('¿Cuánto mide en la realidad esa cota? (en metros, p. ej. 6,00)');
+    const metros = escrito && Number(escrito.replace(',', '.').replace(/[^\d.]/g, ''));
+    enCurso = [];
+    if (metros > 0 && px > 0) {
+      ponerEscala(metros / px, `cota de ${formatoMedida(metros, 'distancia')}`);
+    }
+    ponerModo('medir');
+  }
+
+  function ofrecerCalibrar() {
+    n.ayuda.textContent = plano.papelMmPorPx
+      ? 'Este plano no tiene escala todavía: elige la escala del plano (1:100…) o calibra con una cota.'
+      : 'Este plano no tiene escala todavía: calibra con una cota conocida (toca sus dos extremos).';
+  }
+
+  function herramientasMedir() {
+    const escalaActual = plano.mPorPx && plano.papelMmPorPx ? Math.round(plano.mPorPx * 1000 / plano.papelMmPorPx) : null;
+    const lista = medidasDelPlano();
+    n.medirHerr.replaceChildren(...[
+      el('div', { class: 'chips' }, ...Object.entries(TIPOS_MEDIDA).map(([k, t]) => el('button', {
+        type: 'button', class: `chip${tipoMedida === k && modo === 'medir' ? ' activo' : ''}`,
+        onclick: () => { tipoMedida = k; enCurso = []; ponerModo('medir'); pintarMedidas2(); }
+      }, t))),
+      modo === 'medir' && tipoMedida !== 'distancia' && el('button', {
+        type: 'button', class: 'boton boton-destacado', disabled: enCurso.length < (tipoMedida === 'area' ? 3 : 2), onclick: guardarMedida
+      }, 'Terminar'),
+      enCurso.length > 0 && el('button', { type: 'button', class: 'boton', onclick: () => { enCurso.pop(); pintarMedidas2(); herramientasMedir(); } }, 'Deshacer punto'),
+      plano.papelMmPorPx && el('label', { class: 'escala-plano' }, 'Escala',
+        el('select', {
+          class: 'campo',
+          onchange: (ev) => {
+            const nEsc = Number(ev.target.value);
+            if (nEsc) ponerEscala(plano.papelMmPorPx * nEsc / 1000, `1:${nEsc}`);
+            herramientasMedir();
+          }
+        },
+          el('option', { value: '', selected: !/^1:/.test(plano.escalaTexto || '') }, plano.mPorPx && !/^1:/.test(plano.escalaTexto || '') ? (plano.escalaTexto || 'Calibrada') : '—'),
+          ...ESCALAS.map((e) => el('option', { value: e, selected: escalaActual === e && plano.escalaTexto === `1:${e}` }, `1:${e}`)))),
+      el('button', {
+        type: 'button', class: `boton${modo === 'calibrar' ? ' activo' : ''}`,
+        onclick: () => { enCurso = []; ponerModo(modo === 'calibrar' ? 'medir' : 'calibrar'); pintarMedidas2(); }
+      }, modo === 'calibrar' ? 'Cancelar calibrado' : 'Calibrar con una cota'),
+      lista.length > 0 && el('span', { class: 'pie' }, `${lista.length} ${lista.length === 1 ? 'medida guardada' : 'medidas guardadas'} · toca una para borrarla`)
+    ].filter((x) => x != null && x !== false));
+    n.ayuda.textContent = modo === 'calibrar'
+      ? 'Toca los dos extremos de una cota cuya medida conozcas.'
+      : !plano.mPorPx
+        ? (plano.papelMmPorPx ? 'Sin escala: elige la escala del plano o calibra con una cota.' : 'Sin escala: calibra con una cota conocida.')
+        : `Escala: ${plano.escalaTexto || 'calibrada'}. ${tipoMedida === 'distancia' ? 'Toca dos puntos.' : tipoMedida === 'area' ? 'Toca los vértices y pulsa Terminar.' : 'Toca los puntos del recorrido y pulsa Terminar.'} Puedes arrastrar los puntos para afinar.`;
+  }
 
   /* --- pines y hoja de la nota --- */
 
@@ -771,7 +978,9 @@ export function crearVisorPlano(opciones) {
         encuadrar();
       }
       pintarTrazos();
+      enCurso = [];
       ponerModo('ver');
+      pintarMedidas2();
       seleccionar(notaId);
       const k = nota(notaId);
       if (k) centrarEn(k.x, k.y);
@@ -788,6 +997,9 @@ export function crearVisorPlano(opciones) {
       n.capa.hidden = true;
       n.hoja.hidden = true;
       n.trazos.replaceChildren();
+      n.medidas.replaceChildren();
+      n.etiquetas.replaceChildren();
+      enCurso = [];
       descartarTrazo();
       document.documentElement.classList.remove('con-plano');
     },
@@ -796,6 +1008,7 @@ export function crearVisorPlano(opciones) {
     refrescar() {
       if (!plano) return;
       pintarTrazos();
+      pintarMedidas2();
       pintarPines();
       pintarHoja();
     }

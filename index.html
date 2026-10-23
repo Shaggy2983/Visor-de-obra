@@ -47,10 +47,10 @@
   <div class="acciones">
     <button type="button" id="btn-tema" class="boton boton-tema" aria-label="Ajustes" title="Ajustes">⚙️</button>
     <a href="./visita.html" class="boton" title="Parte de visita diaria">Visita</a>
-    <button id="btn-abrir" class="boton" title="Abrir un archivo IFC del teléfono">Abrir IFC</button>
+    <button id="btn-abrir" class="boton" title="Abrir un modelo IFC o un plano DXF del teléfono">Abrir</button>
     <button id="btn-ar" class="boton boton-destacado" disabled>Ver en obra</button>
   </div>
-  <input type="file" id="entrada-ifc" accept=".ifc,.IFC,application/x-step" hidden>
+  <input type="file" id="entrada-ifc" accept=".ifc,.IFC,.dxf,.DXF,.dwg,application/x-step" hidden>
 </header>
 
 <aside id="panel" class="panel" hidden>
@@ -202,14 +202,17 @@
     <h2><span class="marca" aria-label="COORDINATE">C<svg viewBox="10 10 44 44" aria-hidden="true"><g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g><circle cx="32" cy="32" r="6" fill="var(--color-accent)"/></svg>ORDINATE</span></h2>
     <p class="subtitulo">Visor de obra</p>
     <p class="lema">Los problemas se resuelven en el modelo, no en obra.</p>
-    <p id="portada-texto">Abre un archivo IFC para empezar. Queda guardado en el teléfono
-       y la próxima vez se abre solo, aunque no haya señal.</p>
-    <button id="btn-abrir-2" class="boton boton-destacado grande">Abrir archivo IFC</button>
+    <p id="portada-texto">Abre un modelo IFC (queda guardado en el teléfono y la próxima vez se abre
+       solo, aunque no haya señal) o un plano DXF para verlo en 2D, con capas y medición.</p>
+    <button id="btn-abrir-2" class="boton boton-destacado grande">Abrir modelo IFC o plano DXF</button>
     <button id="btn-ejemplo" class="enlace">o ver un modelo de ejemplo</button>
     <a href="./visita.html" class="boton grande">Parte de visita diaria</a>
     <p class="pie" id="estado-ar">Comprobando la realidad aumentada…</p>
   </div>
 </div>
+
+<!-- Plano DXF en 2D, con capas y medición (js/dxf.js). -->
+<div id="capa-dxf" class="capa-dxf" hidden></div>
 
 <div id="cargando" class="cargando" hidden>
   <div class="cargando-caja">

@@ -78,7 +78,18 @@ export async function generarInformeInteractivo(v, planos, { contacto, lema, rep
         color: COLORES_TRAZO[t.color] || '#d64545',
         grosor: grosorTrazo(t, p.ancho, p.alto).toFixed(1)
       }] : [];
-    }),
+    }).concat((v.medidas || []).flatMap((m) => {
+      // Las medidas, como trazos naranjas (el área, cerrada).
+      const p = datosPlanos.find((x) => x.id === m.plano);
+      if (!p || m.puntos.length < 2) return [];
+      const pts = m.tipo === 'area' ? [...m.puntos, m.puntos[0]] : m.puntos;
+      return [{
+        plano: m.plano,
+        puntos: pts.map(([x, y]) => `${(x * p.ancho).toFixed(1)},${(y * p.alto).toFixed(1)}`).join(' '),
+        color: '#ff6b2c',
+        grosor: (Math.max(p.ancho, p.alto) * 0.003).toFixed(1)
+      }];
+    })),
     fotos,
     repasos: datosRepasos,
     firma: v.firma ? await aDatos(v.firma) : null,

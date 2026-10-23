@@ -7,7 +7,8 @@ import {
   listarVisitas, leerVisita, guardarVisita, borrarVisita,
   listarPlanos, leerPlano, guardarPlano, borrarPlano,
   listarRepasos, leerRepaso, guardarRepaso,
-  listarInspecciones, leerInspeccion, guardarInspeccion, listarVaciados, leerVaciado, guardarVaciado
+  listarInspecciones, leerInspeccion, guardarInspeccion, listarVaciados, leerVaciado, guardarVaciado,
+  listarProgramas, leerPrograma, guardarPrograma, listarMinutas, leerMinuta, guardarMinuta
 } from './partes.js';
 import { avisar } from './interfaz.js';
 import {
@@ -27,6 +28,7 @@ import { iniciarEquipoUI } from './equipo-ui.js';
 import { crearMisRepasos } from './mis-repasos.js';
 import { climaActual, permisoUbicacion } from './clima.js';
 import { resumenCalidad } from './calidad-datos.js';
+import { CAUSAS, resumenSeguimiento } from './seguimiento-datos.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -121,6 +123,7 @@ function normalizar(v) {
   if (!Array.isArray(v.trazos)) v.trazos = [];
   if (!Array.isArray(v.medidas)) v.medidas = [];
   if (!Array.isArray(v.fotosRemotas)) v.fotosRemotas = [];
+  if (!v.afectacion || typeof v.afectacion !== 'object') v.afectacion = { causa: '', horas: '', nota: '' };
   for (const f of v.fotos) if (f.nota === undefined) f.nota = null;
   return v;
 }
@@ -239,6 +242,9 @@ async function pintarAvisosCalidad() {
       'Anota el resultado del laboratorio en el vaciado.', r.vencidas > 0));
   }
   if (r.bajas) avisos.push(tarjeta('./calidad.html#/vaciados', '⚠️', `${plural(r.bajas, 'vaciado', 'vaciados')} por debajo de f'c a 28 días`, 'Revisa los resultados con el calculista.', true));
+  let seg = null;
+  try { seg = await resumenSeguimiento(); } catch (e) { /* sin minutas */ }
+  if (seg && seg.vencidos) avisos.push(tarjeta('./seguimiento.html#/minutas', '🗒️', `${plural(seg.vencidos, 'acuerdo vencido', 'acuerdos vencidos')} de las reuniones`, 'Revisa con los responsables en la próxima reunión.', true));
   if (r.abiertas) avisos.push(tarjeta('./calidad.html#/inspecciones', '✅', `${plural(r.abiertas, 'inspección abierta', 'inspecciones abiertas')}`, 'Falta el resultado o la firma de liberación.', false));
   caja.replaceChildren(...avisos);
   caja.hidden = !avisos.length;
@@ -308,6 +314,7 @@ async function nuevaVisita() {
     clima: [],
     temperatura: '',
     jornada: 'Normal',
+    afectacion: { causa: '', horas: '', nota: '' },
     personal: anterior
       ? anterior.personal.map((p) => ({ ...p, id: nuevoId() }))
       : [{ id: nuevoId(), empresa: '', oficio: '', numero: '' }],
@@ -444,10 +451,36 @@ function pintarClima() {
     el('span', { class: 'pie chips-etiqueta' }, 'Jornada:'),
     ...JORNADAS.map((j) => chip(j, actual.jornada === j, () => {
       actual.jornada = j;
+      // Con lluvia marcada, la causa más probable es la lluvia.
+      if (j !== 'Normal' && !actual.afectacion.causa && actual.clima.includes('Lluvia')) actual.afectacion.causa = 'lluvia';
       pintarClima();
       cambiado();
     }))
   );
+  pintarAfectacion();
+}
+
+/* Día afectado: causa, horas perdidas y nota. Sirve para justificar
+   prórrogas (seguimiento.html#/dias). */
+function pintarAfectacion() {
+  const caja = $('afectacion');
+  const a = actual.afectacion;
+  caja.hidden = actual.jornada === 'Normal';
+  if (caja.hidden) return caja.replaceChildren();
+  const horas = el('input', { class: 'campo', value: a.horas || '', inputmode: 'decimal', placeholder: actual.jornada === 'Sin actividad' ? '8' : 'p. ej. 3' });
+  horas.addEventListener('input', () => { a.horas = horas.value; cambiado(); });
+  const nota = el('input', { class: 'campo', value: a.nota || '', placeholder: 'Detalle (p. ej. lluvia desde las 10:00, se suspendió el vaciado)' });
+  nota.addEventListener('input', () => { a.nota = nota.value; cambiado(); });
+  caja.replaceChildren(
+    el('span', { class: 'pie chips-etiqueta' }, 'Causa:'),
+    el('div', { class: 'chips' }, ...Object.entries(CAUSAS).map(([k, t]) => chip(t, a.causa === k, () => {
+      a.causa = a.causa === k ? '' : k;
+      pintarAfectacion();
+      cambiado();
+    }))),
+    el('div', { class: 'afectacion-datos' },
+      el('label', {}, 'Horas perdidas', horas),
+      el('label', {}, 'Detalle', nota)));
 }
 
 /* --- personal --- */
@@ -1138,7 +1171,7 @@ async function imprimir() {
       dato('Fecha', fechaLarga(v.fecha)),
       dato('Hora de inicio', v.hora),
       dato('Realizada por', v.autor),
-      dato('Jornada', v.jornada),
+      dato('Jornada', [v.jornada, v.jornada !== 'Normal' && CAUSAS[v.afectacion?.causa], v.jornada !== 'Normal' && v.afectacion?.horas && `${v.afectacion.horas} h perdidas`].filter(Boolean).join(' · ')),
       dato('Tiempo', v.clima.join(', ')),
       dato('Temperatura', v.temperatura)),
     cifras(v, repasosV),
@@ -1322,7 +1355,7 @@ function resumen(v) {
     `${fechaLarga(v.fecha)}${v.hora ? ' · ' + v.hora : ''}`,
     v.autor && `Visita: ${v.autor}`,
     (v.clima.length || v.temperatura) && `Tiempo: ${[v.clima.join(', '), v.temperatura].filter(Boolean).join(' · ')}`,
-    v.jornada && v.jornada !== 'Normal' && `Jornada: ${v.jornada}`,
+    v.jornada && v.jornada !== 'Normal' && `Jornada: ${v.jornada}${CAUSAS[v.afectacion?.causa] ? ` (${CAUSAS[v.afectacion.causa]})` : ''}`,
     `Personal: ${totalPersonas(v)}`,
     ...v.personal.filter((p) => p.empresa || p.oficio).map((p) =>
       `  · ${[p.empresa, p.oficio].filter(Boolean).join(' – ')}: ${p.numero || 0}`),
@@ -1415,16 +1448,20 @@ async function generarCopia() {
   });
   const inspecciones = await Promise.all((await listarInspecciones()).map(conFotos));
   const vaciados = await Promise.all((await listarVaciados()).map(conFotos));
+  // Seguimiento (desde la versión 5): programas de avance y minutas.
+  const programas = await listarProgramas();
+  const minutas = await listarMinutas();
   const json = JSON.stringify({
-    formato: 'visitas-obra-e04', version: 4, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados
+    formato: 'visitas-obra-e04', version: 5, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados, programas, minutas
   });
   nodos.aviso.hidden = true;
   return {
     blob: new Blob([json], { type: 'application/json' }),
     nombre: `copia-visitas-${hoy()}-${ahora().replace(':', '')}.json`,
     resumen: `${plural(visitas.length, 'visita', 'visitas')}, ${plural(planos.length, 'plano', 'planos')}, `
-      + `${plural(repasos.length, 'repaso', 'repasos')}, ${plural(inspecciones.length, 'inspección', 'inspecciones')} y `
-      + plural(vaciados.length, 'vaciado', 'vaciados')
+      + `${plural(repasos.length, 'repaso', 'repasos')}, ${plural(inspecciones.length, 'inspección', 'inspecciones')}, `
+      + `${plural(vaciados.length, 'vaciado', 'vaciados')}, ${plural(programas.length, 'programa', 'programas')} y `
+      + plural(minutas.length, 'minuta', 'minutas')
   };
 }
 
@@ -1459,6 +1496,13 @@ async function importar(archivo) {
       firma: r.firma ? await deDatos(r.firma) : null,
       fotos: await Promise.all((r.fotos || []).map(async (f) => ({ ...f, blob: await deDatos(f.blob) })))
     });
+    for (const [lista, leer, guardar] of [[datos.programas, leerPrograma, guardarPrograma], [datos.minutas, leerMinuta, guardarMinuta]]) {
+      for (const r of lista || []) {
+        const existente = await leer(r.id);
+        if (existente && existente.modificado >= r.modificado) continue;
+        await guardar(r);
+      }
+    }
     for (const [lista, leer, guardar] of [[datos.inspecciones, leerInspeccion, guardarInspeccion], [datos.vaciados, leerVaciado, guardarVaciado]]) {
       for (const r of lista || []) {
         const existente = await leer(r.id);
@@ -1614,6 +1658,10 @@ function menuEquipo() {
         type: 'button', class: 'obra-compartida',
         onclick: () => {
           if (n.tipo === 'visitas') return ir(`#/v/${encodeURIComponent(n.id)}`);
+          if (n.tipo === 'programas' || n.tipo === 'minutas') {
+            novedades.quitar(uid, n.id);
+            return ir(n.tipo === 'minutas' ? `./seguimiento.html#/minuta/${encodeURIComponent(n.id)}` : './seguimiento.html#/avance');
+          }
           if (n.tipo === 'inspecciones' || n.tipo === 'vaciados') {
             novedades.quitar(uid, n.id);
             return ir(`./calidad.html#/${n.tipo === 'vaciados' ? 'vaciado' : 'inspeccion'}/${encodeURIComponent(n.id)}`);

@@ -194,6 +194,10 @@
   .informe-estado.si { color: #1f6f3f; border-color: #1f6f3f; }
   .informe-estado.no { color: #c0392b; border-color: #c0392b; }
   .informe-evaluacion { margin-top: 3mm; }
+  /* Las tablas largas pueden seguir en la página siguiente; el pie no se
+     queda solo en una hoja. */
+  .informe section.informe-larga { break-inside: auto; }
+  .informe-pie-pegado { break-before: avoid; }
   /* La liberación y sus firmas, siempre juntas en la misma página. */
   .informe .informe-firma { break-inside: avoid; page-break-inside: avoid; }
   .informe .informe-firmas { display: flex; gap: 8mm; break-inside: avoid; page-break-inside: avoid; }

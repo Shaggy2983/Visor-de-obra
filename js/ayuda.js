@@ -8,6 +8,7 @@ const SECCIONES = [
     titulo: 'Parte de visita', icono: '📋', recorrido: 'visita',
     temas: [
       { t: 'Crear una visita', p: ['En Visitas pulsa «Nueva visita».', 'Se copian la obra, el autor, el personal y las incidencias abiertas de la visita anterior.', 'Todo se guarda solo según escribes, aunque no haya señal.'] },
+      { t: 'Jornada afectada', p: ['Si la jornada es «Parcial» o «Sin actividad», marca la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Se suman en Seguimiento → Días afectados.'] },
       { t: 'Tiempo del lugar', p: ['Al abrir la visita del día, la app toma la temperatura y el tiempo de donde estás.', 'Para repetirlo: «📍 Tomar del lugar». Usa una ubicación aproximada.'] },
       { t: 'Personal en obra', p: ['«+ Añadir empresa u oficio» y el número de personas.', 'La app te propone las empresas y oficios que ya has escrito.'] },
       { t: 'Línea de tiempo de los trabajos', p: ['En «Trabajos realizados» cada línea nueva empieza con la hora («08:15 · …»).', 'Pulsa Intro para la siguiente actividad: queda el registro del día.'] },
@@ -50,6 +51,17 @@ const SECCIONES = [
       { t: 'Camiones y revenimiento', p: ['«+ Camión» por cada uno: nº de conduce, m³, hora y revenimiento medido.', 'La app suma el volumen y marca en naranja los revenimientos fuera de ±1".'] },
       { t: 'Probetas y roturas', p: ['«+ Juego (7 · 28 · 28 días)» crea tres probetas con su código; «+ Probeta» para otra edad.', 'El día de la rotura sale el aviso en el inicio, en la lista de vaciados y con un punto rojo en el menú.', "Anota el resultado del laboratorio: la app calcula el % de f'c y si cumple a 28 días.", '«Registro en PDF» con camiones, probetas y resultados.'] },
       { t: 'En el parte diario', p: ['Las inspecciones y vaciados de la misma obra y día salen en el informe PDF de la visita.'] }
+    ]
+  },
+  {
+    titulo: 'Seguimiento: avance, minutas y días afectados', icono: '📈', recorrido: 'seguimiento',
+    temas: [
+      { t: 'Crear el programa de avance', p: ['Menú → «Avance y curva S», elige la obra y pon el inicio y el fin previstos.', '«Crear con partidas típicas de edificación» trae 12 partidas con pesos y fechas de referencia; o «Empezar vacío».', 'En «Editar programa» pon tus partidas, su peso (% de la obra, del presupuesto) y sus fechas. Los pesos deben sumar 100.'] },
+      { t: 'Anotar el avance', p: ['En «Avance de hoy por partida» mueve la barra al % ejecutado acumulado.', 'La raya naranja marca lo programado para hoy; si vas 10 puntos por detrás, la partida sale como atrasada.'] },
+      { t: 'Curva S e indicadores', p: ['Programado hoy, avance real, desviación en puntos e índice de cumplimiento (real entre programado).', 'Curva programada (naranja, discontinua) y real (azul). Toca la curva para ver los valores de cada fecha; «Ver como tabla» para leerla sin gráfico.', '«Informe PDF» con indicadores, curva y tabla por partida.'] },
+      { t: 'Minutas de reunión', p: ['Menú → «Minutas de reunión» → «+ Minuta».', 'Trae los asistentes y los acuerdos abiertos de la reunión anterior de la obra.', 'Marca quién vino, escribe los temas (uno por línea) y los acuerdos con responsable y fecha límite.'] },
+      { t: 'Seguimiento de acuerdos', p: ['Marca «Cumplido» cuando se cumpla; los demás pasan a la siguiente minuta.', 'Los vencidos salen en el inicio, en la lista de minutas y con un punto rojo en el menú.', '«Minuta en PDF» con hoja de firmas de asistentes y tabla de acuerdos.'] },
+      { t: 'Días afectados', p: ['En la visita del día, en Tiempo y jornada, marca «Parcial» o «Sin actividad»: aparecen la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Menú → «Días afectados»: días equivalentes perdidos por obra y por causa, con la relación en PDF para pedir una prórroga.'] }
     ]
   },
   {

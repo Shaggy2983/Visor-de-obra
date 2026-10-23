@@ -97,7 +97,7 @@ const RECORRIDOS = {
       { sel: '#ficha [data-campo="fecha"]', titulo: 'Fecha y hora', texto: 'Se ponen solas al crear la visita; puedes cambiarlas.' },
       { sel: '#ficha [data-campo="obra"]', titulo: 'Obra y autor', texto: 'El nombre de la obra une las visitas, repasos y planos. Si compartes la obra, se sincroniza con tu equipo.' },
       { sel: '#btn-clima', titulo: 'Tiempo del lugar', texto: 'Toma la temperatura y el tiempo de donde estás (ubicación aproximada). Al abrir la visita del día lo hace solo.' },
-      { sel: '#jornadas', titulo: 'Jornada', texto: 'Normal, parcial o sin actividad: sale en el informe y en el resumen semanal.' },
+      { sel: '#jornadas', titulo: 'Jornada', texto: 'Normal, parcial o sin actividad. Si se perdió tiempo, marca la causa (lluvia, paro…) y las horas: se suman en Seguimiento → Días afectados.' },
       { sel: '#personal', titulo: 'Personal en obra', texto: 'Empresa, oficio y número de personas. La app te propone las empresas y oficios que ya has escrito.' },
       { sel: '#ficha [data-campo="trabajos"]', titulo: 'Trabajos realizados', texto: 'Cada línea nueva empieza con la hora del teléfono, así queda la línea de tiempo del día. El corrector y las sugerencias te ayudan a escribir.' },
       { sel: () => document.querySelector('#ficha [data-campo="trabajos"]')?.closest('.con-dictado')?.querySelector('.boton-dictado'), titulo: 'Dictado por voz', texto: 'Toca el micrófono y habla. Di «coma», «punto y seguido» o «punto y aparte» para puntuar.' },
@@ -163,6 +163,20 @@ const RECORRIDOS = {
       { titulo: 'Liberar o rechazar', texto: 'Con el checklist revisado, marca el resultado y firma la liberación. Los «No cumple» pasan al punch list con un toque y el acta sale en PDF.', centrado: true },
       { sel: '#pestana-vaciados', titulo: 'Vaciados de hormigón', texto: 'Elemento, f\'c, revenimiento y volumen; cada camión con su conduce, m³, hora y revenimiento medido (avisa si se sale ±1").', antes: async () => { if (!location.hash.startsWith('#/vaciado')) location.hash = '#/vaciados'; await esperar(400); } },
       { sel: () => document.querySelector('#agenda:not([hidden])') || document.querySelector('#lista'), titulo: 'Probetas y roturas', texto: '«+ Juego» crea las probetas de 7 y 28 días. El día de cada rotura sale el aviso aquí, en el inicio y en el menú; anota el resultado y la app calcula el % de f\'c.' }
+    ]
+  },
+
+  seguimiento: {
+    pagina: 'seguimiento.html',
+    titulo: 'Avance, minutas y días afectados',
+    pasos: [
+      { sel: '.pestanas-calidad', titulo: 'Seguimiento de la obra', texto: 'Avance por partida con su curva S, minutas de reunión con acuerdos y días afectados por lluvia, paros u otras causas.', antes: async () => { if (location.hash !== '#/avance') location.hash = '#/avance'; await esperar(500); } },
+      { sel: '#filtro-obras', titulo: 'Obra', texto: 'Cada obra tiene su programa: partidas con peso y fechas.' },
+      { sel: () => document.querySelector('.indicadores') || document.querySelector('#contenido .grupo'), titulo: 'Programado frente a real', texto: 'Crea el programa (con partidas típicas o las tuyas). Luego verás lo programado hoy, el avance real, la desviación y el índice de cumplimiento.' },
+      { sel: '.curva', titulo: 'Curva S', texto: 'Naranja discontinua: programado. Azul: real. Toca la curva para ver los valores de cada fecha.' },
+      { sel: '.partidas', titulo: 'Anotar el avance', texto: 'Mueve la barra de cada partida al % ejecutado: se guarda con la fecha de hoy. La raya naranja es lo que tocaba.' },
+      { sel: '#pestana-minutas', titulo: 'Minutas', texto: 'Cada reunión con asistentes, temas y acuerdos con responsable y fecha. Los abiertos pasan a la siguiente; los vencidos avisan en el inicio.', antes: async () => { location.hash = '#/minutas'; await esperar(500); } },
+      { sel: '#pestana-dias', titulo: 'Días afectados', texto: 'Se suman de las visitas con jornada parcial o sin actividad, por causa. Relación en PDF para pedir prórroga.', antes: async () => { location.hash = '#/dias'; await esperar(500); } }
     ]
   },
 

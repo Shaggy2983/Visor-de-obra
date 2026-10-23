@@ -1056,3 +1056,10 @@ a.foto-remota { color: var(--acento); }
 .aviso-calidad strong { display: block; font-size: .92rem; }
 .aviso-calidad .pie { margin: 0; }
 .aviso-calidad > span:first-child { font-size: 1.3rem; }
+
+/* día afectado (jornada parcial o sin actividad): causa, horas y detalle */
+.afectacion { margin: -.2rem 0 .4rem; padding: .55rem .6rem .2rem; border-left: 3px solid var(--aviso-texto); border-radius: .5rem; background: var(--fondo); }
+.afectacion[hidden] { display: none; }
+.afectacion .chips { margin-bottom: .45rem; }
+.afectacion-datos { display: grid; grid-template-columns: 7rem 1fr; gap: .5rem; }
+.afectacion-datos .campo { margin-top: .2rem; }

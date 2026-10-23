@@ -66,10 +66,11 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   páginas): el símbolo de COORDINATE (anillo de nodos) es el botón, se
   inserta solo en cada `.barra-superior` y en `[data-menu]` (portada del
   visor 3D). Al tocarlo los nodos giran y el centro late (sin animación con
-  «reducir movimiento»); baja una hoja con Obra (Visitas, Inspecciones,
-  Vaciados, Modelo 3D), Equipo (Novedades, Panel, Perfil), Datos (Cuentas
-  vinculadas `visita.html#/cuentas`, Copia `#/copia`), Aspecto y Guía.
-  Punto rojo por novedades o probetas por romper (`crd-roturas`). API
+  «reducir movimiento»); baja una hoja con Obra (Visitas, Modelo 3D),
+  Calidad (Inspecciones, Vaciados), Seguimiento (Avance, Minutas, Días
+  afectados), Equipo (Novedades, Panel, Perfil), Datos (Cuentas vinculadas
+  `visita.html#/cuentas`, Copia `#/copia`), Aspecto y Guía. Punto rojo por
+  novedades, probetas por romper (`crd-roturas`) o acuerdos vencidos. API
   `window.crdMenu` (`equipo(activo, n)`, `alNovedades`, `avisos()`). Ya no
   hay botones ⚙️ ni 👥; el inicio de Visitas sólo tiene cuenta, avisos de
   calidad, buscador y lista.
@@ -94,11 +95,32 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   con fecha de rotura (7/14/28…), resultado y % f'c, evaluación por edad;
   agenda de roturas y avisos en el inicio; registro PDF. El parte diario
   PDF lista la calidad de la misma obra y fecha. Se sincronizan como las
-  visitas y van en la copia de seguridad (formato v4).
+  visitas y van en la copia de seguridad (formato v5, que añade programas y minutas).
   · PDF: firmas como fondo del recuadro (no `<img>`: Chrome partía el
   bloque de firmas); `@page acta`.
+- **Seguimiento** (`seguimiento.html`, `js/seguimiento.js`, cálculos en
+  `js/seguimiento-datos.js`, estilos `css/seguimiento.css`; tablas
+  IndexedDB `programas` y `minutas`, base v6). Rutas `#/avance`,
+  `#/minutas`, `#/minuta/ID`, `#/dias`.
+  · **Avance y curva S:** un programa por obra (id fijo
+  `prog-<obra>`), partidas con peso %, inicio y fin; lo programado crece
+  lineal entre fechas; avance real = último % anotado (deslizador, con la
+  fecha de hoy); obra = media ponderada. Indicadores programado, real,
+  desviación (pts) e índice real/programado. Curva SVG con tokens
+  `--serie-real` (azul) / `--serie-prog` (naranja discontinua), validados
+  para daltonismo; cursor con valores, tabla. Partidas típicas de
+  edificación como plantilla. Informe PDF (`@page seguimiento`).
+  · **Minutas** MR-NNN: asistentes (presente), temas, acuerdos con
+  responsable, fecha límite y cumplido; la nueva trae asistentes y
+  acuerdos abiertos de la anterior. Vencidos → aviso en el inicio y punto
+  rojo del menú (`crd-acuerdos-vencidos`). PDF con hoja de firmas.
+  · **Días afectados:** la visita con jornada Parcial / Sin actividad pide
+  causa (`CAUSAS`), horas perdidas y detalle (`v.afectacion`); se suman
+  por obra y causa (sin actividad = 1 día; parcial = horas/8 o ½). PDF
+  «Relación de días afectados» para prórrogas.
+  · Piezas de PDF comunes en `js/impreso.js` (también las usa calidad).
 - **Novedades del equipo** (`js/novedades.js`): al bajar, lo que otro crea o
-  cambia en una obra compartida (visitas, repasos, inspecciones y vaciados) queda como novedad en el
+  cambia en una obra compartida (visitas, repasos, inspecciones, vaciados, programa y minutas) queda como novedad en el
   teléfono (localStorage `crd-novedades:{uid}`); aviso al sincronizar,
   etiqueta Nueva/Actualizada en la lista y «Novedades del equipo» en el menú
   del símbolo con contador (`visita.html#/novedades`). La primera bajada de una obra no cuenta.
@@ -129,7 +151,7 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - **Guía de uso y recorridos** (`ayuda.html` + `js/ayuda.js`: todas las
   funciones con pasos y buscador; `js/guia.js` en todas las páginas:
   recorridos que iluminan los botones reales — inicio, visita, plano,
-  modelo, calidad, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
+  modelo, calidad, seguimiento, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
   entre páginas (sessionStorage `crd-guia`). La visita de práctica es
   `guia-ejemplo` (se ofrece borrarla). Primer uso: se ofrece el de inicio
   (localStorage `crd-guia-ofrecida`). Acceso: menú del símbolo → Guía de uso; ❓ en
@@ -150,7 +172,8 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   `js/mis-repasos.js`). **Equipos de trabajo** reutilizables que se
   vinculan a obras con un papel.
 - Reglas: `firestore.rules` (colecciones visitas, repasos, planos,
-  inspecciones y vaciados) y `storage.rules`, con 87 pruebas en
+  inspecciones, vaciados, programas y minutas) y `storage.rules`, con 91
+  pruebas en
   `pruebas/` contra los emuladores (`?emulador=1` abre la app contra
   ellos).
 
@@ -198,12 +221,13 @@ Entra) en `js/cuentas-config.js`.
    permiso sensible: para salir del modo de prueba de Google hace falta
    verificar la app.
 4. Hoja de ruta del supervisor (acordada el 22/10/2026), por PR:
-   hecho el menú del símbolo, inspecciones y vaciados. Siguen: avance
-   físico por partida con curva S, minutas de reunión con acuerdos, días
-   afectados (lluvia, paro); luego RFI y órdenes de cambio, recepción de
+   hechos el menú del símbolo, inspecciones, vaciados, avance con curva S,
+   minutas y días afectados. Siguen: RFI y órdenes de cambio, recepción de
    materiales, SST (charla de 5 min, EPP, permisos), repasos en el plano y
-   exportar CSV. Reglas con `inspecciones` y `vaciados` publicadas en
-   Firestore el 22/10/2026 (idénticas al repositorio).
+   exportar CSV. Reglas con `inspecciones` y `vaciados` publicadas el
+   22/10/2026; **`programas` y `minutas` hay que publicarlas** (si no, no
+   sincronizan). El programa es un documento por obra: si dos personas
+   anotan avance a la vez, gana la última escritura.
 5. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
    repasos en el plano, papel de empresa por encima de los equipos.
 6. Notificación con la app cerrada y resumen semanal por correo automático:

@@ -4,7 +4,7 @@
    (partes.js) y funciona sin señal. Lo que pertenece a una obra
    compartida se sincroniza cuando hay conexión:
 
-   · subir: cada visita, repaso, plano, inspección o vaciado cuya versión local es más nueva
+   · subir: cada visita, repaso, plano, inspección, vaciado, programa o minuta cuya versión local es más nueva
      que la que ya está en la nube. Las fotos, firmas y planos van a
      Storage (obras/{obra}/archivos/…) una sola vez, por su id.
    · bajar: lo que otros han cambiado desde la última vez (marca por
@@ -44,7 +44,9 @@ const TIPOS = {
   visitas: { listar: partes.listarVisitas, leer: partes.leerVisita, guardar: partes.guardarVisita, borrar: partes.borrarVisita },
   repasos: { listar: partes.listarRepasos, leer: partes.leerRepaso, guardar: partes.guardarRepaso, borrar: partes.borrarRepaso },
   inspecciones: { listar: partes.listarInspecciones, leer: partes.leerInspeccion, guardar: partes.guardarInspeccion, borrar: partes.borrarInspeccion },
-  vaciados: { listar: partes.listarVaciados, leer: partes.leerVaciado, guardar: partes.guardarVaciado, borrar: partes.borrarVaciado }
+  vaciados: { listar: partes.listarVaciados, leer: partes.leerVaciado, guardar: partes.guardarVaciado, borrar: partes.borrarVaciado },
+  programas: { listar: partes.listarProgramas, leer: partes.leerPrograma, guardar: partes.guardarPrograma, borrar: partes.borrarPrograma },
+  minutas: { listar: partes.listarMinutas, leer: partes.leerMinuta, guardar: partes.guardarMinuta, borrar: partes.borrarMinuta }
 };
 // Qué tipos llevan fotos y cuáles firma (como Blob dentro del registro).
 const CON_FOTOS = new Set(['visitas', 'repasos', 'inspecciones', 'vaciados']);
@@ -153,6 +155,8 @@ function tituloNovedad(tipo, r) {
   if (tipo === 'visitas') return r.autor || 'Bitácora';
   if (tipo === 'inspecciones') return `Inspección IN-${tresCifras(r.numero)} · ${r.titulo || ''}${r.zona ? ` · ${r.zona}` : ''}`;
   if (tipo === 'vaciados') return `Vaciado VH-${tresCifras(r.numero)} · ${r.elemento || ''}`;
+  if (tipo === 'programas') return 'Programa y avance';
+  if (tipo === 'minutas') return `Minuta MR-${tresCifras(r.numero)}`;
   return `Repaso ${r.numero || ''} ${r.zona ? `· ${r.zona}` : ''}`.trim();
 }
 

@@ -202,8 +202,8 @@ Entra) en `js/cuentas-config.js`.
    físico por partida con curva S, minutas de reunión con acuerdos, días
    afectados (lluvia, paro); luego RFI y órdenes de cambio, recepción de
    materiales, SST (charla de 5 min, EPP, permisos), repasos en el plano y
-   exportar CSV. **Las reglas con `inspecciones` y `vaciados` hay que
-   publicarlas en Firestore** (si no, esas colecciones no sincronizan).
+   exportar CSV. Reglas con `inspecciones` y `vaciados` publicadas en
+   Firestore el 22/10/2026 (idénticas al repositorio).
 5. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
    repasos en el plano, papel de empresa por encima de los equipos.
 6. Notificación con la app cerrada y resumen semanal por correo automático:

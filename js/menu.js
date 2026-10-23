@@ -177,7 +177,7 @@
     priv.href = './privacidad.html';
     pie.appendChild(guia);
     pie.appendChild(priv);
-    pie.appendChild(nodo('span', 'menu-marca', 'hola@coordinate.do'));
+    pie.appendChild(nodo('span', 'menu-marca', 'hola.coordinate.rd@gmail.com'));
     hoja.appendChild(pie);
   }
 

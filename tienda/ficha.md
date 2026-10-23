@@ -11,7 +11,7 @@ de publicar: tú respondes ante Google por lo que se declara.
 | Paquete | `com.coordinate.bitacora` |
 | Categoría | Empresa |
 | Etiquetas | Productividad, Herramientas |
-| Correo de contacto | hola@coordinate.do |
+| Correo de contacto | hola.coordinate.rd@gmail.com |
 | Sitio web | https://coordinate.do |
 | Política de privacidad | https://shaggy2983.github.io/Visor-de-obra/privacidad.html |
 | Precio | Gratuita, sin anuncios ni compras |

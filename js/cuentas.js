@@ -517,6 +517,42 @@ export function subirArchivo(proveedor, ruta, nombre, blob, tipo) {
   return proveedor === 'google' ? subirDrive(completa, limpio, blob, tipo) : subirOneDrive(completa, limpio, blob, tipo);
 }
 
+/* Comparte (sólo lectura) la carpeta CARPETA_RAIZ/…ruta con unos correos y
+   devuelve su enlace. Google: permiso por persona, sin correo de aviso.
+   Microsoft: invitación sin correo que exige entrar con esa cuenta. Los
+   correos ya compartidos se recuerdan para no repetir. */
+export async function compartirCarpeta(proveedor, ruta, correos) {
+  const completa = [CARPETA_RAIZ, ...ruta.map((r) => nombreArchivo(r))];
+  const clave = `crd-compartida:${proveedor}:${completa.join('/')}`;
+  let hechos = [];
+  try { hechos = JSON.parse(localStorage.getItem(clave)) || []; } catch (e) { /* nada */ }
+  const nuevos = correos.map((c) => c.trim().toLowerCase()).filter((c) => c && !hechos.includes(c));
+  let enlace = null;
+  if (proveedor === 'google') {
+    const id = await carpetaDrive(completa, true);
+    for (const correo of nuevos) {
+      await api('google', `${DRIVE}/files/${id}/permissions?sendNotificationEmail=false`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'user', role: 'reader', emailAddress: correo })
+      });
+      hechos.push(correo);
+    }
+    enlace = `https://drive.google.com/drive/folders/${id}`;
+  } else {
+    const item = await (await api('microsoft', `${GRAPH_DRIVE}/root:/${rutaOneDrive(completa)}?select=id,webUrl`)).json();
+    if (nuevos.length) {
+      await api('microsoft', `${GRAPH_DRIVE}/items/${item.id}/invite`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipients: nuevos.map((email) => ({ email })), requireSignIn: true, sendInvitation: false, roles: ['read'] })
+      });
+      hechos.push(...nuevos);
+    }
+    enlace = item.webUrl;
+  }
+  try { localStorage.setItem(clave, JSON.stringify(hechos)); } catch (e) { /* se repetirá */ }
+  return enlace;
+}
+
 /* Archivos de CARPETA_RAIZ/…ruta, el más reciente primero. */
 export async function listarArchivos(proveedor, ruta) {
   const completa = [CARPETA_RAIZ, ...ruta.map((r) => nombreArchivo(r))];

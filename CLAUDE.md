@@ -146,14 +146,21 @@ con `shaggy2983.github.io` autorizado, Firestore creado con reglas); ID
 de cliente de Google (proyecto `coordinate-b7759`) y de Microsoft (app de
 Entra) en `js/cuentas-config.js`.
 
-1. **Storage** de Firebase: crearlo (plan Blaze) y publicar
-   `storage.rules`; hasta entonces las fotos, firmas y planos de las obras
-   compartidas no suben a la nube (y las visitas que los llevan no llegan
-   al panel). **Publicar `firestore.rules`** de nuevo (regla
-   `actualizaMiFicha` del perfil) y comprobar que son las del repositorio.
-   Las pruebas de reglas nuevas (ficha) no se han podido correr en la nube
-   de Claude (sin acceso a la descarga del emulador): correr
-   `npm run reglas` en el PC.
+1. **Sin Storage** (Luis decidió seguir en el plan Spark, 22/10/2026). La
+   sincronización sube igual los datos; fotos, firmas y planos van a la
+   **nube vinculada del autor** (`subirAVinculada` en `js/equipo.js`:
+   Drive u OneDrive, «COORDINATE Visitas / Obras / obra», carpeta
+   compartida sólo lectura con los correos del equipo vía
+   `compartirCarpeta` de `js/cuentas.js`) y el enlace viaja en los datos
+   (`fotos[].enlace`, `firmaEnlace`, `carpetaEnlace`, plano `enlace`). Lo
+   que no se puede bajar queda en `fotosRemotas` / `firmaRemota` /
+   `crd-planos-remotos` y se muestra como enlace. Sin cuenta vinculada, los
+   archivos se quedan en el teléfono y el registro queda en
+   `crd-archivos-pendientes` para reintentar. `crd-sin-storage` recuerda 6 h
+   que no hay Storage. Con Blaze: crear Storage en us-east1 y publicar
+   `storage.rules`: vuelve a usarse solo. `firestore.rules` publicadas el
+   22/10/2026 (con `actualizaMiFicha`); falta correr `npm run reglas` en el
+   PC (aquí no se puede descargar el emulador).
 2. **Primera prueba real** de cuentas: crear cuenta, compartir una obra,
    invitar, equipo y contratista, en teléfonos de verdad.
 3. **Google Play:** la cuenta de desarrollador espera la verificación de

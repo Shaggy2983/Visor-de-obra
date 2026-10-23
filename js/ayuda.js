@@ -46,7 +46,8 @@ const SECCIONES = [
       { t: 'Compartir una obra', p: ['«+ Compartir una obra» con el nombre de la obra.', 'Invita por correo con un papel: administrador, editor, solo lectura o contratista.', 'Avísale con «Enviar aviso» (WhatsApp o correo).'] },
       { t: 'Equipos de trabajo', p: ['«+ Crear un equipo» y añade a su gente.', 'Vincula el equipo a una obra con un papel: entran todos de una vez.'] },
       { t: 'Novedades', p: ['El botón 👥 de arriba muestra las bitácoras nuevas o cambiadas de tu equipo.', 'En la lista llevan la etiqueta «Nueva» o «Actualizada».'] },
-      { t: 'Sincronización', p: ['Con señal se sincroniza al guardar, al volver la cobertura y cada 2 minutos.', 'Sin señal sigues trabajando: se sube después.'] }
+      { t: 'Sincronización', p: ['Con señal se sincroniza al guardar, al volver la cobertura y cada 2 minutos.', 'Sin señal sigues trabajando: se sube después.'] },
+      { t: 'Fotos del equipo en tu nube', p: ['En las obras compartidas, tus fotos, firmas y planos se suben a tu Google Drive u OneDrive vinculado (carpeta «COORDINATE Visitas / Obras / obra»).', 'La carpeta se comparte, sólo para ver, con los miembros de la obra.', 'Tus compañeros ven «📷 Ver foto en la nube»; en el panel, «📷 Fotos».', 'Sin cuenta vinculada, los archivos se quedan en tu teléfono: vincúlala en «Cuentas vinculadas».'] }
     ]
   },
   {

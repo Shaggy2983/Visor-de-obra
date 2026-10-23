@@ -32,6 +32,7 @@ import { cargarFirebase, configurado } from './firebase-app.js';
 import * as partes from './partes.js';
 import { mismaObra, ahora } from './utiles.js';
 import * as novedades from './novedades.js';
+import { vinculadas, subirArchivo, compartirCarpeta } from './cuentas.js';
 
 export const ROLES = { admin: 'Administrador', editor: 'Editor', lector: 'Solo lectura', contratista: 'Contratista' };
 export const PAPELES_EQUIPO = { admin: 'Administrador', miembro: 'Miembro' };
@@ -55,54 +56,95 @@ async function huella(blob) {
   return [...new Uint8Array(h)].slice(0, 6).map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
+/* Archivos que no están en Storage: se suben a la nube vinculada del autor
+   (Drive u OneDrive) y su enlace viaja en los datos. Este mapa recuerda
+   ruta → enlace en el teléfono que los subió. */
+const CLAVE_ENLACES = 'crd-enlaces';
+const leerMapa = (k) => { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } };
+const escribirMapa = (k, m) => { try { localStorage.setItem(k, JSON.stringify(m)); } catch (e) { /* lleno */ } };
+export const planosRemotos = (obraId) => (leerMapa('crd-planos-remotos')[obraId] || []);
+
 /* Separa un registro en sus datos (sin Blobs) y los archivos que lleva. */
 async function separar(tipo, r, obraId) {
   const base = `obras/${obraId}/archivos/`;
+  const enlaces = leerMapa(CLAVE_ENLACES);
   const archivos = [];
   const datos = { ...r };
+  delete datos.fotosRemotas;
+  delete datos.firmaRemota;
   if (tipo === 'visitas' || tipo === 'repasos') {
     datos.fotos = (r.fotos || []).map(({ blob, ...foto }) => {
       const ruta = `${base}${foto.id}.${extension(blob)}`;
       archivos.push({ ruta, blob });
-      return { ...foto, ruta };
+      return { ...foto, ruta, ...(enlaces[ruta] || foto.enlace ? { enlace: enlaces[ruta] || foto.enlace } : {}) };
     });
+    // Las fotos de otros que este teléfono no pudo bajar siguen en los datos.
+    const propias = new Set(datos.fotos.map((f) => f.id));
+    for (const f of r.fotosRemotas || []) if (!propias.has(f.id)) datos.fotos.push(f);
   }
   if (tipo === 'visitas') {
     datos.firma = null;
     datos.firmaRuta = null;
+    datos.firmaEnlace = null;
     if (r.firma) {
       datos.firmaRuta = `${base}firma-${r.id}-${await huella(r.firma)}.png`;
+      datos.firmaEnlace = enlaces[datos.firmaRuta] || null;
       archivos.push({ ruta: datos.firmaRuta, blob: r.firma });
+    } else if (r.firmaRemota) {
+      datos.firmaRuta = r.firmaRemota.ruta;
+      datos.firmaEnlace = r.firmaRemota.enlace || null;
     }
   }
   if (tipo === 'planos') {
     delete datos.blob;
     datos.ruta = `${base}plano-${r.id}.${extension(r.blob)}`;
+    if (enlaces[datos.ruta]) datos.enlace = enlaces[datos.ruta];
     archivos.push({ ruta: datos.ruta, blob: r.blob });
   }
   return { datos, archivos };
 }
 
 /* Lo contrario: rehace el registro local, reutilizando las imágenes que
-   ya están en el teléfono y bajando las que falten. */
+   ya están en el teléfono y bajando las que falten. Lo que no se puede
+   bajar (sin Storage) queda como «remoto», con su enlace si lo hay. */
 async function juntar(tipo, datos, local, bajar) {
+  const intentar = async (ruta) => { try { return await bajar(ruta); } catch (e) { return null; } };
   const r = { ...datos };
   if (tipo === 'visitas' || tipo === 'repasos') {
-    r.fotos = await Promise.all((datos.fotos || []).map(async ({ ruta, ...foto }) => {
+    r.fotos = [];
+    r.fotosRemotas = [];
+    for (const { ruta, ...foto } of datos.fotos || []) {
       const previa = local && (local.fotos || []).find((f) => f.id === foto.id && f.blob);
-      return { ...foto, blob: previa ? previa.blob : await bajar(ruta) };
-    }));
+      const blob = previa ? previa.blob : await intentar(ruta);
+      if (blob) r.fotos.push({ ...foto, blob });
+      else r.fotosRemotas.push({ ...foto, ruta });
+    }
   }
   if (tipo === 'visitas') {
-    r.firma = datos.firmaRuta ? await bajar(datos.firmaRuta) : null;
+    r.firma = null;
+    r.firmaRemota = null;
+    if (datos.firmaRuta) {
+      if (local && local.firma && datos.firmaRuta.endsWith(`-${await huella(local.firma)}.png`)) r.firma = local.firma;
+      else r.firma = await intentar(datos.firmaRuta);
+      if (!r.firma) r.firmaRemota = { ruta: datos.firmaRuta, enlace: datos.firmaEnlace || null };
+    }
     delete r.firmaRuta;
+    delete r.firmaEnlace;
   }
   if (tipo === 'planos') {
-    r.blob = local && local.blob ? local.blob : await bajar(datos.ruta);
+    r.blob = local && local.blob ? local.blob : await intentar(datos.ruta);
+    if (!r.blob) {
+      const e = new Error('Plano sin archivo');
+      e.code = 'crd/sin-archivo';
+      throw e;
+    }
     delete r.ruta;
   }
   return r;
 }
+
+// Errores de subida que indican que no hay Storage (plan sin Blaze).
+const FALTA_STORAGE = ['storage/unknown', 'storage/bucket-not-found', 'storage/project-not-found', 'storage/no-default-bucket', 'storage/unauthorized'];
 
 export class Equipo extends EventTarget {
   constructor() {
@@ -744,18 +786,82 @@ export class Equipo extends EventTarget {
     }
   }
 
+  /* ¿Hay Storage? Sin plan Blaze no existe: se recuerda 6 h y, mientras,
+     los archivos van a la nube vinculada del autor. */
+  get sinStorage() {
+    try { return Date.now() - Number(localStorage.getItem('crd-sin-storage') || 0) < 6 * 3600e3; } catch (e) { return false; }
+  }
+
+  marcarSinStorage() {
+    try { localStorage.setItem('crd-sin-storage', String(Date.now())); } catch (e) { /* nada */ }
+  }
+
+  /* Sube un archivo al Drive u OneDrive del autor (carpeta «Obras / nombre
+     de la obra», compartida con el equipo) y devuelve su enlace, o null. */
+  async subirAVinculada(obra, archivo) {
+    const lista = vinculadas();
+    const proveedor = lista.includes('google') ? 'google' : lista[0];
+    if (!proveedor) return null;
+    const ruta = ['Obras', obra.nombre];
+    try {
+      const subido = await subirArchivo(proveedor, ruta, archivo.ruta.split('/').pop(), archivo.blob, tipoImagen(archivo.blob));
+      if (!this.compartidas) this.compartidas = new Set();
+      if (!this.compartidas.has(obra.id)) {
+        const correos = Object.entries(obra.personas || {})
+          .filter(([id, p]) => id !== this.usuario.uid && p && p.correo).map(([, p]) => p.correo);
+        const carpeta = await compartirCarpeta(proveedor, ruta, correos).catch((e) => { console.warn('compartir', e); return null; });
+        if (carpeta) {
+          const m = leerMapa('crd-carpetas');
+          m[obra.id] = carpeta;
+          escribirMapa('crd-carpetas', m);
+        }
+        this.compartidas.add(obra.id);
+      }
+      return subido.url || null;
+    } catch (e) {
+      console.warn('nube vinculada', e);
+      return null;
+    }
+  }
+
   async subir(obra, tipo, filtro = () => true) {
     const { fb, db, storage } = this.f;
+    const pendientes = new Set(Object.keys(leerMapa('crd-archivos-pendientes')));
     for (const r of await TIPOS[tipo].listar()) {
       if (r.obraId !== obra.id || !filtro(r)) continue;
       const v = version(r);
-      if (v <= await partes.versionSincronizada(tipo, r.id)) continue;
+      const yaSubido = v <= await partes.versionSincronizada(tipo, r.id);
+      if (yaSubido && !pendientes.has(r.id)) continue;
       const { datos, archivos } = await separar(tipo, r, obra.id);
+      const enlaces = leerMapa(CLAVE_ENLACES);
+      let faltan = 0, nuevos = 0;
       for (const a of archivos) {
-        if (!a.blob || await partes.estaSubido(a.ruta)) continue;
-        await fb.uploadBytes(fb.ref(storage, a.ruta), a.blob, { contentType: tipoImagen(a.blob) });
-        await partes.anotarSubido(a.ruta);
+        if (!a.blob || await partes.estaSubido(a.ruta) || enlaces[a.ruta]) continue;
+        if (!this.sinStorage) {
+          try {
+            await fb.uploadBytes(fb.ref(storage, a.ruta), a.blob, { contentType: tipoImagen(a.blob) });
+            await partes.anotarSubido(a.ruta);
+            continue;
+          } catch (e) {
+            if (!FALTA_STORAGE.includes(e && e.code)) throw e;
+            this.marcarSinStorage();
+          }
+        }
+        const enlace = await this.subirAVinculada(obra, a);
+        if (enlace) { enlaces[a.ruta] = enlace; nuevos++; } else faltan++;
       }
+      escribirMapa(CLAVE_ENLACES, enlaces);
+      // Lo que no ha podido subirse a ningún sitio se reintenta más tarde.
+      const mapaPendientes = leerMapa('crd-archivos-pendientes');
+      if (faltan) mapaPendientes[r.id] = Date.now(); else delete mapaPendientes[r.id];
+      escribirMapa('crd-archivos-pendientes', mapaPendientes);
+      // Los enlaces conseguidos ahora, a los datos.
+      if (datos.fotos) for (const f of datos.fotos) if (!f.enlace && enlaces[f.ruta]) f.enlace = enlaces[f.ruta];
+      if (datos.firmaRuta && !datos.firmaEnlace && enlaces[datos.firmaRuta]) datos.firmaEnlace = enlaces[datos.firmaRuta];
+      if (tipo === 'planos' && !datos.enlace && enlaces[datos.ruta]) datos.enlace = enlaces[datos.ruta];
+      const carpeta = leerMapa('crd-carpetas')[obra.id];
+      if (carpeta && tipo !== 'planos') datos.carpetaEnlace = carpeta;
+      if (yaSubido && !nuevos) continue;
       const documento = {
         datos: JSON.stringify(datos), version: v, borrado: false,
         autor: this.usuario.uid, actualizado: fb.serverTimestamp()
@@ -823,7 +929,18 @@ export class Equipo extends EventTarget {
         continue;
       }
       if (local && version(local) >= x.version) continue;
-      const r = await juntar(tipo, JSON.parse(x.datos), local, bajarArchivo);
+      let r;
+      try {
+        r = await juntar(tipo, JSON.parse(x.datos), local, bajarArchivo);
+      } catch (e) {
+        if (e.code !== 'crd/sin-archivo') throw e;
+        // Plano que no está en Storage: se recuerda con su enlace.
+        const dp = JSON.parse(x.datos);
+        const m = leerMapa('crd-planos-remotos');
+        m[obra.id] = [...(m[obra.id] || []).filter((p) => p.id !== d.id), { id: d.id, nombre: dp.nombre, enlace: dp.enlace || null, obra: dp.obra }];
+        escribirMapa('crd-planos-remotos', m);
+        continue;
+      }
       await T.guardar(r, { callado: true });
       await partes.anotarSincronizada(tipo, d.id, x.version);
       cambiados.add(d.id);

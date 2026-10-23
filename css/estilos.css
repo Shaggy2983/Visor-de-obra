@@ -944,3 +944,33 @@ a.boton {
 .dxf-muestra { width: .9rem; height: .9rem; border-radius: .2rem; border: 1px solid var(--borde); flex: 0 0 auto; }
 .dxf-unidades { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--texto-tenue); }
 .dxf-unidades .campo { width: auto; min-height: 2.2rem; padding: .25rem .4rem; }
+
+/* ---------- recorridos guiados (js/guia.js) ---------- */
+
+.guia-capa { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.guia-capa[hidden] { display: none; }
+.guia-capa.sin-foco { background: rgba(8, 12, 20, .62); pointer-events: auto; }
+.guia-foco {
+  position: fixed;
+  border-radius: .7rem;
+  box-shadow: 0 0 0 3px var(--acento), 0 0 0 9999px rgba(8, 12, 20, .62);
+  transition: left .2s, top .2s, width .2s, height .2s;
+  pointer-events: none;
+}
+.guia-foco[hidden] { display: none; }
+.guia-globo {
+  position: fixed;
+  pointer-events: auto;
+  padding: .8rem .9rem .75rem;
+  border: 1px solid var(--borde);
+  border-radius: .8rem;
+  background: var(--fondo-2);
+  color: var(--texto);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+}
+.guia-cabecera { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.guia-contador { font-size: .72rem; letter-spacing: .04em; color: var(--acento); font-weight: 600; }
+.guia-cerrar { appearance: none; border: 0; background: none; color: var(--texto-tenue); font-size: 1rem; cursor: pointer; padding: .2rem .35rem; }
+.guia-globo h3 { margin: .35rem 0 .3rem; font-size: 1.02rem; }
+.guia-globo p { margin: 0; font-size: .9rem; line-height: 1.45; color: var(--texto); }
+.guia-botones { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .75rem; }

@@ -1416,6 +1416,7 @@ nodos.entradaPlano.addEventListener('change', () => {
   if (archivo) cargarPlano(archivo);
 });
 nodos.otrosPlanos.addEventListener('click', () => { verTodosPlanos = true; pintarPlanos(); });
+document.getElementById('plano-guia').addEventListener('click', () => window.crdGuia && window.crdGuia.empezar('plano'));
 nodos.botonInteractivo.addEventListener('click', informeInteractivo);
 
 const nube = crearNube({

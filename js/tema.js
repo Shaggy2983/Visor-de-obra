@@ -21,7 +21,8 @@
     ['visita.html', '📋', 'Visitas'],
     ['panel.html', '📊', 'Panel del equipo'],
     ['perfil.html', '👤', 'Mi perfil y mis obras'],
-    ['index.html', '🧊', 'Modelo 3D (IFC)']
+    ['index.html', '🧊', 'Modelo 3D (IFC)'],
+    ['ayuda.html', '❓', 'Guía de uso']
   ];
   var raiz = document.documentElement;
 

@@ -9,6 +9,7 @@ const SECCIONES = [
     temas: [
       { t: 'Crear una visita', p: ['En Visitas pulsa «Nueva visita».', 'Se copian la obra, el autor, el personal y las incidencias abiertas de la visita anterior.', 'Todo se guarda solo según escribes, aunque no haya señal.'] },
       { t: 'Jornada afectada', p: ['Si la jornada es «Parcial» o «Sin actividad», marca la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Se suman en Seguimiento → Días afectados.'] },
+      { t: 'Borrar varias visitas', p: ['En la lista de Visitas pulsa «Seleccionar varias» y toca las que quieras (o «Todas»: respeta lo que hayas buscado).', '«Borrar» pide confirmación; en obras compartidas también se borran para el equipo.'] },
       { t: 'Tiempo del lugar', p: ['Al abrir la visita del día, la app toma la temperatura y el tiempo de donde estás.', 'Para repetirlo: «📍 Tomar del lugar». Usa una ubicación aproximada.'] },
       { t: 'Personal en obra', p: ['«+ Añadir empresa u oficio» y el número de personas.', 'La app te propone las empresas y oficios que ya has escrito.'] },
       { t: 'Línea de tiempo de los trabajos', p: ['En «Trabajos realizados» cada línea nueva empieza con la hora («08:15 · …»).', 'Pulsa Intro para la siguiente actividad: queda el registro del día.'] },

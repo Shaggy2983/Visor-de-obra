@@ -1076,3 +1076,16 @@ a.foto-remota { color: var(--acento); }
 .exportar-fila { display: flex; align-items: center; justify-content: space-between; gap: .6rem; padding: .45rem .6rem; border: 1px solid var(--borde); border-radius: .6rem; background: var(--fondo); }
 .exportar-fila > span { display: flex; flex-direction: column; }
 .exportar-fila .pie { margin: 0; }
+
+/* seleccionar varias visitas para borrarlas */
+.barra-seleccion { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .4rem .7rem; margin: -.2rem 0 .5rem; min-height: 1.4rem; }
+.barra-seleccion strong { margin-right: auto; font-size: .9rem; }
+.seleccionando .tarjeta { position: relative; padding-left: 2.9rem; }
+.tarjeta-casilla {
+  position: absolute; left: .8rem; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 1.4rem; height: 1.4rem;
+  border: 2px solid var(--borde); border-radius: .35rem;
+  color: var(--texto-sobre-acento); font-weight: 700; font-size: .9rem;
+}
+.tarjeta.elegida { border-color: var(--acento); background: var(--fondo-3); }
+.tarjeta.elegida .tarjeta-casilla { background: var(--acento); border-color: var(--acento); }

@@ -218,6 +218,7 @@ function cerrarPlano() {
 
 async function mostrarLista(vista = '') {
   actual = null;
+  if (vista) seleccion = null;
   nodos.vistaLista.classList.toggle('modo-datos', Boolean(vista));
   $('grupo-cuentas').classList.toggle('activo', vista === 'cuentas');
   $('grupo-copia').classList.toggle('activo', vista === 'copia');
@@ -288,9 +289,57 @@ function coincide(v, texto) {
   return texto.toLowerCase().split(/\s+/).every((t) => pajar.includes(t));
 }
 
+/* Selección de varias visitas para borrarlas de una vez. */
+let seleccion = null;   // Set de ids mientras se elige; null fuera del modo
+
+function pintarSeleccion(visibles) {
+  const barra = $('barra-seleccion');
+  if (!seleccion) {
+    barra.replaceChildren(...(todas.length > 1 ? [el('button', {
+      type: 'button', class: 'enlace', onclick: () => { seleccion = new Set(); pintarLista(); }
+    }, 'Seleccionar varias')] : []));
+    return;
+  }
+  const n = seleccion.size;
+  const todasVisibles = visibles.length > 0 && visibles.every((v) => seleccion.has(v.id));
+  barra.replaceChildren(
+    el('strong', {}, n ? plural(n, 'seleccionada', 'seleccionadas') : 'Toca las visitas'),
+    el('button', {
+      type: 'button', class: 'enlace', onclick: () => {
+        if (todasVisibles) for (const v of visibles) seleccion.delete(v.id);
+        else for (const v of visibles) seleccion.add(v.id);
+        pintarLista();
+      }
+    }, todasVisibles ? 'Ninguna' : 'Todas'),
+    el('button', { type: 'button', class: 'boton boton-peligro', disabled: !n, onclick: borrarSeleccion }, n ? `Borrar ${n}` : 'Borrar'),
+    el('button', { type: 'button', class: 'boton', onclick: () => { seleccion = null; pintarLista(); } }, 'Cancelar'));
+}
+
+async function borrarSeleccion() {
+  const elegidas = todas.filter((v) => seleccion.has(v.id));
+  if (!elegidas.length) return;
+  const compartidas = elegidas.filter((v) => v.obraId && ['admin', 'editor'].includes(equipo.rolEn(v.obraId))).length;
+  const fotos = elegidas.reduce((s, v) => s + v.fotos.length, 0);
+  const aviso = [
+    `¿Borrar ${plural(elegidas.length, 'visita', 'visitas')}${fotos ? ` con ${plural(fotos, 'foto', 'fotos')}` : ''}? No se puede deshacer.`,
+    compartidas ? `${compartidas} ${compartidas === 1 ? 'es de una obra compartida: también se borra' : 'son de obras compartidas: también se borran'} para tu equipo.` : ''
+  ].filter(Boolean).join('\n\n');
+  if (!confirm(aviso)) return;
+  let hechas = 0;
+  for (const v of elegidas) {
+    try { await borrarVisita(v.id); hechas++; } catch (e) { /* sigue con las demás */ }
+  }
+  seleccion = null;
+  avisar(nodos.aviso, `${plural(hechas, 'visita borrada', 'visitas borradas')}.`, 3000);
+  await mostrarLista();
+}
+
 function pintarLista() {
   const texto = nodos.buscar.value.trim();
   const visibles = todas.filter((v) => coincide(v, texto));
+  if (seleccion) for (const id of [...seleccion]) if (!todas.some((v) => v.id === id)) seleccion.delete(id);
+  pintarSeleccion(visibles);
+  nodos.lista.classList.toggle('seleccionando', Boolean(seleccion));
   nodos.lista.replaceChildren(...visibles.map(tarjeta));
   nodos.listaVacia.hidden = todas.length > 0;
   if (todas.length && !visibles.length) {
@@ -304,7 +353,18 @@ function tarjeta(v) {
   const pendientes = abiertas(v).length;
   const graves = abiertas(v).some((i) => i.gravedad === 'grave');
   const nov = miUid() && novedades.deVisita(miUid(), v.id);
-  return el('a', { class: `tarjeta${nov ? ' con-novedad' : ''}`, href: `#/v/${encodeURIComponent(v.id)}` },
+  const elegida = seleccion && seleccion.has(v.id);
+  return el('a', {
+    class: `tarjeta${nov ? ' con-novedad' : ''}${elegida ? ' elegida' : ''}`, href: `#/v/${encodeURIComponent(v.id)}`,
+    'aria-pressed': seleccion ? String(Boolean(elegida)) : null,
+    onclick: (ev) => {
+      if (!seleccion) return;
+      ev.preventDefault();
+      if (elegida) seleccion.delete(v.id); else seleccion.add(v.id);
+      pintarLista();
+    }
+  },
+    seleccion && el('span', { class: 'tarjeta-casilla', 'aria-hidden': 'true' }, elegida ? '✓' : ''),
     el('div', { class: 'tarjeta-fecha' }, fechaLarga(v.fecha), v.hora ? ` · ${v.hora}` : '',
       nov && el('span', { class: `etiqueta ${nov.nuevo ? 'ok' : 'atencion'}` }, nov.nuevo ? 'Nueva' : 'Actualizada'),
       nov && nov.quien && el('span', { class: 'pie' }, ` de ${nov.quien}`)),

@@ -99,6 +99,14 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   de planos): escala en `plano.mPorPx`; PDF guarda `papelMmPorPx` para
   elegir 1:N; o «Calibrar con una cota». Medidas en `v.medidas` (0–1),
   salen en el informe PDF e interactivo.
+- **Guía de uso y recorridos** (`ayuda.html` + `js/ayuda.js`: todas las
+  funciones con pasos y buscador; `js/guia.js` en todas las páginas:
+  recorridos que iluminan los botones reales — inicio, visita, plano,
+  modelo, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
+  entre páginas (sessionStorage `crd-guia`). La visita de práctica es
+  `guia-ejemplo` (se ofrece borrarla). Primer uso: se ofrece el de inicio
+  (localStorage `crd-guia-ofrecida`). Acceso: ⚙️ → Guía de uso; ❓ en el
+  visor de planos. **Al añadir una función, añadirla a la guía.**
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
 

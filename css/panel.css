@@ -237,3 +237,14 @@
 
 .grupo .perfil-nombre { font-size: 1.25rem; text-transform: none; letter-spacing: 0; color: var(--texto); margin: 0; }
 .tabla-dias td:first-child { white-space: nowrap; }
+
+/* ---------- guía de uso (ayuda.html) ---------- */
+.ayuda-portada h2 { margin: .2rem 0 .3rem; font-size: 1.3rem; }
+.ayuda-portada p { margin: 0 0 .6rem; color: var(--texto-tenue); }
+.ayuda-portada .campo { margin: .8rem 0 1rem; }
+.ayuda-seccion { padding: .7rem .8rem; border: 1px solid var(--borde); border-radius: .7rem; background: var(--fondo-2); }
+.ayuda-seccion .grupo-cabecera h2 { font-size: .95rem; text-transform: none; letter-spacing: 0; color: var(--texto); }
+.ayuda-tema { border-top: 1px solid var(--borde); padding: .45rem 0; }
+.ayuda-tema summary { cursor: pointer; font-weight: 600; font-size: .95rem; list-style-position: inside; }
+.ayuda-tema ol { margin: .4rem 0 .2rem; padding-left: 1.3rem; font-size: .9rem; line-height: 1.45; }
+.ayuda-tema li + li { margin-top: .2rem; }

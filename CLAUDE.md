@@ -271,8 +271,9 @@ Entra) en `js/cuentas-config.js`.
    seguridad de los datos revisadas el 23/10/2026 en `tienda/ficha.md`.
    Gmail (`gmail.send`) es un permiso sensible: para salir del modo de
    prueba de Google hay que verificar la app OAuth; lista, justificación
-   y guion del vídeo en `tienda/verificacion-google.md` (faltan Search
-   Console, marca, vídeo y enviar: los hace Luis). Portada pública en
+   y guion del vídeo en `tienda/verificacion-google.md` (Search Console verificado, marca, permisos y justificación
+   cargados el 23/10/2026; faltan reintentar «Verificar la marca» a partir
+   del 24/10, el vídeo y enviar). Portada pública en
    `shaggy2983.github.io/` (PR #3 de ese repositorio).
 4. Hoja de ruta del supervisor (acordada el 22/10/2026): **hecha entera**
    — menú del símbolo, inspecciones, vaciados, avance con curva S,

@@ -104,6 +104,7 @@ const SECCIONES = [
   {
     titulo: 'Modelo 3D y planos DXF', icono: '🧊', recorrido: 'modelo',
     temas: [
+      { t: 'Abrir desde OneDrive, Drive o el correo', p: ['«Abrir» → elige la nube (OneDrive, Drive…) en el selector de archivos del teléfono.', 'La app reconoce el IFC aunque la nube lo entregue sin extensión.', 'Si no abre, en OneDrive marca el archivo «Disponible sin conexión» (o descárgalo) y vuelve a abrirlo.'] },
       { t: 'Abrir un modelo IFC', p: ['Modelo 3D → «Abrir» y elige el .ifc (exportado de Revit u otro programa).', 'Queda guardado y se abre solo la próxima vez.'] },
       { t: 'Explorar el modelo', p: ['Toca un elemento: ficha, propiedades, aislar, ocultar, transparentar, rayos X.', 'Panel: plantas, categorías, buscar y colorear por propiedad.'] },
       { t: 'Medir, cortar y vista', p: ['«Medir» entre puntos del modelo.', '«Cortes»: planos y caja de sección.', '«Vista»: fondos, aristas, transparencia y luz.'] },

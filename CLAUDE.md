@@ -63,7 +63,9 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   worker): ficha y propiedades del elemento, medir (`js/medir.js`), cortes
   y caja de sección (`js/cortes.js`), colorear por propiedad
   (`js/colores.js`), transparencias, rayos X, 6 fondos, aristas, vistas,
-  realidad aumentada (WebXR).
+  realidad aumentada (WebXR). «Abrir» acepta cualquier archivo (`*/*`, para
+  que OneDrive/Drive en Android no lo bloqueen) y reconoce IFC/DXF/DWG por
+  la cabecera si llega sin extensión (`tipoDe` en `js/app.js`).
 - **Menú del símbolo** (`js/menu.js`, cargado con `defer` en todas las
   páginas): el símbolo de COORDINATE (anillo de nodos) es el botón, se
   inserta solo en cada `.barra-superior` y en `[data-menu]` (portada del

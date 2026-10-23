@@ -460,7 +460,7 @@ async function pintarMinutas() {
       abiertos.length > 12 ? el('p', { class: 'pie' }, `y ${abiertos.length - 12} más en la última minuta de cada obra.`) : null) : null,
     todas.length
       ? el('div', { class: 'tarjetas' }, ...todas.map(tarjetaMinuta))
-      : el('p', { class: 'vacio' }, 'Todavía no hay minutas. Pulsa ', el('strong', {}, '+ Minuta'), ' al empezar la reunión de obra: asistentes, temas y acuerdos con responsable y fecha. Los acuerdos abiertos pasan solos a la siguiente reunión.'));
+      : el('p', { class: 'vacio' }, 'Todavía no hay minutas. Toca ', el('strong', {}, '+ Minuta'), ' al empezar la reunión de obra: asistentes, temas y acuerdos con responsable y fecha. Los acuerdos abiertos pasan solos a la siguiente reunión.'));
 }
 
 function tarjetaMinuta(m) {
@@ -708,7 +708,7 @@ function diasPdf(dias, obra) {
           el('td', { class: 'informe-hora' }, d.fecha), el('td', {}, d.jornada), el('td', {}, CAUSAS[d.causa] || '—'),
           el('td', { class: 'num' }, d.horas != null ? fmt(d.horas, 1) : '—'), el('td', { class: 'num' }, fmt(d.dias, 2)),
           el('td', {}, [obra ? '' : d.obra, d.nota].filter(Boolean).join(' · ') || '—')))))),
-    el('p', { class: 'informe-legal' }, 'Relación tomada de los partes diarios de visita. Un día sin actividad cuenta 1; uno parcial, las horas perdidas entre 8.'),
+    el('p', { class: 'informe-legal' }, 'Relación tomada de los reportes diarios de visita. Un día sin actividad cuenta 1; uno parcial, las horas perdidas entre 8.'),
     el('section', { class: 'informe-firma' },
       titulo('Conformidad'),
       el('div', { class: 'informe-firmas' }, cajaFirma(null, '', 'Supervisión'), cajaFirma(null, '', 'Contratista'))),

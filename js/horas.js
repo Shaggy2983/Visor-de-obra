@@ -3,7 +3,7 @@
    el día y que las horas salgan en todos los informes.
 
    La hora se pone cuando el cursor queda en una línea vacía (al entrar en el
-   cuadro vacío o al pulsar Intro), nunca mientras el teclado está componiendo
+   cuadro vacío o al tocar Intro), nunca mientras el teclado está componiendo
    una palabra. Al salir del cuadro se quitan las horas que quedaron sin
    texto. */
 

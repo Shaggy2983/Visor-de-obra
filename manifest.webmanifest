@@ -1,7 +1,7 @@
 {
   "name": "COORDINATE · Visor de obra",
   "short_name": "CRD Obra",
-  "description": "COORDINATE — visor IFC de campo y parte de visita diaria",
+  "description": "COORDINATE — visor IFC de campo y reporte de visita diaria",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

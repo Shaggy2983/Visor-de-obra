@@ -373,7 +373,7 @@ function seccionFotos(r, titulo = 'Fotos') {
         ? el('a', { class: 'foto-remota', href: f.enlace, target: '_blank', rel: 'noopener noreferrer' }, el('span', { class: 'foto-remota-icono' }, '📷'), 'Ver foto en la nube')
         : el('span', { class: 'foto-remota' }, el('span', { class: 'foto-remota-icono' }, '📷'), 'Foto en el teléfono de su autor')))),
     el('div', { class: 'fila-botones' },
-      el('button', { type: 'button', class: 'boton', onclick: () => { destinoFoto = actual; nodos.camara.click(); } }, 'Hacer foto'),
+      el('button', { type: 'button', class: 'boton', onclick: () => { destinoFoto = actual; nodos.camara.click(); } }, 'Tomar foto'),
       el('button', { type: 'button', class: 'boton', onclick: () => { destinoFoto = actual; nodos.galeria.click(); } }, 'De la galería')));
 }
 

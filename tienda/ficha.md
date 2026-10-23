@@ -18,13 +18,13 @@ de publicar: tú respondes ante Google por lo que se declara.
 
 ## Descripción breve (máx. 80)
 
-Parte de obra, punch list, calidad, avance, RFI y seguridad. Funciona sin señal.
+Reporte de obra, punch list, calidad, avance, RFI y seguridad. Sin señal.
 
 ## Descripción completa (máx. 4000; ahora 2300)
 
-El parte de visita y el control de obra de COORDINATE, pensados para el teléfono, a pie de obra y sin depender de la cobertura.
+El reporte de visita y el control de obra de COORDINATE, pensados para el teléfono, a pie de obra y sin depender de la cobertura.
 
-PARTE DIARIO
+REPORTE DIARIO
 • Tiempo del lugar, jornada y personal por empresa y oficio.
 • Trabajos con la hora, maquinaria, materiales y observaciones; dictado por voz.
 • Incidencias por gravedad que pasan solas a la visita siguiente.

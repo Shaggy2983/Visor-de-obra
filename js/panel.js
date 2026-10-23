@@ -1,6 +1,6 @@
 /* Panel del equipo (panel.html): resumen diario y semanal de las
    bitácoras de las obras compartidas. Lee de la nube (sin fotos), así
-   sirve también en el navegador del ordenador. Las cuentas están en
+   sirve también en el navegador de la computadora. Las cuentas están en
    resumen.js; aquí sólo se pinta. */
 
 import { el, plural, fechaLarga, hoy } from './utiles.js';

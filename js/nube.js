@@ -16,7 +16,7 @@ const CLAVE_DESTINATARIOS = 'coordinate-destinatarios';
 /* opciones (las da visita.js):
      avisar(texto, ms)       mensaje breve en pantalla
      informe(visita)         → { blob, nombre } del informe interactivo
-     resumen(visita)         → texto del parte
+     resumen(visita)         → texto del reporte
      copia()                 → { blob, nombre } de la copia de seguridad
      restaurar(blob)         importa una copia                          */
 export function crearNube(opciones) {
@@ -168,7 +168,7 @@ export function crearNube(opciones) {
     const cuenta = selectorCuenta('cuenta-correo');
     const para = el('input', { type: 'text', inputmode: 'email', class: 'campo', value: previo.para || recordarDestinatarios(visita.obra), placeholder: 'correo@empresa.com, otro@…', autocapitalize: 'off', spellcheck: false });
     const cc = el('input', { type: 'text', inputmode: 'email', class: 'campo', placeholder: 'Opcional', autocapitalize: 'off', spellcheck: false });
-    const asunto = el('input', { type: 'text', class: 'campo', value: previo.asunto || `Parte de visita · ${visita.obra || 'Obra'} · ${fechaLarga(visita.fecha)}` });
+    const asunto = el('input', { type: 'text', class: 'campo', value: previo.asunto || `Reporte de visita · ${visita.obra || 'Obra'} · ${fechaLarga(visita.fecha)}` });
     const texto = el('textarea', { class: 'campo', rows: 8, value: opciones.resumen(visita) });
     const conInforme = el('input', { type: 'checkbox', checked: true });
     const conFotos = el('input', { type: 'checkbox', checked: false });

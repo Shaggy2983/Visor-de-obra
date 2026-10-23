@@ -154,8 +154,8 @@ async function mostrarLista() {
   nodos.tarjetas.replaceChildren(...visibles.map((r) => (seccion === 'vaciados' ? tarjetaVaciado(r) : tarjetaInspeccion(r))));
   nodos.vacia.hidden = visibles.length > 0;
   nodos.vacia.replaceChildren(...(seccion === 'vaciados'
-    ? ['Todavía no hay vaciados. Pulsa ', el('strong', {}, '+ Vaciado'), ' el día que se hormigona: conduces, revenimiento y probetas, con aviso el día de cada rotura.']
-    : ['Todavía no hay inspecciones. Pulsa ', el('strong', {}, '+ Inspección'), ' y elige la partida (acero, encofrado, instalaciones, impermeabilización…): cada punto se marca Cumple / No cumple y se libera con firma.']));
+    ? ['Todavía no hay vaciados. Toca ', el('strong', {}, '+ Vaciado'), ' el día que se hormigona: conduces, revenimiento y probetas, con aviso el día de cada rotura.']
+    : ['Todavía no hay inspecciones. Toca ', el('strong', {}, '+ Inspección'), ' y elige la partida (acero, encofrado, instalaciones, impermeabilización…): cada punto se marca Cumple / No cumple y se libera con firma.']));
 }
 
 function etiquetaResultado(r) {
@@ -334,7 +334,7 @@ function seccionFotos(r, { titulo = 'Fotos', filtro = (f) => !f.punto } = {}) {
     el('div', { class: 'grupo-cabecera' }, el('h2', {}, titulo), el('span', { class: 'pie' }, fotos.length ? plural(fotos.length, 'foto', 'fotos') : '')),
     el('div', { class: 'fotos' }, ...fotos.map((f) => miniatura(r, f)), ...remotas.map(fotoRemota)),
     el('div', { class: 'fila-botones' },
-      el('button', { type: 'button', class: 'boton', onclick: () => pedirFoto({}, 'camara') }, 'Hacer foto'),
+      el('button', { type: 'button', class: 'boton', onclick: () => pedirFoto({}, 'camara') }, 'Tomar foto'),
       el('button', { type: 'button', class: 'boton', onclick: () => pedirFoto({}, 'galeria') }, 'De la galería')));
 }
 
@@ -563,8 +563,8 @@ function seccionFirma(r, { titulo }) {
     borrarB.hidden = !hubo;
     mia.hidden = !leerMiFirma();
     ayuda.textContent = bloqueada
-      ? (hubo ? `Firmada${r.firmadaEn ? ` el ${new Date(r.firmadaEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}` : ''}.` : 'Bloqueada para evitar trazos por error. Pulsa «Firmar».')
-      : 'Firma con el dedo y pulsa «Listo».';
+      ? (hubo ? `Firmada${r.firmadaEn ? ` el ${new Date(r.firmadaEn).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })}` : ''}.` : 'Bloqueada para evitar trazos por error. Toca «Firmar».')
+      : 'Firma con el dedo y toca «Listo».';
   }
 
   function preparar() {

@@ -903,7 +903,7 @@ const misRepasos = crearMisRepasos({
 });
 
 /* --- firma ---
-   El recuadro está bloqueado hasta pulsar «Firmar», para que un roce al
+   El recuadro está bloqueado hasta tocar «Firmar», para que un roce al
    desplazar la ficha no deje trazos. «Listo» lo vuelve a bloquear, y se
    bloquea solo al abrir otra visita. */
 
@@ -929,8 +929,8 @@ const firma = (() => {
     nodos.firmaMia.hidden = !leerMiFirma();
     nodos.firmaGuardar.hidden = !huboTrazo;
     nodos.firmaAyuda.textContent = bloqueada
-      ? (huboTrazo ? 'Firma guardada y bloqueada.' : 'La firma está bloqueada para evitar trazos por error. Pulsa «Firmar» para habilitarla.')
-      : 'Firma con el dedo dentro del recuadro y pulsa «Listo» para bloquearla.';
+      ? (huboTrazo ? 'Firma guardada y bloqueada.' : 'La firma está bloqueada para evitar trazos por error. Toca «Firmar» para habilitarla.')
+      : 'Firma con el dedo dentro del recuadro y toca «Listo» para bloquearla.';
   }
 
   function bloquear(si) {
@@ -1233,7 +1233,7 @@ async function lanzarImpresion(titulo, urls) {
   setTimeout(() => { for (const u of urls) URL.revokeObjectURL(u); }, 60000);
 }
 
-/* Inspecciones y vaciados de la misma obra y fecha, para el parte. */
+/* Inspecciones y vaciados de la misma obra y fecha, para el reporte. */
 async function calidadDelDia(v) {
   const tres = (n) => String(n || 0).padStart(3, '0');
   const RES = { liberada: 'Liberada', condicionada: 'Con observaciones', rechazada: 'Rechazada' };
@@ -1276,11 +1276,11 @@ async function imprimir() {
     el('div', { class: 'informe-banda' },
       logotipo(),
       el('div', { class: 'informe-banda-doc' },
-        el('span', { class: 'informe-tipo' }, 'Parte diario de obra'),
+        el('span', { class: 'informe-tipo' }, 'Reporte diario de obra'),
         el('strong', {}, numeroParte(v)))),
     el('header', { class: 'informe-cabecera' },
       el('div', {},
-        el('h1', {}, 'Parte de visita de obra'),
+        el('h1', {}, 'Reporte de visita de obra'),
         el('p', { class: 'informe-obra' }, v.obra || 'Obra sin nombre')),
       el('div', { class: 'informe-sello' },
         el('span', {}, 'Emitido'),
@@ -1482,7 +1482,7 @@ async function informeInteractivo() {
 function resumen(v) {
   const repasos = punch.lista(v).filter((r) => estadoEn(r, v.fecha) !== 'cerrado' || r.cerrado === v.fecha);
   const lineas = [
-    `COORDINATE · PARTE DE VISITA · ${v.obra || 'Obra'}`,
+    `COORDINATE · REPORTE DE VISITA · ${v.obra || 'Obra'}`,
     `${fechaLarga(v.fecha)}${v.hora ? ' · ' + v.hora : ''}`,
     v.autor && `Visita: ${v.autor}`,
     (v.clima.length || v.temperatura) && `Tiempo: ${[v.clima.join(', '), v.temperatura].filter(Boolean).join(' · ')}`,
@@ -1753,7 +1753,7 @@ nodos.nube.addEventListener('click', async () => { await guardarYa(); nube.guard
 nodos.copiaNube.addEventListener('click', () => nube.copiaNube());
 
 /* --- aviso a los administradores al firmar ---
-   En una obra compartida, al terminar de firmar se ofrece mandar el parte
+   En una obra compartida, al terminar de firmar se ofrece mandar el reporte
    a sus administradores: con la cuenta vinculada (Gmail u Outlook, con el
    informe adjunto) o con la app de correo del teléfono (sólo el texto).
    Además les llega como novedad en la app al sincronizar. */

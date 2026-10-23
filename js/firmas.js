@@ -5,7 +5,7 @@
    bajarlo, queda { ruta, enlace } en su lugar.
 
    La firma se hace en una hoja a pantalla completa que sólo se abre al
-   pulsar «Firmar»: así no se traza por error al desplazar la ficha. */
+   tocar «Firmar»: así no se traza por error al desplazar la ficha. */
 
 import { el } from './utiles.js';
 

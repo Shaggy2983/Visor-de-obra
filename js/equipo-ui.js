@@ -97,7 +97,7 @@ export function iniciarEquipoUI(opciones) {
           type: 'button', class: 'enlace',
           onclick: (ev) => con(ev.target, 'Enviando…', async () => {
             const c = correo.querySelector('input').value;
-            if (!c) return fallo('Escribe tu correo y vuelve a pulsar.');
+            if (!c) return fallo('Escribe tu correo y vuelve a tocar.');
             await equipo.restablecer(c);
             fallo(`Te hemos enviado un correo a ${c} para cambiar la contraseña.`);
           })
@@ -129,7 +129,7 @@ export function iniciarEquipoUI(opciones) {
           con(crear, 'Creando…', async () => {
             await equipo.registrar(nombre.querySelector('input').value, c, clave.querySelector('input').value);
             abrir('Cuenta creada',
-              el('p', {}, `Te hemos enviado un correo a ${c}. Pulsa el enlace para verificarlo: hace falta para recibir invitaciones a obras.`),
+              el('p', {}, `Te hemos enviado un correo a ${c}. Toca el enlace para verificarlo: hace falta para recibir invitaciones a obras.`),
               el('button', { type: 'button', class: 'boton boton-destacado', onclick: () => dialogo.close() }, 'Entendido'));
           });
         }

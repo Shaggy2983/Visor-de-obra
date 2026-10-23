@@ -769,7 +769,7 @@ export function crearVisorPlano(opciones) {
       ? 'Toca los dos extremos de una cota cuya medida conozcas.'
       : !plano.mPorPx
         ? (plano.papelMmPorPx ? 'Sin escala: elige la escala del plano o calibra con una cota.' : 'Sin escala: calibra con una cota conocida.')
-        : `Escala: ${plano.escalaTexto || 'calibrada'}. ${tipoMedida === 'distancia' ? 'Toca dos puntos.' : tipoMedida === 'area' ? 'Toca los vértices y pulsa Terminar.' : 'Toca los puntos del recorrido y pulsa Terminar.'} Puedes arrastrar los puntos para afinar.`;
+        : `Escala: ${plano.escalaTexto || 'calibrada'}. ${tipoMedida === 'distancia' ? 'Toca dos puntos.' : tipoMedida === 'area' ? 'Toca los vértices y toca Terminar.' : 'Toca los puntos del recorrido y toca Terminar.'} Puedes arrastrar los puntos para afinar.`;
   }
 
   /* --- pines y hoja de la nota --- */
@@ -972,7 +972,7 @@ export function crearVisorPlano(opciones) {
           }, '✕'));
       })),
       el('div', { class: 'fila-botones' },
-        el('button', { type: 'button', class: 'boton', onclick: () => camara.click() }, 'Hacer foto'),
+        el('button', { type: 'button', class: 'boton', onclick: () => camara.click() }, 'Tomar foto'),
         el('button', { type: 'button', class: 'boton', onclick: () => galeria.click() }, 'Galería'),
         el('button', {
           type: 'button', class: 'boton',

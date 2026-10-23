@@ -20,7 +20,7 @@
 
   var GRUPOS = [
     ['Obra', [
-      ['visita.html', '📋', 'Visitas diarias', 'Parte de obra, incidencias, repasos y planos'],
+      ['visita.html', '📋', 'Visitas diarias', 'Reporte de obra, incidencias, repasos y planos'],
       ['index.html', '🧊', 'Modelo 3D y planos DXF', 'IFC, medir, cortes y realidad aumentada']
     ]],
     ['Calidad', [

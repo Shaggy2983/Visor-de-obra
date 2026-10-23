@@ -96,7 +96,7 @@ export class Medidor {
     } else {
       this.ayuda.textContent = n < 3
         ? `Toca los vértices del contorno (${n} de al menos 3).`
-        : 'Sigue tocando vértices o pulsa «Cerrar área».';
+        : 'Sigue tocando vértices o toca «Cerrar área».';
     }
     const cerrar = this.barra.querySelector('[data-accion=cerrar]');
     if (cerrar) cerrar.hidden = !(this.modo === 'area' && n >= 3);

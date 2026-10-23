@@ -73,19 +73,19 @@ const RECORRIDOS = {
     titulo: 'Primeros pasos',
     pasos: [
       { titulo: 'Bienvenido a COORDINATE · Obra', texto: 'En un minuto te enseño lo principal. Todo se guarda en el teléfono según escribes, aunque no haya señal.', centrado: true },
-      { sel: '#btn-nueva', titulo: 'Nueva visita', texto: 'Empieza el parte del día. Copia la obra, el personal y las incidencias abiertas de la visita anterior.' },
+      { sel: '#btn-nueva', titulo: 'Nueva visita', texto: 'Empieza el reporte del día. Copia la obra, el personal y las incidencias abiertas de la visita anterior.' },
       { sel: '#buscar', titulo: 'Buscar', texto: 'Busca por obra, trabajos, incidencias, notas de planos o pinturas.' },
-      { sel: '#lista', titulo: 'Tus visitas', texto: 'Cada tarjeta es un parte. Las de tu equipo llevan la etiqueta «Nueva» o «Actualizada».' },
+      { sel: '#lista', titulo: 'Tus visitas', texto: 'Cada tarjeta es el reporte de un día. Las de tu equipo llevan la etiqueta «Nueva» o «Actualizada».' },
       { sel: '#grupo-equipo', titulo: 'Cuenta y equipo', texto: 'Entra con tu cuenta para compartir obras, invitar a tu equipo con un papel (administrador, editor, lector o contratista) y crear equipos de trabajo.' },
       { sel: '#avisos-calidad', titulo: 'Avisos de calidad', texto: 'Probetas que toca romper hoy o vencidas, y protocolos de inspección sin cerrar.' },
       { sel: '.barra-superior .boton-menu', titulo: 'El menú', texto: 'Toca el símbolo de COORDINATE: abre todas las funciones (visitas, inspecciones, vaciados, modelo 3D, panel, perfil, cuentas vinculadas, copia de seguridad) y el modo claro u oscuro. Un punto rojo avisa de novedades o roturas.' },
-      { titulo: '¿Seguimos con una visita?', texto: 'Te abro una visita de ejemplo (datos inventados) para enseñarte cada parte del parte de obra.', centrado: true, siguiente: 'visita' }
+      { titulo: '¿Seguimos con una visita?', texto: 'Te abro una visita de ejemplo (datos inventados) para enseñarte cada sección del reporte de obra.', centrado: true, siguiente: 'visita' }
     ]
   },
 
   visita: {
     pagina: 'visita.html',
-    titulo: 'El parte de visita',
+    titulo: 'El reporte de visita',
     preparar: async () => {
       await crearEjemplo();
       if (!location.hash.includes(EJEMPLO)) location.hash = `#/v/${EJEMPLO}`;
@@ -105,8 +105,8 @@ const RECORRIDOS = {
       { sel: '#repasos', titulo: 'Punch list (repasos)', texto: 'Defectos de terminación con zona, responsable y fotos de antes y después. Siguen abiertos de visita en visita hasta cerrarlos.' },
       { sel: '#btn-plano', titulo: 'Planos y notas', texto: 'Carga un PDF, un DXF o una imagen. Encima pones notas numeradas con fotos, dibujas a mano y mides distancias y áreas (botón 📏).' },
       { sel: '#btn-camara', titulo: 'Fotos', texto: 'Desde la cámara o la galería; se guardan reducidas para no llenar el teléfono.' },
-      { sel: '#firma-caja', titulo: 'Firma', texto: 'Bloqueada hasta pulsar «Firmar», para que un roce no deje trazos. También puedes adjuntar una foto de tu firma y guardarla como «mi firma».' },
-      { sel: '#btn-informe', titulo: 'Informe en PDF', texto: 'Parte profesional con número de documento, ficha, línea de tiempo, incidencias, planos con notas y medidas, fotos y firmas.' },
+      { sel: '#firma-caja', titulo: 'Firma', texto: 'Bloqueada hasta tocar «Firmar», para que un roce no deje trazos. También puedes adjuntar una foto de tu firma y guardarla como «mi firma».' },
+      { sel: '#btn-informe', titulo: 'Informe en PDF', texto: 'Reporte profesional con número de documento, ficha, línea de tiempo, incidencias, planos con notas y medidas, fotos y firmas.' },
       { sel: '#btn-interactivo', titulo: 'Informe interactivo', texto: 'Un archivo .html para enviar: el cliente toca las notas del plano y ve sus fotos.' },
       { sel: '#btn-correo', titulo: 'Enviar y guardar', texto: 'Por correo con tu Gmail u Outlook, a tu Drive u OneDrive, o «Compartir resumen» por WhatsApp.' },
       { titulo: 'Listo', texto: '¿Borro la visita de ejemplo? Si quieres seguir practicando, déjala y bórrala luego desde la propia visita.', centrado: true, final: 'ejemplo' }
@@ -118,7 +118,7 @@ const RECORRIDOS = {
     titulo: 'Planos: notas, dibujo y medidas',
     pasos: [
       { sel: '#plano-marco', titulo: 'Moverse por el plano', texto: 'Arrastra con un dedo, pellizca con dos para acercar, doble toque para ampliar.' },
-      { sel: '#plano-modo', titulo: 'Notas', texto: 'Pulsa «+ Nota» y toca el sitio. Cada nota lleva número, tipo, texto, fotos, tonos de pintura y enlaces.' },
+      { sel: '#plano-modo', titulo: 'Notas', texto: 'Toca «+ Nota» y toca el lugar del plano. Cada nota lleva número, tipo, texto, fotos, tonos de pintura y enlaces.' },
       { sel: '#plano-dibujar', titulo: 'Dibujar', texto: 'Marca a mano alzada con colores y grosores; con la goma borras trazos.' },
       { sel: '#plano-medir', titulo: 'Medir', texto: 'Distancia, recorrido o área. Un PDF necesita escala: elige 1:50, 1:100… o «Calibrar con una cota» tocando los extremos de una medida conocida. Los DXF ya traen la escala.' },
       { sel: '#plano-cerrar', titulo: 'Volver', texto: 'Las notas, dibujos y medidas son de esta visita y salen en sus informes.' }
@@ -174,7 +174,7 @@ const RECORRIDOS = {
       { sel: '#filtro-obras', titulo: 'Obra', texto: 'Cada obra tiene su programa: partidas con peso y fechas.' },
       { sel: () => document.querySelector('.indicadores') || document.querySelector('#contenido .grupo'), titulo: 'Programado frente a real', texto: 'Crea el programa (con partidas típicas o las tuyas). Luego verás lo programado hoy, el avance real, la desviación y el índice de cumplimiento.' },
       { sel: '.curva', titulo: 'Curva S', texto: 'Naranja discontinua: programado. Azul: real. Toca la curva para ver los valores de cada fecha.' },
-      { sel: '.partidas', titulo: 'Anotar el avance', texto: 'Mueve la barra de cada partida al % ejecutado: se guarda con la fecha de hoy. La raya naranja es lo que tocaba.' },
+      { sel: '.partidas', titulo: 'Anotar el avance', texto: 'Mueve la barra de cada partida al % ejecutado: se guarda con la fecha de hoy. La raya naranja marca lo programado para hoy.' },
       { sel: '#pestana-minutas', titulo: 'Minutas', texto: 'Cada reunión con asistentes, temas y acuerdos con responsable y fecha. Los abiertos pasan a la siguiente; los vencidos avisan en el inicio.', antes: async () => { location.hash = '#/minutas'; await esperar(500); } },
       { sel: '#pestana-dias', titulo: 'Días afectados', texto: 'Se suman de las visitas con jornada parcial o sin actividad, por causa. Relación en PDF para pedir prórroga.', antes: async () => { location.hash = '#/dias'; await esperar(500); } }
     ]
@@ -200,7 +200,7 @@ const RECORRIDOS = {
       { sel: '#mi-perfil', titulo: 'Tu perfil', texto: 'Nombre, cargo, empresa y foto: lo ven los miembros de tus obras. El teléfono sólo lo ves tú.' },
       { sel: '#mis-obras', titulo: 'Tus obras', texto: 'Con tu papel en cada una. «Espacio de la obra» muestra su equipo, cifras, bitácoras recientes e incidencias abiertas.' },
       { sel: '#mis-bitacoras', titulo: 'Tus bitácoras', texto: 'Las últimas que has hecho, en todas tus obras.' },
-      { sel: '#grupo-equipo', titulo: 'Cuenta y equipo', texto: 'Entrar desde el ordenador, compartir obras, invitar y gestionar equipos de trabajo.' }
+      { sel: '#grupo-equipo', titulo: 'Cuenta y equipo', texto: 'Entrar desde la computadora, compartir obras, invitar y gestionar equipos de trabajo.' }
     ]
   }
 };

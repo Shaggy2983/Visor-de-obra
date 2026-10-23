@@ -77,7 +77,7 @@ function pintarPerfil() {
       : null,
     el('p', { class: 'pie' }, miFirma
       ? 'Guardada en este dispositivo. En cada visita: «⭐ Usar mi firma».'
-      : 'Todavía no hay firma guardada en este dispositivo. En una visita, firma o adjunta tu firma y pulsa «Guardar como mi firma».'));
+      : 'Todavía no hay firma guardada en este dispositivo. En una visita, firma o adjunta tu firma y toca «Guardar como mi firma».'));
 }
 
 function editarPerfil() {

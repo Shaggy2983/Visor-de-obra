@@ -299,7 +299,7 @@ export class Equipo extends EventTarget {
     return this.f.fb.sendEmailVerification(this.usuario);
   }
 
-  /* Tras pulsar el enlace del correo: se recarga el usuario y su token,
+  /* Tras tocar el enlace del correo: se recarga el usuario y su token,
      que es lo que miran las reglas para dejar usar las invitaciones. */
   async comprobarVerificacion() {
     await this.usuario.reload();

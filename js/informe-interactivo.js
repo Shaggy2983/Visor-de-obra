@@ -236,7 +236,7 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
     return h('button', Object.assign({ class: 'pin', style: 'background:' + color(n), 'data-nota': n.id, title: 'Nota ' + n.numero }, extra || {}), n.numero);
   }
 
-  raiz.append(h('h1', {}, 'Parte de visita de obra'), h('p', { class: 'obra' }, V.obra || 'Obra sin nombre'));
+  raiz.append(h('h1', {}, 'Reporte de visita de obra'), h('p', { class: 'obra' }, V.obra || 'Obra sin nombre'));
   raiz.append(h('div', { class: 'tarjeta' }, h('table', { class: 'datos' }, h('tbody', {},
     h('tr', {}, h('th', {}, 'Fecha'), h('td', {}, V.fecha + (V.hora ? ' · ' + V.hora : ''))),
     h('tr', {}, h('th', {}, 'Realizada por'), h('td', {}, V.autor || '—')),
@@ -353,7 +353,7 @@ thead th{background:var(--bg);color:var(--section);font-size:12px}
     });
   }
 
-  /* --- resto del parte --- */
+  /* --- resto del reporte --- */
   if (V.personal.length) {
     var total = V.personal.reduce(function (s, p) { return s + (Number(p.numero) || 0); }, 0);
     seccion('Personal en obra (' + total + ')').append(h('div', { class: 'tarjeta' }, h('table', {},

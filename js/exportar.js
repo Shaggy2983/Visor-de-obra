@@ -29,7 +29,7 @@ const GRAVEDAD = { leve: 'Leve', media: 'Media', grave: 'Grave' };
 
 export const TABLAS = [
   {
-    id: 'visitas', nombre: 'Visitas (partes diarios)',
+    id: 'visitas', nombre: 'Visitas (reportes diarios)',
     async filas(obra) {
       const vs = (await partes.listarVisitas()).filter(deObra(obra));
       return [['Fecha', 'Hora', 'Obra', 'Realizada por', 'Jornada', 'Causa', 'Horas perdidas', 'Tiempo', 'Temperatura', 'Personas', 'Trabajos', 'Incidencias abiertas', 'Fotos', 'Firmada'],

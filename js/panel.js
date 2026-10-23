@@ -18,7 +18,7 @@ const nodos = {
 };
 const GRAVEDAD = { grave: 'Grave', media: 'Media', leve: 'Leve' };
 const DIA_CORTO = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-const CONTACTO = 'hola.coordinate.rd@gmail.com · coordinate.do · Santo Domingo, RD';
+const CONTACTO = 'hola.coordinate.rd@gmail.com · Santo Domingo, RD';
 
 const estado = { vista: 'dia', obra: 'todas', fecha: hoy() };
 let pintando = 0;

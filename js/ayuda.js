@@ -63,6 +63,8 @@ const SECCIONES = [
       { t: 'Curva S e indicadores', p: ['Programado hoy, avance real, desviación en puntos e índice de cumplimiento (real entre programado).', 'Curva programada (naranja, discontinua) y real (azul). Toca la curva para ver los valores de cada fecha; «Ver como tabla» para leerla sin gráfico.', '«Informe PDF» con indicadores, curva y tabla por partida.'] },
       { t: 'Minutas de reunión', p: ['Menú → «Minutas de reunión» → «+ Minuta».', 'Trae los asistentes y los acuerdos abiertos de la reunión anterior de la obra.', 'Marca quién vino, escribe los temas (uno por línea) y los acuerdos con responsable y fecha límite.'] },
       { t: 'Seguimiento de acuerdos', p: ['Marca «Cumplido» cuando se cumpla; los demás pasan a la siguiente minuta.', 'Los vencidos salen en el inicio, en la lista de minutas y con un punto rojo en el menú.', '«Minuta en PDF» con hoja de firmas de asistentes y tabla de acuerdos.'] },
+      { t: 'Firmar la minuta en el teléfono', p: ['Al final de la minuta, «Firmas de asistentes»: pasa el teléfono y cada presente toca «✍ Firmar» en su línea.', 'En «Conformidad» firman quien convoca y la contratista (con su nombre). «⭐ Mi firma» pone la tuya guardada.', 'Las firmas salen en la hoja de asistencia y en el PDF; también se puede imprimir sin firmar y firmar a mano.'] },
+      { t: 'Dos personas anotando avance', p: ['Si dos teléfonos anotan avance a la vez en la misma obra, al sincronizar se juntan partida a partida: no se pierde lo de ninguno.'] },
       { t: 'Días afectados', p: ['En la visita del día, en Tiempo y jornada, marca «Parcial» o «Sin actividad»: aparecen la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Menú → «Días afectados»: días equivalentes perdidos por obra y por causa, con la relación en PDF para pedir una prórroga.'] }
     ]
   },
@@ -72,8 +74,9 @@ const SECCIONES = [
       { t: 'Hacer una consulta (RFI)', p: ['Menú → «Consultas (RFI)» → «+ RFI».', 'Asunto, disciplina (ARQ, EST, HDS…), plano o especificación de referencia, a quién va dirigida y para cuándo necesitas la respuesta.', 'Escribe la pregunta, tu propuesta si la tienes y añade fotos. «RFI en PDF» para enviarla.'] },
       { t: 'Anotar la respuesta', p: ['Marca «Respondida» o «Cerrada», copia la respuesta, quién responde y la fecha.', 'La app cuenta los días de espera; las vencidas avisan en el inicio y en el menú.', 'Si impacta el costo o el plazo: «Crear orden de cambio».'] },
       { t: 'Orden de cambio', p: ['Menú → «Órdenes de cambio» → «+ Orden»: título, origen, tipo (adicional, deductivo o sin costo) y descripción.', 'Partidas con unidad, cantidad y precio (RD$ o USD); la app suma el total. Montos antes de ITBIS.', 'Días de impacto en el plazo, estado (borrador, enviada, aprobada, rechazada) y quién aprueba. PDF para firmar.'] },
+      { t: 'Firmas en el teléfono', p: ['Cada registro de control tiene al final su sección «Firmas»: RFI (solicita y responde), orden de cambio (solicita y aprueba), recepción (recibe y entrega el proveedor), permisos (solicita y autoriza), charlas, EPP e incidentes.', 'Toca «✍ Firmar»: se abre una hoja grande para firmar con el dedo; «Aceptar firma» la guarda. «⭐ Mi firma» usa la guardada en este teléfono.', 'Las firmas salen en el PDF y se sincronizan con la obra compartida (en la nube vinculada del autor).'] },
       { t: 'Recepción de materiales', p: ['Menú → «Recepción de materiales» → «+ Recepción»: proveedor, conduce y orden de compra.', 'Cada material con lo pedido, lo recibido y lo rechazado: la app marca los faltantes.', 'Haz foto del conduce firmado y de lo rechazado. PDF de recepción.'] },
-      { t: 'Charla de 5 minutos', p: ['Menú → «Seguridad (SST)» → «+ Registro» → Charla.', 'Tema, quién la imparte, duración y asistentes. El PDF trae una columna para que firme cada uno.'] },
+      { t: 'Charla de 5 minutos', p: ['Menú → «Seguridad (SST)» → «+ Registro» → Charla.', 'Tema, quién la imparte, duración y asistentes.', 'Cada asistente firma en el teléfono en «Firmas de asistentes» (pasa el teléfono), o a mano en la columna del PDF.'] },
       { t: 'Revisión de EPP', p: ['Casco, chaleco, botas, guantes, lentes, protección auditiva, arnés y mascarilla: Cumple / No cumple / N/A.', 'Frente o zona y personas revisadas; nota en lo que falta.'] },
       { t: 'Permisos de trabajo', p: ['Altura, caliente, espacio confinado, excavación, eléctrico o izaje: cada uno trae sus controles.', 'Trabajo, zona, quién ejecuta, horario y quién autoriza. Ciérralo al terminar: los de otro día sin cerrar avisan en el inicio.'] },
       { t: 'Incidentes', p: ['Casi accidente, daño material o accidente (con o sin baja): qué pasó, causas, acciones, responsable y fecha.', 'La pestaña muestra los días sin accidentes de la obra.'] }
@@ -85,17 +88,17 @@ const SECCIONES = [
       { t: 'Cuenta', p: ['En Visitas → «Cuenta y equipo» → Entrar o Crear cuenta (o con Google).', 'Verifica tu correo para poder recibir invitaciones.'] },
       { t: 'Compartir una obra', p: ['«+ Compartir una obra» con el nombre de la obra.', 'Invita por correo con un papel: administrador, editor, solo lectura o contratista.', 'Avísale con «Enviar aviso» (WhatsApp o correo).'] },
       { t: 'Equipos de trabajo', p: ['«+ Crear un equipo» y añade a su gente.', 'Vincula el equipo a una obra con un papel: entran todos de una vez.'] },
-      { t: 'Novedades', p: ['Menú → «Novedades del equipo»: bitácoras, repasos, inspecciones y vaciados nuevos o cambiados de tu equipo (el punto rojo del menú avisa).', 'En la lista llevan la etiqueta «Nueva» o «Actualizada».'] },
-      { t: 'Sincronización', p: ['Visitas, repasos, planos, inspecciones y vaciados de las obras compartidas.', 'Con señal se sincroniza al guardar, al volver la cobertura y cada 2 minutos.', 'Sin señal sigues trabajando: se sube después.'] },
+      { t: 'Novedades', p: ['Menú → «Novedades del equipo»: bitácoras, repasos y registros de calidad, seguimiento y control nuevos o cambiados de tu equipo (el punto rojo del menú avisa).', 'En la lista llevan la etiqueta «Nueva» o «Actualizada».'] },
+      { t: 'Sincronización', p: ['Visitas, repasos, planos y todos los registros de calidad, seguimiento y control (con sus firmas) de las obras compartidas.', 'Con señal se sincroniza al guardar, al volver la cobertura y cada 2 minutos.', 'Sin señal sigues trabajando: se sube después.'] },
       { t: 'Fotos del equipo en tu nube', p: ['En las obras compartidas, tus fotos, firmas y planos se suben a tu Google Drive u OneDrive vinculado (carpeta «COORDINATE Visitas / Obras / obra»).', 'La carpeta se comparte, sólo para ver, con los miembros de la obra.', 'Tus compañeros ven «📷 Ver foto en la nube»; en el panel, «📷 Fotos».', 'Sin cuenta vinculada, los archivos se quedan en tu teléfono: vincúlala en «Cuentas vinculadas».'] }
     ]
   },
   {
     titulo: 'Panel y perfil', icono: '📊', recorrido: 'panel',
     temas: [
-      { t: 'Resumen diario', p: ['Panel → Diario: bitácoras del día por obra, quién y a qué hora, firmadas, personal, trabajos e incidencias.', 'Avisa de las obras sin bitácora.'] },
-      { t: 'Resumen semanal', p: ['Panel → Semanal: visitas por día y por persona, incidencias, repasos por responsable, personal y clima.', '«Reporte semanal en PDF» para enviarlo.'] },
-      { t: 'Perfil', p: ['Perfil → «Editar perfil»: nombre, cargo, empresa, teléfono y foto.', 'Tus obras con tu papel y el espacio de cada obra (equipo, cifras, bitácoras).'], recorrido: 'perfil' }
+      { t: 'Resumen diario', p: ['Panel → Diario: bitácoras del día por obra, quién y a qué hora, firmadas, personal, trabajos e incidencias.', 'Debajo, «Calidad, seguimiento y control»: avance real frente a programado, inspecciones, vaciados, RFI, cambios, recepciones y seguridad del día.', 'Avisa de las obras sin bitácora y de lo vencido: probetas sin romper, acuerdos, RFI sin respuesta y permisos sin cerrar.'] },
+      { t: 'Resumen semanal', p: ['Panel → Semanal: visitas por día y por persona, incidencias, repasos por responsable, personal y clima.', 'Y además: 6. Calidad (inspecciones, vaciados, roturas), 7. Avance, reuniones y días afectados, 8. RFI, cambios y materiales, 9. Seguridad, y la lista de pendientes y vencidos.', '«Reporte semanal en PDF» para enviarlo.'] },
+      { t: 'Perfil', p: ['Perfil → «Editar perfil»: nombre, cargo, empresa, teléfono y foto.', 'Tus obras con tu papel y el espacio de cada obra (equipo, cifras, calidad, avance, RFI y seguridad, bitácoras).'], recorrido: 'perfil' }
     ]
   },
   {

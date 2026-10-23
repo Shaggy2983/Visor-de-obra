@@ -230,3 +230,10 @@
 .ayuda-tema summary { cursor: pointer; font-weight: 600; font-size: .95rem; list-style-position: inside; }
 .ayuda-tema ol { margin: .4rem 0 .2rem; padding-left: 1.3rem; font-size: .9rem; line-height: 1.45; }
 .ayuda-tema li + li { margin-top: .2rem; }
+
+/* Calidad, seguimiento y control dentro de cada obra */
+.panel-registros {
+  margin-top: 0.9rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--borde);
+}

@@ -1548,6 +1548,20 @@ async function compartir() {
 /* copia de seguridad: un JSON con las fotos dentro, en base64         */
 /* ------------------------------------------------------------------ */
 
+/* Firmas múltiples (minutas y control): { papel: { blob, … } } ⇄ base64. */
+async function firmasADatos(firmas) {
+  if (!firmas) return firmas;
+  const salida = {};
+  for (const [k, f] of Object.entries(firmas)) salida[k] = f && f.blob ? { ...f, blob: await aDatos(f.blob) } : f;
+  return salida;
+}
+async function firmasDeDatos(firmas) {
+  if (!firmas) return firmas;
+  const salida = {};
+  for (const [k, f] of Object.entries(firmas)) salida[k] = f && typeof f.blob === 'string' ? { ...f, blob: await deDatos(f.blob) } : f;
+  return salida;
+}
+
 /* La copia entera como JSON, o null si no hay nada que copiar. */
 async function generarCopia() {
   await guardarYa();
@@ -1575,13 +1589,14 @@ async function generarCopia() {
   const conFotos = async (r) => ({
     ...r,
     firma: r.firma ? await aDatos(r.firma) : null,
+    firmas: await firmasADatos(r.firmas),
     fotos: await Promise.all((r.fotos || []).map(async (f) => ({ ...f, blob: await aDatos(f.blob) })))
   });
   const inspecciones = await Promise.all((await listarInspecciones()).map(conFotos));
   const vaciados = await Promise.all((await listarVaciados()).map(conFotos));
   // Seguimiento (desde la versión 5): programas de avance y minutas.
   const programas = await listarProgramas();
-  const minutas = await listarMinutas();
+  const minutas = await Promise.all((await listarMinutas()).map(async (m) => ({ ...m, firmas: await firmasADatos(m.firmas) })));
   // Control (desde la versión 6): RFI, cambios, recepciones y seguridad.
   const control = {};
   for (const [k, listar] of Object.entries(TABLAS_CONTROL)) control[k] = await Promise.all((await listar.listar()).map(conFotos));
@@ -1628,13 +1643,14 @@ async function importar(archivo) {
     const deCopia = async (r) => ({
       ...r,
       firma: r.firma ? await deDatos(r.firma) : null,
+      firmas: await firmasDeDatos(r.firmas),
       fotos: await Promise.all((r.fotos || []).map(async (f) => ({ ...f, blob: await deDatos(f.blob) })))
     });
     for (const [lista, leer, guardar] of [[datos.programas, leerPrograma, guardarPrograma], [datos.minutas, leerMinuta, guardarMinuta]]) {
       for (const r of lista || []) {
         const existente = await leer(r.id);
         if (existente && existente.modificado >= r.modificado) continue;
-        await guardar(r);
+        await guardar({ ...r, firmas: await firmasDeDatos(r.firmas) });
       }
     }
     for (const [k, t] of Object.entries(TABLAS_CONTROL)) {

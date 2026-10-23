@@ -11,7 +11,7 @@ import { avisar } from './interfaz.js';
 import { equipo, ROLES, PAPELES_EQUIPO } from './equipo.js';
 import { iniciarEquipoUI } from './equipo-ui.js';
 import { listarVisitas, listarRepasos, listarPlanos } from './partes.js';
-import { incidencias, estadoRepaso, personasDe, firmada, autorDe, ultimaPorPersona, lunes, sumarDias } from './resumen.js';
+import { incidencias, estadoRepaso, personasDe, firmada, autorDe, ultimaPorPersona, lunes, sumarDias, registros } from './resumen.js';
 
 const $ = (id) => document.getElementById(id);
 const nodos = {
@@ -246,6 +246,7 @@ async function pintarObra(id, { fresco = false } = {}) {
   const personas = obra.personas || {};
   const nombreEquipo = (eid) => (equipo.equipos.find((e) => e.id === eid) || {}).nombre || 'Equipo';
   const por = (pid) => Object.entries(obra.porEquipo || {}).filter(([, l]) => l.includes(pid)).map(([eid]) => nombreEquipo(eid));
+  const rg = registros(datos, '0000-01-01', fecha);
   const miembros = Object.entries(obra.miembros)
     .sort((a, b) => ['admin', 'editor', 'lector', 'contratista'].indexOf(a[1]) - ['admin', 'editor', 'lector', 'contratista'].indexOf(b[1]));
 
@@ -261,6 +262,24 @@ async function pintarObra(id, { fresco = false } = {}) {
         cifra(inc.length, 'incidencias abiertas', inc.some((i) => i.gravedad === 'grave') ? 'alerta' : ''),
         cifra(repAbiertos.length, 'repasos abiertos'),
         cifra(miembros.length, 'personas en la obra')),
+
+    rol !== 'contratista' && rg.hay && el('section', { class: 'grupo' },
+      el('h2', {}, 'Calidad, seguimiento y control'),
+      rg.avance && el('p', { class: 'pie' }, `Avance ${Math.round(rg.avance.real)} % real · ${Math.round(rg.avance.programado)} % programado · ${rg.avance.desviacion >= 0 ? '+' : ''}${Math.round(rg.avance.desviacion)} pts`),
+      el('div', { class: 'cifras cifras-pequenas' },
+        cifra(rg.calidad.inspecciones.length, 'inspecciones'),
+        cifra(rg.calidad.vaciados.length, 'vaciados'),
+        cifra(rg.calidad.roturasVencidas + rg.calidad.roturasHoy, 'probetas por romper', rg.calidad.roturasVencidas ? 'alerta' : ''),
+        cifra(rg.acuerdos.abiertos, 'acuerdos abiertos', rg.acuerdos.vencidos.length ? 'alerta' : ''),
+        cifra(rg.rfi.abiertas, 'RFI abiertas', rg.rfi.vencidas.length ? 'alerta' : ''),
+        cifra(rg.cambios.enviadas, 'cambios por aprobar'),
+        cifra(rg.sst.permisosOlvidados, 'permisos sin cerrar', rg.sst.permisosOlvidados ? 'alerta' : ''),
+        rg.sst.sinAccidentes != null && cifra(rg.sst.sinAccidentes, 'días sin accidentes')),
+      el('p', { class: 'pie' },
+        el('a', { class: 'enlace', href: './calidad.html' }, 'Calidad'), ' · ',
+        el('a', { class: 'enlace', href: './seguimiento.html' }, 'Seguimiento'), ' · ',
+        el('a', { class: 'enlace', href: './control.html' }, 'Control'), ' · ',
+        el('a', { class: 'enlace', href: `./panel.html#vista=semana&obra=${encodeURIComponent(obra.id)}&fecha=${fecha}` }, 'Reporte semanal'))),
 
     el('section', { class: 'grupo' },
       el('h2', {}, `Equipo de la obra (${miembros.length})`),

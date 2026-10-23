@@ -18,77 +18,61 @@ de publicar: tú respondes ante Google por lo que se declara.
 
 ## Descripción breve (máx. 80)
 
-Partes de obra, punch list con fotos, planos con notas y visor BIM. Sin señal.
+Parte de obra, punch list, calidad, avance, RFI y seguridad. Funciona sin señal.
 
-## Descripción completa
+## Descripción completa (máx. 4000; ahora 2300)
 
-El parte de visita de obra de COORDINATE, pensado para escribirse en el
-teléfono, a pie de obra y sin depender de la cobertura.
+El parte de visita y el control de obra de COORDINATE, pensados para el teléfono, a pie de obra y sin depender de la cobertura.
 
 PARTE DIARIO
-• Fecha, tiempo, jornada y personal por empresa y oficio, con el total.
-• Trabajos realizados, maquinaria, materiales recibidos y observaciones.
-• Incidencias por gravedad: las que no se resuelven pasan solas a la
-  visita siguiente.
-• Fotos con la cámara o de la galería, y firma con el dedo.
-• Se guarda según escribes, sin conexión.
+• Tiempo del lugar, jornada y personal por empresa y oficio.
+• Trabajos con la hora, maquinaria, materiales y observaciones; dictado por voz.
+• Incidencias por gravedad que pasan solas a la visita siguiente.
+• Fotos y firma con el dedo. Se guarda según escribes.
 
-PLANOS CON NOTAS
-• Carga planos en PDF o imagen y navégalos con zoom.
-• Marca notas numeradas (observación, incidencia o avance) con su texto
-  y las fotos de esa zona.
-• Dibuja a mano alzada: nubes de revisión, flechas, marcas.
-• Añade tonos de pintura (color, marca, código y acabado) y enlaces a
-  fichas técnicas o referencias.
+PLANOS Y PUNCH LIST
+• Planos PDF, imagen o DXF con notas numeradas, dibujo a mano alzada y medidas a escala.
+• Repasos con zona, responsable, prioridad y fotos antes/después, marcados en el plano.
+• Punch list en PDF para los contratistas.
 
-PUNCH LIST DE TERMINACIONES
-• Cada repaso con número, zona, tipo (pintura, pañete, cerámica,
-  carpintería…), qué corregir, responsable y prioridad.
-• Foto del defecto (antes) y del arreglo (después); al poner la de
-  después pasa a «corregido», y lo cierras al verificarlo.
-• Los repasos abiertos siguen de visita en visita, y cada informe los
-  muestra como estaban ese día.
-• Punch list en PDF para pasárselo a los contratistas.
+CALIDAD
+• Inspecciones con checklist por partida (acero, encofrado, mampostería, instalaciones, terminaciones…), fotos y firma de liberación; lo que no cumple pasa al punch list.
+• Vaciados con camiones, revenimiento y probetas; agenda de roturas y % de f'c.
 
-INFORMES
-• Informe en PDF con los planos marcados, la tabla de notas y las fotos.
-• Informe interactivo: un solo archivo que se abre en cualquier
-  navegador; tocas un número del plano y aparece la nota con sus fotos.
-• Resumen para compartir por WhatsApp o correo.
+SEGUIMIENTO
+• Avance por partida con curva S, desviación e índice de cumplimiento.
+• Minutas con asistentes y acuerdos que pasan a la reunión siguiente; avisos de vencidos.
+• Días afectados por lluvia, paros o falta de material, para pedir prórrogas.
+
+CONTROL
+• Consultas (RFI) con días de espera y órdenes de cambio con partidas y total.
+• Recepción de materiales con faltantes y rechazos.
+• Seguridad: charlas de 5 minutos, EPP, permisos de trabajo e incidentes.
+• Firmas en el teléfono: quien solicita, aprueba, recibe y cada asistente.
+
+INFORMES Y DATOS
+• PDF de cada registro con la marca de COORDINATE.
+• Informe interactivo: un archivo que se abre en cualquier navegador.
+• Exportar a Excel (CSV) y copia de seguridad.
 
 EQUIPO (opcional)
-• Crea tu cuenta, comparte una obra e invita a tu equipo como
-  administrador, editor, solo lectura o contratista.
-• Equipos de trabajo: crea el equipo una vez y dale acceso a varias
-  obras de un toque.
-• El contratista sólo ve los repasos que le asignas, sube la foto del
-  arreglo y los marca como corregidos.
-• Visitas, punch list, planos y fotos se sincronizan entre teléfonos;
-  sin señal sigues trabajando y se sincroniza al volver la cobertura.
-
-CORREO Y NUBE (opcional)
-• Vincula tu cuenta de Google (Gmail y Drive) o de Microsoft (Outlook y
-  OneDrive) para enviar el parte por correo, guardar el informe en la
-  nube por obra y hacer copias de seguridad.
+• Comparte una obra con papeles: administrador, editor, solo lectura o contratista.
+• Panel diario y semanal del equipo, también en el ordenador.
+• Todo se sincroniza entre teléfonos; sin señal sigues trabajando.
+• Correo y nube con tu cuenta de Google o Microsoft.
 
 MODELO 3D (IFC)
-• Toca un elemento y ve todas sus propiedades: Psets, cantidades,
-  materiales y medidas.
-• Mide distancias y áreas, con imán a esquinas y bordes.
-• Cortes en planta, alzados, por cara y caja de sección.
-• Colorea el modelo por cualquier propiedad, con leyenda.
-• Transparencias, rayos X, aislar y ocultar; seis fondos, luz, aristas
-  y vistas rápidas.
-• Filtros por planta y categoría y buscador.
-• Realidad aumentada para ver el modelo a escala real en el terreno
-  (en teléfonos compatibles con ARCore).
+• Propiedades de cada elemento, medir, cortes y caja de sección, colorear por propiedad y realidad aumentada.
 
 PRIVACIDAD
-Sin cuenta, todo se guarda en tu teléfono. Con cuenta, sólo lo de las
-obras que compartes va a la nube, y sólo lo ve tu equipo.
+Sin cuenta, todo se queda en tu teléfono. Con cuenta, sólo lo de las obras que compartes va a la nube, y sólo lo ve tu equipo.
 
 COORDINATE — coordinación BIM y gestión de datos de proyectos.
 Los problemas se resuelven en el modelo, no en obra.
+
+## Novedades de esta versión (máx. 500)
+
+Calidad (inspecciones y vaciados con probetas), avance con curva S, minutas, días afectados, RFI, órdenes de cambio, recepción de materiales y seguridad. Firmas en el teléfono en todos los registros. Panel del equipo con calidad, avance y vencidos. Menú nuevo en el símbolo de COORDINATE. Exportar a Excel.
 
 ## Gráficos
 
@@ -96,7 +80,7 @@ Los problemas se resuelven en el modelo, no en obra.
 |---|---|
 | Icono 512×512 | `../icono-512.png` |
 | Gráfico destacado 1024×500 | `grafico-destacado-1024x500.png` |
-| Capturas de teléfono (1080×1920) | `captura-1-ficha.png` … `captura-5-visitas.png` |
+| Capturas de teléfono (1080×1920, máx. 8) | en este orden: `captura-5-visitas.png`, `captura-1-ficha.png`, `captura-2-plano.png`, `captura-6-calidad.png`, `captura-7-avance.png`, `captura-8-firmas.png`, `captura-9-panel.png`, `captura-4-informe.png` (sobra `captura-3-nota.png`) |
 
 Las capturas se hicieron con datos de ejemplo inventados. Si prefieres
 capturas de una obra real, usa sólo casos anónimos.
@@ -131,21 +115,39 @@ ubicación. Resultado esperado: apta para todos.
 
 Mayores de 18 años (herramienta profesional). No dirigida a menores.
 
-## Seguridad de los datos (propuesta)
+## Seguridad de los datos (propuesta, revisada el 23/10/2026)
 
 Con la cuenta de equipo, lo de las obras compartidas se guarda en
-Firebase (servidores de Google para COORDINATE). Propuesta de respuestas:
+Firebase (servidores de Google para COORDINATE); fotos, firmas y planos,
+en el Drive u OneDrive del propio usuario. Propuesta de respuestas:
 
 - ¿Recopila o comparte datos de usuario? **Sí**.
 - ¿Cifrados en tránsito? **Sí** (HTTPS).
 - ¿El usuario puede pedir que se borren? **Sí**: en la app («Borrar mi
   cuenta») y por correo.
-- Tipos de datos, todos **recopilados**, **no compartidos** con terceros
-  y con finalidad **Funcionalidad de la app** y **Gestión de la cuenta**:
-  - Información personal → **Nombre** y **Dirección de correo
-    electrónico** (obligatorios para tener cuenta, que es opcional).
-  - Fotos y vídeos → **Fotos** (opcional).
-  - Archivos y documentos → **Archivos y documentos** (opcional: planos,
-    partes, firmas).
-- ¿Es obligatorio recopilarlos? Marca **opcional**: la app funciona sin
-  cuenta.
+- Tipos de datos, todos **recopilados**, **no compartidos** con terceros,
+  **opcionales** (la app funciona sin cuenta), finalidad **Funcionalidad
+  de la app** (y **Gestión de la cuenta** en nombre y correo):
+
+| Categoría de Play | Tipo | Por qué |
+|---|---|---|
+| Información personal | Nombre, Dirección de correo electrónico | Cuenta de equipo |
+| Información personal | Número de teléfono | Perfil (opcional; no se muestra a la obra) |
+| Fotos y vídeos | Fotos | Fotos de visitas, repasos y registros; foto de perfil |
+| Archivos y documentos | Archivos y documentos | Planos, informes, firmas |
+| Ubicación | Ubicación aproximada | «Tiempo del lugar» (redondeada, va a Open-Meteo; no se guarda) |
+| Actividad en la app | Otro contenido generado por el usuario | Partes, minutas (asistentes), RFI, cambios, SST |
+
+- Cambio respecto a la versión anterior de esta propuesta: se añaden
+  **Número de teléfono**, **Ubicación aproximada** y **Otro contenido
+  generado por el usuario** (minutas con asistentes, registros de
+  seguridad con la persona afectada, firmas).
+- Los incidentes pueden describir lesiones de un trabajador (un tercero,
+  no el usuario). No se propone declarar «Información de salud» porque
+  no se recoge sobre el usuario; si Google lo pregunta, la respuesta está
+  en la política de privacidad (apartado de seguridad y control).
+  **Decisión tuya**: si prefieres ir sobre seguro, márcalo también.
+
+## Verificación de Google (Gmail)
+
+Ver `verificacion-google.md`.

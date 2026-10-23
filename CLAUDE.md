@@ -53,7 +53,8 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   y «⭐ Usar mi firma».
 - **Predictivo y corrector** (`js/predictivo.js`): sugerencias de frases y
   listas (empresa, oficio, obra, autor, zona) aprendidas de las visitas y
-  repasos locales; activa spellcheck/autocapitalize para Gboard (ES/EN).
+  repasos locales y de los registros de calidad, seguimiento y control;
+  activa spellcheck/autocapitalize para Gboard (ES/EN).
 - **Punch list de terminaciones** (`js/repasos.js`): repasos por obra con
   zona, tipo, responsable, prioridad y fotos antes/después; estados
   pendiente → corregido → cerrado con fecha; PDF propio para contratistas.
@@ -139,11 +140,21 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   otro día sin cerrar avisan) e incidente (clase, causas, acciones);
   días sin accidentes. PDF de cada uno con `@page control`.
   · Avisos en el inicio y punto rojo del menú (`crd-control-avisos`).
+- **Firmas en el teléfono** (`js/firmas.js`): `r.firmas = {papel: {blob,
+  nombre, en}}` en minutas (convoca, contratista), RFI (solicita, responde),
+  OC (solicita, aprueba), RM (recibe, entrega), SST (solicita/autoriza o
+  responsable/supervisión) y asistentes (`a:<id>`, charlas y minutas).
+  Hoja de firma a pantalla completa (sólo al pulsar «Firmar», recorta al
+  trazo), «⭐ Mi firma». En los PDF con `cajaFirma(urlFirma(...))` y
+  `celdaFirmaAsistente`. Se sincronizan como archivos (`firma-<id>-<papel>-
+  <huella>.png` en la nube vinculada; `{ruta, enlace}` si no se bajan) y van
+  en la copia de seguridad.
 - **Repasos en el plano** (`r.ubicacion = {plano, x, y}`): «📍 Marcar en el
   plano» en el repaso (elige plano si hay varios) → modo `ubicar` del
   visor (`visor.ubicar(r)`); cuadrados «R3» por estado; tocar uno abre su
-  ficha. Salen en el informe PDF y en el PDF del punch list
-  (`componerPlano(..., repasos)`).
+  ficha. Salen en el informe PDF, en el PDF del punch list
+  (`componerPlano(..., repasos)`) y en el informe interactivo (marcas «R3»
+  que llevan a la ficha del repaso).
 - **Exportar a Excel (CSV)** (`js/exportar.js`, `visita.html#/exportar`,
   menú → Datos): 13 tablas (visitas, incidencias, personal, repasos,
   inspecciones, vaciados, probetas, avance, acuerdos, RFI, cambios,
@@ -160,14 +171,18 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - **Panel del equipo** (`panel.html`, `js/panel.js`, cálculo en
   `js/resumen.js`, estilos `css/panel.css`): resumen diario y semanal (visitas
   por día y persona, incidencias, repasos por responsable, personal y clima)
-  de las obras con papel admin/editor/lector. Lee de Firestore sin fotos
+  de las obras con papel admin/editor/lector, más calidad, avance, acuerdos,
+  días afectados, RFI, cambios, materiales y SST (`registros()` /
+  `totalRegistros()` de `resumen.js`; secciones 6–9 del semanal y lista de
+  pendientes y vencidos). Lee de Firestore sin fotos todas las colecciones
   (`equipo.leerObra`, caché 1 min), así sirve en el ordenador. «Reporte en
   PDF» con `print()` y página con nombre `reporte-panel`.
 - **Perfil y espacio de obra** (`perfil.html`, `js/perfil.js`): perfil
   (nombre, cargo, empresa, teléfono, foto 160 px) en `usuarios/{uid}`; la
   ficha pública (sin teléfono) va a `personas[uid]` de cada obra y equipo
   (regla `actualizaMiFicha`). `#/obra/<id>`: miembros, equipos, cifras y
-  bitácoras recientes. Incluye «Cuenta y equipo» para entrar desde el PC.
+  bitácoras recientes, y cifras de calidad, seguimiento y control. Incluye
+  «Cuenta y equipo» para entrar desde el PC.
 - **Planos DXF y medición** (`js/dxf.js`, lector en `js/dxf-worker.js` con
   dxf-parser MIT en `vendor/dxf/`; DWG no: formato cerrado y las librerías
   libres son GPL). En Modelo 3D, «Abrir» acepta `.dxf`: visor 2D con capas
@@ -250,17 +265,23 @@ Entra) en `js/cuentas-config.js`.
    1.0.0; comprobado 23/10/2026). Para pedir producción faltan **12 testers
    que acepten** (había 9 de 20 invitados) y luego **14 días** de prueba.
    Enlace para unirse: https://play.google.com/apps/testing/com.coordinate.bitacora
-   (web) o la ficha en Play desde Android. Al subir el `.aab`, añadir la huella SHA-256 de la firma de
-   Google Play a `assetlinks.json` (sin quitar la de subida) y dar a los
-   revisores una cuenta de prueba verificada. Gmail (`gmail.send`) es un
-   permiso sensible: para salir del modo de prueba de Google hace falta
-   verificar la app.
+   (web) o la ficha en Play desde Android. Huella de la firma de Google Play ya en `assetlinks.json`
+   (`36:46:33:CC:…:39:0B`, junto a la de subida). A los revisores, dar una
+   cuenta de prueba verificada. Ficha, «Novedades», capturas 6–9 y
+   seguridad de los datos revisadas el 23/10/2026 en `tienda/ficha.md`.
+   Gmail (`gmail.send`) es un permiso sensible: para salir del modo de
+   prueba de Google hay que verificar la app OAuth; lista, justificación
+   y guion del vídeo en `tienda/verificacion-google.md` (faltan Search
+   Console, marca, vídeo y enviar: los hace Luis). Portada pública en
+   `shaggy2983.github.io/` (PR #3 de ese repositorio).
 4. Hoja de ruta del supervisor (acordada el 22/10/2026): **hecha entera**
    — menú del símbolo, inspecciones, vaciados, avance con curva S,
    minutas, días afectados, RFI, órdenes de cambio, recepción de
    materiales, SST, repasos en el plano y exportar CSV. Reglas con todas
    las colecciones publicadas el 23/10/2026 (idénticas al repositorio). El programa es un documento por
-   obra: si dos personas anotan avance a la vez, gana la última escritura.
+   obra: si dos teléfonos anotan avance a la vez se juntan partida a partida
+   (`fusionarProgramas`, se baja antes de subir; `p.borradas` evita que
+   vuelvan las partidas quitadas).
 5. Hecho el 23/10/2026: borrar varias visitas a la vez («Seleccionar
    varias» en la lista; `seleccion` en `js/visita.js`). Queda por decidir:
    papel de empresa por encima de los equipos.

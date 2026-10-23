@@ -146,7 +146,7 @@ const RECORRIDOS = {
     pagina: 'panel.html',
     titulo: 'Panel del equipo',
     pasos: [
-      { sel: '#pestanas', titulo: 'Diario y semanal', texto: 'El resumen del día (quién fue, trabajos, incidencias) o de la semana (por día, por persona, incidencias, repasos, personal y clima).' },
+      { sel: '#pestanas', titulo: 'Diario y semanal', texto: 'El resumen del día (quién fue, trabajos, incidencias) o de la semana (por día, por persona, incidencias, repasos, personal y clima), con la calidad, el avance, las RFI, los cambios y la seguridad de cada obra, y lo vencido.' },
       { sel: '#obra', titulo: 'Obra', texto: 'Todas tus obras o una sola.' },
       { sel: '.panel-fecha', titulo: 'Fecha', texto: 'Cambia de día o de semana con las flechas.' },
       { sel: '#imprimir', titulo: 'Reporte en PDF', texto: 'Guarda o imprime el resumen con la marca de COORDINATE.' },
@@ -188,7 +188,8 @@ const RECORRIDOS = {
       { sel: '#btn-nuevo', titulo: 'Nueva RFI', texto: 'Asunto, disciplina, plano de referencia, la pregunta con fotos y para cuándo necesitas la respuesta. La app cuenta los días de espera y avisa de las vencidas.' },
       { sel: '#pestana-cambios', titulo: 'Órdenes de cambio', texto: 'Adicionales y deductivos con sus partidas, total, impacto en plazo y aprobación. Se pueden crear desde la respuesta de una RFI.', antes: async () => { location.hash = '#/cambios'; await esperar(500); } },
       { sel: '#pestana-materiales', titulo: 'Recepción de materiales', texto: 'Proveedor, conduce, lo pedido frente a lo recibido y lo rechazado, con foto del conduce.', antes: async () => { location.hash = '#/materiales'; await esperar(500); } },
-      { sel: '#pestana-sst', titulo: 'Seguridad', texto: 'Charlas de 5 minutos con asistentes, revisión de EPP, permisos de trabajo con sus controles e incidentes. Días sin accidentes de la obra.', antes: async () => { location.hash = '#/sst'; await esperar(500); } }
+      { sel: '#pestana-sst', titulo: 'Seguridad', texto: 'Charlas de 5 minutos con asistentes, revisión de EPP, permisos de trabajo con sus controles e incidentes. Días sin accidentes de la obra.', antes: async () => { location.hash = '#/sst'; await esperar(500); } },
+      { sel: '.pestanas-calidad', titulo: 'Firmas en el teléfono', texto: 'Al final de cada registro, «Firmas»: toca «✍ Firmar» y firma con el dedo (o «⭐ Mi firma»). En las charlas, cada asistente firma en su línea. Todo sale en el PDF.' }
     ]
   },
 

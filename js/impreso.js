@@ -67,7 +67,7 @@ export async function imprimir(articulo, nombre, nodos, { pagina = null } = {}) 
   // Página con nombre (pie de página propio): «acta» por defecto (calidad).
   articulo.style.page = pagina || '';
   await Promise.all([...articulo.querySelectorAll('img')].map((i) => i.decode().catch(() => {})));
-  await Promise.all([...articulo.querySelectorAll('.informe-hueco[style]')].map((n) => {
+  await Promise.all([...articulo.querySelectorAll('.informe-hueco[style], .informe-firma-celda[style]')].map((n) => {
     const m = n.style.backgroundImage.match(/url\("?(.*?)"?\)/);
     if (!m) return null;
     const img = new Image();

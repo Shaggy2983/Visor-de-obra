@@ -1089,3 +1089,38 @@ a.foto-remota { color: var(--acento); }
 }
 .tarjeta.elegida { border-color: var(--acento); background: var(--fondo-3); }
 .tarjeta.elegida .tarjeta-casilla { background: var(--acento); border-color: var(--acento); }
+
+/* ---------- Firmas en el teléfono (minutas y control: js/firmas.js) ---------- */
+.firmas-tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+.firma-tarjeta { display: flex; flex-direction: column; gap: .45rem; padding: .7rem; border: 1px solid var(--borde); border-radius: .6rem; background: var(--fondo); }
+.firma-tarjeta.con-firma { border-color: var(--acento-oscuro); }
+.firma-tarjeta-titulo { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.firma-tarjeta-nombre { font-size: .9rem; color: var(--texto-tenue); }
+.firma-tarjeta .fila-botones { margin: 0; flex-wrap: wrap; }
+.firma-vista {
+  height: 5.5rem; border-radius: .45rem; background: var(--color-light-bg) center / contain no-repeat;
+  display: flex; align-items: center; justify-content: center; text-align: center; padding: .3rem;
+}
+.firma-vista .pie, .firma-vista .enlace { color: #4a5870; }
+.firmas-asistentes { display: flex; flex-direction: column; }
+.firma-asistente { display: grid; grid-template-columns: 1fr 5.5rem auto; align-items: center; gap: .6rem; padding: .45rem 0; border-bottom: 1px solid var(--borde); }
+.firma-asistente:last-child { border-bottom: 0; }
+.firma-mini { height: 2.4rem; border-radius: .35rem; background: var(--color-light-bg) center / contain no-repeat; color: #2e7d32; display: flex; align-items: center; justify-content: center; }
+
+/* Hoja a pantalla completa para firmar */
+.hoja-firma {
+  position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+  background: rgba(var(--velo-rgb), .88);
+}
+.hoja-firma-caja {
+  width: min(44rem, 100%); display: flex; flex-direction: column; gap: .6rem; padding: 1rem;
+  border: 1px solid var(--borde); border-radius: .8rem; background: var(--fondo-2); box-shadow: 0 12px 40px rgba(0,0,0,.4);
+}
+.hoja-firma-cabecera { display: flex; justify-content: space-between; align-items: baseline; gap: .6rem; flex-wrap: wrap; }
+.hoja-firma-lienzo {
+  display: block; width: 100%; height: min(18rem, 48vh); border-radius: .5rem; touch-action: none;
+  background: #fff; outline: 3px solid var(--acento); outline-offset: 2px;
+}
+.hoja-firma .fila-botones { justify-content: flex-end; margin: 0; }
+@media print { .hoja-firma { display: none !important; } }

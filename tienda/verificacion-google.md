@@ -15,14 +15,14 @@ consentimiento de OAuth).
 
 | # | Paso | Estado |
 |---|---|---|
-| 1 | Página principal pública en el dominio: `https://shaggy2983.github.io/` describe la app, enlaza la privacidad y explica los permisos | PR #3 de `shaggy2983.github.io` (pendiente de fusionar) |
+| 1 | Página principal pública en el dominio: `https://shaggy2983.github.io/` describe la app, enlaza la privacidad y explica los permisos | Hecho (PR #3) |
 | 2 | Política de privacidad en el mismo dominio, con el uso de Gmail y Drive y la frase de uso limitado | Hecho: `/Visor-de-obra/privacidad.html` |
-| 3 | Dominio autorizado `shaggy2983.github.io` **verificado en Search Console** con la misma cuenta propietaria del proyecto | **Tú**: Search Console → Añadir propiedad → Prefijo de URL `https://shaggy2983.github.io/` → método «Archivo HTML». Pásame el archivo `googleXXXX.html` y lo subo al repositorio `shaggy2983.github.io` |
-| 4 | Marca: nombre «COORDINATE · Obra», logotipo 120×120 (`marca/`), correo de asistencia `hola@coordinate.do` (o tu Gmail), página principal, privacidad | **Tú**, en «Branding». Subir logotipo también exige verificación |
-| 5 | Permisos declarados: `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`, `.../auth/drive.file`, `.../auth/gmail.send` | **Tú**, en «Acceso a datos» |
-| 6 | Justificación de `gmail.send` (texto abajo) | Listo para copiar |
+| 3 | Dominio autorizado `shaggy2983.github.io` **verificado en Search Console** con la misma cuenta propietaria del proyecto | Hecho el 23/10/2026 (archivo `google820fa782b73ea21e.html` en la raíz, PR #4: **no borrarlo**) |
+| 4 | Marca: nombre «COORDINATE · Obra», logotipo 120×120 (`marca/`), correo de asistencia `hola@coordinate.do` (o tu Gmail), página principal, privacidad | Hecho el 23/10/2026 menos el logotipo (nombre «COORDINATE», correo luisleocadioasc@gmail.com, página principal, privacidad, dominios `coordinate-b7759.firebaseapp.com` y `shaggy2983.github.io`). **Verificar la marca**: el primer intento dijo que la página principal «no está registrada a tu nombre» porque Search Console se acababa de verificar; Google pide esperar 24 h y reintentar (Información de la marca → ⓘ → Ver problemas → «Corregí los problemas») |
+| 5 | Permisos declarados: `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`, `.../auth/drive.file`, `.../auth/gmail.send` | Hecho el 23/10/2026 |
+| 6 | Justificación de `gmail.send` (texto abajo) | Pegada en «Acceso a los datos» el 23/10/2026 |
 | 7 | Vídeo de demostración en YouTube (oculto) | Guion abajo; lo grabas en el teléfono |
-| 8 | «Publicar app» (pasa de Prueba a Producción) y «Preparar para verificación» | **Tú** |
+| 8 | La app ya está «En producción» (3 de 100 usuarios sin verificar). Falta «Preparar para verificación» en el Centro de verificación, cuando la marca esté verificada y el vídeo subido | **Tú** (o yo con la sesión abierta) |
 | 9 | Responder a los correos del equipo de verificación (suele tardar de 3 a 5 días hábiles, a veces semanas) | **Tú** (puedo redactar las respuestas) |
 
 Microsoft (Entra) no exige verificación para `Mail.Send` delegado, pero

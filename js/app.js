@@ -549,16 +549,49 @@ async function abrirDxf(archivo) {
   }
 }
 
+/* Qué es un archivo, por el nombre o, si no lo trae (OneDrive, Drive y
+   otras nubes en Android a veces lo entregan sin extensión o como
+   «application/octet-stream»), por sus primeros bytes. */
+async function tipoDe(archivo) {
+  const nombre = (archivo.name || '').toLowerCase();
+  if (nombre.endsWith('.ifc')) return 'ifc';
+  if (esDxf(archivo)) return 'dxf';
+  if (nombre.endsWith('.dwg')) return 'dwg';
+  const cabeza = await archivo.slice(0, 4096).text().catch(() => '');
+  if (/ISO-10303-21/.test(cabeza)) return 'ifc';
+  if (/^AC10\d\d/.test(cabeza)) return 'dwg';
+  if (/^\s*0\s*\r?\n\s*SECTION/.test(cabeza)) return 'dxf';
+  return null;
+}
+
+async function abrirElegido(archivo) {
+  const tipo = await tipoDe(archivo);
+  if (tipo === 'dxf') return abrirDxf(archivo);
+  if (tipo === 'dwg') {
+    avisar(nodos.aviso, 'Los DWG no se pueden abrir aquí: en AutoCAD, Guardar como → «AutoCAD DXF» y abre el .dxf.', 7000);
+    return;
+  }
+  if (tipo !== 'ifc') {
+    avisar(nodos.aviso, `«${archivo.name || 'Ese archivo'}» no es un modelo IFC ni un plano DXF.`, 6000);
+    return;
+  }
+  let datos;
+  try {
+    datos = await archivo.arrayBuffer();
+  } catch (e) {
+    // Archivo de la nube que no se terminó de bajar al teléfono.
+    avisar(nodos.aviso, 'No se pudo leer el archivo. Si está en OneDrive o Drive, márcalo «Disponible sin conexión» (o descárgalo) y vuelve a abrirlo.', 8000);
+    return;
+  }
+  const nombre = /\.ifc$/i.test(archivo.name || '') ? archivo.name : 'Modelo IFC.ifc';
+  cargar(datos, nombre, true);
+}
+
 nodos.entrada.addEventListener('change', async () => {
   const archivo = nodos.entrada.files && nodos.entrada.files[0];
   if (!archivo) return;
   nodos.entrada.value = '';
-  if (esDxf(archivo)) return abrirDxf(archivo);
-  if (/\.dwg$/i.test(archivo.name)) {
-    avisar(nodos.aviso, 'Los DWG no se pueden abrir aquí: en AutoCAD, Guardar como → «AutoCAD DXF» y abre el .dxf.', 7000);
-    return;
-  }
-  cargar(await archivo.arrayBuffer(), archivo.name, true);
+  abrirElegido(archivo);
 });
 
 nodos.ejemplo.addEventListener('click', async () => {
@@ -575,11 +608,7 @@ addEventListener('dragover', (ev) => ev.preventDefault());
 addEventListener('drop', async (ev) => {
   ev.preventDefault();
   const archivo = ev.dataTransfer && ev.dataTransfer.files[0];
-  if (archivo && /\.ifc$/i.test(archivo.name)) {
-    cargar(await archivo.arrayBuffer(), archivo.name, true);
-  } else if (archivo && esDxf(archivo)) {
-    abrirDxf(archivo);
-  }
+  if (archivo) abrirElegido(archivo);
 });
 
 /* Colores, Cortes y Vista abren el panel más bajo: se ajustan mirando el modelo. */

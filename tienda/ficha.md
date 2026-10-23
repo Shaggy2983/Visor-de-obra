@@ -12,7 +12,7 @@ de publicar: tú respondes ante Google por lo que se declara.
 | Categoría | Empresa |
 | Etiquetas | Productividad, Herramientas |
 | Correo de contacto | hola.coordinate.rd@gmail.com |
-| Sitio web | https://coordinate.do |
+| Sitio web | https://shaggy2983.github.io/ (cambiar a https://coordinate.do cuando exista) |
 | Política de privacidad | https://shaggy2983.github.io/Visor-de-obra/privacidad.html |
 | Precio | Gratuita, sin anuncios ni compras |
 

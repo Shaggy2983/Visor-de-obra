@@ -1,7 +1,8 @@
 # COORDINATE · Obra — contexto del proyecto
 
 App de campo de **COORDINATE** (coordinación BIM y gestión de datos de
-proyectos, Santo Domingo, RD; hola@coordinate.do). Lema: «Los problemas se
+proyectos, Santo Domingo, RD; contacto hola.coordinate.rd@gmail.com hasta
+tener hola@coordinate.do). Lema: «Los problemas se
 resuelven en el modelo, no en obra.» Todo en español.
 
 ## Reglas que no se discuten

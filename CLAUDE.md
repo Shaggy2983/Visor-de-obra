@@ -224,9 +224,8 @@ Entra) en `js/cuentas-config.js`.
    hechos el menú del símbolo, inspecciones, vaciados, avance con curva S,
    minutas y días afectados. Siguen: RFI y órdenes de cambio, recepción de
    materiales, SST (charla de 5 min, EPP, permisos), repasos en el plano y
-   exportar CSV. Reglas con `inspecciones` y `vaciados` publicadas el
-   22/10/2026; **`programas` y `minutas` hay que publicarlas** (si no, no
-   sincronizan). El programa es un documento por obra: si dos personas
+   exportar CSV. Reglas con `inspecciones`, `vaciados`, `programas` y
+   `minutas` publicadas el 22/10/2026 (idénticas al repositorio). El programa es un documento por obra: si dos personas
    anotan avance a la vez, gana la última escritura.
 5. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
    repasos en el plano, papel de empresa por encima de los equipos.

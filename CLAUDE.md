@@ -37,6 +37,9 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - **Dictado por voz** (`js/dictado.js`): micrófono en cada `textarea.campo`
   (Web Speech API de Chrome, sin servicios de pago; necesita señal).
   Órdenes: «coma», «dos puntos», «punto y seguido», «punto y aparte».
+  En Samsung Internet / WebView (la pestaña se bloqueaba al dictar) o si la
+  página se cayó arrancando (`crd-dictado-arranque` → `crd-dictado-roto`, 7
+  días), el 🎤 abre el teclado y remite a su dictado. On-device sólo en Chrome.
 - **Tiempo del lugar** (`js/clima.js`): al abrir la visita del día sin
   temperatura, o con «📍 Tomar del lugar», ubicación aproximada (redondeada)
   → Open-Meteo (libre, sin clave) → temperatura y estados. Declarado en

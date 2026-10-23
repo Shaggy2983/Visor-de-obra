@@ -16,6 +16,30 @@ import { marcarHora } from './horas.js';
 
 const Reconocedor = window.SpeechRecognition || window.webkitSpeechRecognition;
 
+/* Dónde el dictado de la página no es fiable: Samsung Internet y los
+   WebView declaran el reconocimiento de voz, pero en algunos teléfonos la
+   pestaña se bloquea al usarlo («La pestaña se ha bloqueado»). Ahí el 🎤
+   lleva al dictado del teclado (Gboard o Samsung Keyboard). Si la página
+   se cae a mitad de un arranque, el teléfono lo recuerda 7 días. */
+const UA = navigator.userAgent || '';
+const NAVEGADOR_SIN_DICTADO = /SamsungBrowser|; wv\)|Version\/[\d.]+ Chrome\/[\d.]+ Mobile/.test(UA);
+const CHROME_DE_VERDAD = /Chrome\/\d+/.test(UA) && !/SamsungBrowser|EdgA|OPR|YaBrowser|; wv\)/.test(UA);
+const CLAVE_ARRANQUE = 'crd-dictado-arranque';
+const CLAVE_ROTO = 'crd-dictado-roto';
+const leer = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const poner = (k, v) => { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } };
+(() => {
+  const arranque = Number(leer(CLAVE_ARRANQUE));
+  if (arranque && Date.now() - arranque < 10 * 60 * 1000) poner(CLAVE_ROTO, String(Date.now()));
+  poner(CLAVE_ARRANQUE, null);
+})();
+function dictadoRoto() {
+  const t = Number(leer(CLAVE_ROTO));
+  if (t && Date.now() - t > 7 * 24 * 3600 * 1000) { poner(CLAVE_ROTO, null); return false; }
+  return Boolean(t);
+}
+const modoTeclado = () => !Reconocedor || NAVEGADOR_SIN_DICTADO || dictadoRoto();
+
 const ORDENES = [
   [/\s*\b(punto y aparte|nueva l[ií]nea|nuevo p[aá]rrafo)\b\s*/gi, '.\n'],
   [/\s*\b(punto y seguido|punto final)\b\s*/gi, '. '],
@@ -78,6 +102,7 @@ function parar() {
   const { boton, rec, area, vigia } = activo;
   if (activo.vivo) { const t = activo.vivo.texto; quitarVivo(area, activo); insertar(area, limpiar(t)); }
   activo = null;
+  poner(CLAVE_ARRANQUE, null);
   clearTimeout(vigia);
   boton.classList.remove('escuchando', 'oyendo');
   boton.setAttribute('aria-pressed', 'false');
@@ -92,6 +117,7 @@ let local = null;
 async function hayLocal() {
   if (local !== null) return local;
   local = false;
+  if (!CHROME_DE_VERDAD) return local;
   try {
     if (Reconocedor.available) {
       const r = await Reconocedor.available({ langs: [idioma()], processLocally: true });
@@ -161,7 +187,7 @@ function escuchar(area, boton) {
   if (activo.local) rec.processLocally = true;   // en el teléfono, sin ir a internet
   const estado = activo;
   estado.rec = rec;
-  rec.onaudiostart = () => { boton.classList.add('oyendo'); clearTimeout(estado.vigia); };
+  rec.onaudiostart = () => { boton.classList.add('oyendo'); clearTimeout(estado.vigia); poner(CLAVE_ARRANQUE, null); };
   rec.onresult = (ev) => {
     let provisional = '';
     for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -198,7 +224,14 @@ function escuchar(area, boton) {
   rec.start();
 }
 
+/* Dictado con el teclado: se abre el teclado en el cuadro y se explica. */
+function conTeclado(area) {
+  area.focus();
+  aviso('Para dictar aquí, toca el 🎤 del teclado (Gboard o Samsung Keyboard). Para usar el dictado de la app, abre la app en Chrome.');
+}
+
 async function empezar(area, boton) {
+  if (modoTeclado()) { conTeclado(area); return; }
   if (activo && activo.area === area) { parar(); return; }
   parar();
   activo = { area, boton, rec: null, vigia: 0, fallo: false };
@@ -207,6 +240,8 @@ async function empezar(area, boton) {
   boton.title = 'Parar dictado';
   const estado = activo;
   if (!(await pedirMicrofono()) || activo !== estado) { if (activo === estado) parar(); return; }
+  // Si la pestaña se cae entre aquí y el primer sonido, al recargar se sabrá.
+  poner(CLAVE_ARRANQUE, String(Date.now()));
   estado.local = await hayLocal();
   // Si en 6 s no llega sonido, algo bloquea el reconocimiento.
   estado.vigia = setTimeout(() => {
@@ -244,7 +279,8 @@ function recorrer(raiz) {
   raiz.querySelectorAll?.('textarea.campo').forEach(preparar);
 }
 
-if (Reconocedor) {
+// El 🎤 se pone siempre: donde la app no puede dictar, lleva al del teclado.
+{
   recorrer(document.body);
   new MutationObserver((cambios) => {
     for (const c of cambios) c.addedNodes.forEach((n) => { if (n.nodeType === 1) recorrer(n); });

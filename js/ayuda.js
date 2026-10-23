@@ -13,7 +13,7 @@ const SECCIONES = [
       { t: 'Tiempo del lugar', p: ['Al abrir la visita del día, la app toma la temperatura y el tiempo de donde estás.', 'Para repetirlo: «📍 Tomar del lugar». Usa una ubicación aproximada.'] },
       { t: 'Personal en obra', p: ['«+ Añadir empresa u oficio» y el número de personas.', 'La app te propone las empresas y oficios que ya has escrito.'] },
       { t: 'Línea de tiempo de los trabajos', p: ['En «Trabajos realizados» cada línea nueva empieza con la hora («08:15 · …»).', 'Toca Enter (salto de línea) para la siguiente actividad: queda el registro del día.'] },
-      { t: 'Dictado por voz', p: ['Toca el micrófono 🎤 de cualquier cuadro de texto y habla.', 'Di «coma», «dos puntos», «punto y seguido» o «punto y aparte».', 'Necesita señal; la primera vez pide permiso del micrófono.'] },
+      { t: 'Dictado por voz', p: ['Toca el micrófono 🎤 de cualquier cuadro de texto y habla.', 'Di «coma», «dos puntos», «punto y seguido» o «punto y aparte».', 'Necesita señal; la primera vez pide permiso del micrófono.', 'Si el teléfono abre la app con Samsung Internet, el 🎤 lleva al dictado del teclado (Gboard o Samsung Keyboard). Para el dictado de la app, pon Chrome como navegador predeterminado.'] },
       { t: 'Corrector y texto predictivo', p: ['El teclado corrige en español e inglés.', 'Al escribir aparecen frases que ya usaste: tócalas para completarlas.'] },
       { t: 'Incidencias', p: ['«+ Añadir incidencia» con su gravedad (leve, media, grave).', 'Marca «Resuelta» cuando se arregle: guarda la hora.', 'Las abiertas pasan solas a la visita siguiente.'] },
       { t: 'Fotos', p: ['«Tomar foto» o «De la galería».', 'Puedes vincular fotos a una nota del plano.'] },

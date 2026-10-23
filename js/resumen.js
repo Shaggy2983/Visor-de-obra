@@ -79,6 +79,7 @@ export function resumenDia(obras, fecha, nombreDe) {
         id: v.id, hora: v.hora || '', autor: autorDe(v, (u) => nombreDe(obra, u)),
         personas: personasDe(v), firmada: firmada(v), clima: v.clima || [], temperatura: v.temperatura || '',
         jornada: v.jornada || 'Normal', trabajos: extracto(v.trabajos, 4), fotos: (v.fotos || []).length,
+        carpeta: v.carpetaEnlace || null,
         incidenciasAbiertas: (v.incidencias || []).filter(abierta).length
       })),
       personas: Math.max(0, ...delDia.map(personasDe)),

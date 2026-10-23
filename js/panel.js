@@ -116,6 +116,7 @@ function pintarDia(r) {
             el('strong', {}, `${v.hora ? `${v.hora} · ` : ''}${v.autor}`),
             v.firmada ? etiqueta('Firmada', 'ok') : etiqueta('Sin firmar', 'atencion'),
             v.jornada !== 'Normal' && etiqueta(v.jornada, 'atencion'),
+            v.carpeta && el('a', { class: 'enlace', href: v.carpeta, target: '_blank', rel: 'noopener noreferrer', title: 'Fotos, firma y planos en la nube del autor' }, '📷 Fotos'),
             enlaceVisita(v.id)),
           el('p', { class: 'pie' }, [plural(v.personas, 'persona', 'personas'), [v.clima.join(', '), v.temperatura].filter(Boolean).join(' · '), v.fotos && plural(v.fotos, 'foto', 'fotos')].filter(Boolean).join(' · ')),
           v.trabajos.length

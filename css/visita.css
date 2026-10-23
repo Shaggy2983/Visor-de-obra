@@ -1023,3 +1023,15 @@ textarea.campo.dictando { caret-color: transparent; }
 .midiendo .pin { pointer-events: none; opacity: .6; }
 .escala-plano { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--texto-tenue); }
 .escala-plano .campo { width: auto; min-height: 2.2rem; padding: .25rem .4rem; font-size: .9rem; }
+
+/* fotos y planos que están en la nube de otra persona (sin Storage) */
+.foto-remota {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem;
+  min-height: 7rem; padding: .5rem; border: 1px dashed var(--borde); border-radius: .5rem;
+  color: var(--texto-tenue); font-size: .8rem; text-align: center; text-decoration: none;
+}
+a.foto-remota { color: var(--acento); }
+.foto-remota-icono { font-size: 1.6rem; }
+.plano-remoto { display: flex; flex-direction: column; gap: .25rem; padding: .7rem 0; text-decoration: none; color: var(--texto); }
+.plano-remoto-icono { font-size: 2rem; text-align: center; }
+.firma-remota a { color: var(--seleccion); }

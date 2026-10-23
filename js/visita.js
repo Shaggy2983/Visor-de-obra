@@ -21,7 +21,7 @@ import {
 import { crearNube } from './nube.js';
 import { avisoPendiente, vinculadas } from './cuentas.js';
 import * as novedades from './novedades.js';
-import { equipo } from './equipo.js';
+import { equipo, planosRemotos } from './equipo.js';
 import { iniciarEquipoUI } from './equipo-ui.js';
 import { crearMisRepasos } from './mis-repasos.js';
 import { climaActual, permisoUbicacion } from './clima.js';
@@ -118,6 +118,7 @@ function normalizar(v) {
   if (!Array.isArray(v.notas)) v.notas = [];
   if (!Array.isArray(v.trazos)) v.trazos = [];
   if (!Array.isArray(v.medidas)) v.medidas = [];
+  if (!Array.isArray(v.fotosRemotas)) v.fotosRemotas = [];
   for (const f of v.fotos) if (f.nota === undefined) f.nota = null;
   return v;
 }
@@ -315,6 +316,13 @@ function abrirFicha(v, { recarga = false } = {}) {
   verTodosPlanos = false;
   pintarPlanos();
   firma.cargar(v.firma);
+  const firmaRemota = document.getElementById('firma-remota');
+  firmaRemota.hidden = !(!v.firma && v.firmaRemota);
+  firmaRemota.replaceChildren(...(v.firmaRemota && !v.firma
+    ? ['Firmada en otro teléfono. ', v.firmaRemota.enlace
+      ? el('a', { href: v.firmaRemota.enlace, target: '_blank', rel: 'noopener noreferrer' }, 'Ver la firma en la nube')
+      : 'La imagen está en el teléfono de quien firmó.']
+    : []));
   nodos.avisoLectura.hidden = equipo.rolEn(v.obraId) !== 'lector';
   nodos.estadoGuardado.textContent = 'Guardado';
   if (!recarga) scrollTo(0, 0);
@@ -532,7 +540,17 @@ function pintarFotos() {
       }, '✕')
     );
   }));
-  nodos.totalFotos.textContent = actual.fotos.length ? String(actual.fotos.length) : '';
+  // Fotos de otra persona que no están en este teléfono (sin Storage):
+  // se abren en su Drive u OneDrive.
+  for (const f of actual.fotosRemotas || []) {
+    nodos.fotos.append(f.enlace
+      ? el('a', { class: 'foto foto-remota', href: f.enlace, target: '_blank', rel: 'noopener noreferrer', title: 'Abrir en la nube' },
+        el('span', { class: 'foto-remota-icono' }, '📷'), el('span', {}, f.pie || 'Ver foto en la nube'))
+      : el('div', { class: 'foto foto-remota' },
+        el('span', { class: 'foto-remota-icono' }, '📷'), el('span', {}, 'En el teléfono de quien la hizo')));
+  }
+  const totalFotos = actual.fotos.length + (actual.fotosRemotas || []).length;
+  nodos.totalFotos.textContent = totalFotos ? String(totalFotos) : '';
 }
 
 function ampliar(url) {
@@ -607,7 +625,19 @@ async function pintarPlanos() {
       }, '✕')
     );
   }));
-  if (!visibles.length) {
+  // Planos de la obra que están en la nube de otra persona (sin Storage).
+  for (const p of visita.obraId ? planosRemotos(visita.obraId) : []) {
+    if (planos.some((x) => x.id === p.id)) continue;
+    nodos.planos.append(el('div', { class: 'plano-ficha' },
+      p.enlace
+        ? el('a', { class: 'plano-abrir plano-remoto', href: p.enlace, target: '_blank', rel: 'noopener noreferrer' },
+          el('span', { class: 'plano-remoto-icono' }, '🗺️'), el('span', { class: 'plano-titulo' }, p.nombre || 'Plano'),
+          el('span', { class: 'pie' }, 'En la nube de quien lo cargó · abrir'))
+        : el('div', { class: 'plano-abrir plano-remoto' },
+          el('span', { class: 'plano-remoto-icono' }, '🗺️'), el('span', { class: 'plano-titulo' }, p.nombre || 'Plano'),
+          el('span', { class: 'pie' }, 'Sólo en el teléfono de quien lo cargó'))));
+  }
+  if (!visibles.length && !nodos.planos.childElementCount) {
     nodos.planos.append(el('p', { class: 'pie' }, 'Carga un plano (PDF, DXF o imagen) para marcar notas y medir sobre él.'));
   }
 }

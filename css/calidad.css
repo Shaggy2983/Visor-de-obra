@@ -1,0 +1,201 @@
+/* Calidad de obra (calidad.html): inspecciones con checklist y vaciados de
+   hormigón. Se carga detrás de estilos.css, visita.css y panel.css. */
+
+.pestanas-calidad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .3rem;
+  margin-bottom: .8rem;
+  padding: .25rem;
+  border: 1px solid var(--borde);
+  border-radius: .8rem;
+  background: var(--fondo-2);
+}
+.pestana-calidad {
+  padding: .55rem .4rem;
+  border-radius: .6rem;
+  color: var(--texto-tenue);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+.pestana-calidad.activa { background: var(--acento); color: var(--texto-sobre-acento); }
+
+.tarjeta-alerta { color: var(--peligro-texto); font-weight: 600; }
+.tarjeta-fecha .etiqueta { margin-left: .35rem; }
+.chips[hidden] { display: none; }
+.tres { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .6rem; }
+.aviso-texto { color: var(--aviso-texto) !important; }
+
+/* ---------- agenda de roturas ---------- */
+.agenda { margin-bottom: 1rem; }
+.agenda[hidden] { display: none; }
+.agenda h2 { margin: 0 0 .45rem; font-size: .8rem; letter-spacing: .08em; text-transform: uppercase; color: var(--texto-tenue); }
+.agenda-lista { display: flex; flex-direction: column; gap: .35rem; }
+.agenda-item {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .5rem .65rem;
+  border: 1px solid var(--borde); border-left: 3px solid var(--borde);
+  border-radius: .6rem;
+  background: var(--fondo-2); color: var(--texto); text-decoration: none;
+}
+.agenda-item.hoy { border-left-color: var(--aviso-texto); }
+.agenda-item.vencida { border-left-color: var(--peligro-texto); }
+.agenda-fecha { min-width: 4.8rem; font-size: .8rem; font-weight: 700; color: var(--texto-tenue); text-transform: capitalize; }
+.agenda-item.hoy .agenda-fecha { color: var(--aviso-texto); }
+.agenda-item.vencida .agenda-fecha { color: var(--peligro-texto); }
+.agenda-texto { display: flex; flex-direction: column; min-width: 0; }
+.agenda-texto .pie { margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- nueva inspección: plantillas ---------- */
+.etiqueta-campo { display: block; font-size: .8rem; color: var(--texto-tenue); margin-bottom: .6rem; }
+.etiqueta-campo .campo { margin-top: .2rem; font-size: 16px; }
+.plantillas { display: grid; gap: .4rem; }
+.plantilla {
+  display: flex; align-items: center; gap: .7rem;
+  padding: .6rem .7rem;
+  border: 1px solid var(--borde); border-radius: .7rem;
+  background: var(--fondo); color: var(--texto);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.plantilla:hover, .plantilla:focus-visible { border-color: var(--acento); outline: none; }
+.plantilla > span:last-child { display: flex; flex-direction: column; }
+.plantilla .pie { margin: 0; }
+.plantilla-icono { font-size: 1.35rem; width: 1.8rem; text-align: center; }
+
+/* ---------- checklist ---------- */
+.progreso {
+  display: flex; height: .45rem; margin: .1rem 0 .8rem;
+  overflow: hidden; border-radius: 1rem; background: var(--fondo-3);
+}
+.progreso span { display: block; height: 100%; transition: width .25s ease; }
+.progreso-si { background: var(--acento); }
+.progreso-no { background: var(--peligro-texto); }
+.progreso-na { background: var(--texto-tenue); opacity: .5; }
+
+.puntos { display: flex; flex-direction: column; gap: .5rem; margin-bottom: .4rem; }
+.punto {
+  padding: .55rem .6rem .6rem;
+  border: 1px solid var(--borde); border-left: 4px solid var(--borde);
+  border-radius: .7rem;
+  background: var(--fondo-2);
+}
+.punto.si { border-left-color: var(--acento); }
+.punto.no { border-left-color: var(--peligro-texto); }
+.punto.na { border-left-color: var(--texto-tenue); opacity: .8; }
+.punto-cabecera { display: flex; align-items: flex-start; gap: .5rem; }
+.punto-n {
+  flex: 0 0 auto; display: inline-grid; place-items: center;
+  width: 1.5rem; height: 1.5rem; margin-top: .05rem;
+  border-radius: .4rem; background: var(--fondo-3); color: var(--texto-tenue);
+  font-size: .75rem; font-weight: 700;
+}
+.punto-texto { flex: 1; font-size: .93rem; line-height: 1.35; padding-top: .1rem; }
+.punto-texto-propio { flex: 1; margin: 0 !important; }
+.punto-cabecera .quitar { min-height: 2rem; margin-top: -.2rem; }
+.punto-valores { display: grid; grid-template-columns: 1fr 1fr .7fr auto; gap: .3rem; margin-top: .45rem; }
+.valor {
+  padding: .5rem .3rem;
+  border: 1px solid var(--borde); border-radius: .55rem;
+  background: var(--fondo); color: var(--texto);
+  font: inherit; font-size: .84rem; font-weight: 600; cursor: pointer;
+}
+.valor-si.activo { background: var(--acento); border-color: var(--acento); color: var(--texto-sobre-acento); }
+.valor-no.activo { background: var(--peligro-texto); border-color: var(--peligro-texto); color: var(--color-bg); }
+.valor-na.activo { background: var(--fondo-3); border-color: var(--texto-tenue); }
+.valor-foto { min-width: 2.6rem; padding: 0 .5rem; }
+.punto-detalle { margin-top: .45rem; }
+.punto-detalle .campo { margin: 0; font-size: 16px; }
+.punto-detalle .pie { margin: .3rem 0 0; }
+.fotos-punto { grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr)); margin-top: .4rem; }
+
+.aviso-repasos {
+  margin-top: .7rem; padding: .65rem .75rem;
+  border: 1px solid var(--peligro-texto); border-radius: .7rem;
+  background: rgba(var(--superficie-rgb), .6);
+}
+.aviso-repasos p { margin: 0 0 .5rem; font-size: .88rem; }
+
+/* ---------- vaciado: camiones y probetas ----------
+   En el teléfono cada fila va en dos líneas para que los números se lean. */
+.camiones, .probetas { display: flex; flex-direction: column; gap: .5rem; }
+.camion {
+  display: grid;
+  grid-template-columns: 1.4rem 1.6fr 1fr 2.4rem;
+  grid-template-areas: "n conduce m3 quitar" "n hora rev rev";
+  gap: .35rem .4rem; align-items: end;
+  padding: .45rem .5rem;
+  border: 1px solid var(--borde); border-radius: .65rem;
+  background: var(--fondo);
+}
+.camion > :nth-child(1) { grid-area: n; }
+.camion > :nth-child(2) { grid-area: conduce; }
+.camion > :nth-child(3) { grid-area: m3; }
+.camion > :nth-child(4) { grid-area: hora; }
+.camion > :nth-child(5) { grid-area: rev; }
+.camion > :nth-child(6) { grid-area: quitar; }
+.camion label { font-size: .7rem; }
+.camion .campo { margin: 0; padding: .5rem .45rem; }
+.camion-n { align-self: center; color: var(--texto-tenue); font-size: .85rem; font-weight: 700; text-align: center; }
+.campo.fuera { border-color: var(--aviso-texto); color: var(--aviso-texto); font-weight: 600; }
+
+.probeta {
+  display: grid;
+  grid-template-columns: 1fr 5rem 2.4rem;
+  grid-template-areas: "codigo edad quitar" "fecha valor pct";
+  gap: .35rem .4rem; align-items: center;
+  padding: .45rem .5rem;
+  border: 1px solid var(--borde); border-radius: .65rem;
+  background: var(--fondo);
+}
+.probeta > :nth-child(1) { grid-area: codigo; }
+.probeta > :nth-child(2) { grid-area: edad; }
+.probeta > :nth-child(3) { grid-area: fecha; }
+.probeta > :nth-child(4) { grid-area: valor; }
+.probeta > :nth-child(5) { grid-area: pct; }
+.probeta > :nth-child(6) { grid-area: quitar; }
+.probeta .campo { margin: 0; padding: .5rem .45rem; }
+.probeta-cabecera { display: none; }
+.probeta-fecha { display: flex; flex-wrap: wrap; align-items: center; gap: .1rem .4rem; font-size: .82rem; text-transform: capitalize; line-height: 1.2; }
+.probeta-fecha::before { content: "Rotura:"; color: var(--texto-tenue); text-transform: none; }
+.probeta-fecha .etiqueta { font-size: .66rem; }
+.probeta-pct { font-size: .85rem; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.probeta.hoy { border-color: var(--aviso-texto); box-shadow: inset 3px 0 0 var(--aviso-texto); }
+.probeta.vencida { border-color: var(--peligro-texto); box-shadow: inset 3px 0 0 var(--peligro-texto); }
+.probeta.resaltada { animation: resaltar 1.6s ease-out; }
+@keyframes resaltar { 0%, 30% { background: var(--fondo-3); outline: 2px solid var(--acento); } 100% { outline-color: transparent; } }
+
+/* En pantallas anchas, una sola línea con cabecera. */
+@media (min-width: 640px) {
+  .camion { grid-template-columns: 1.4rem 1.5fr .8fr 1.1fr .8fr 2.4rem; grid-template-areas: "n conduce m3 hora rev quitar"; }
+  .probeta { grid-template-columns: 1.4fr .9fr 1.4fr 1.1fr 3.2rem 2.4rem; grid-template-areas: "codigo edad fecha valor pct quitar"; }
+  .probeta-cabecera { display: grid; border: 0; background: none; padding-bottom: 0; font-size: .68rem; color: var(--texto-tenue); text-transform: uppercase; letter-spacing: .05em; }
+  .probeta-fecha::before { content: none; }
+}
+
+.tabla-evaluacion { width: 100%; margin-top: .7rem; border-collapse: collapse; font-size: .86rem; }
+.tabla-evaluacion th { text-align: left; font-size: .7rem; color: var(--texto-tenue); text-transform: uppercase; letter-spacing: .05em; padding: .3rem; border-bottom: 1px solid var(--borde); }
+.tabla-evaluacion td { padding: .35rem .3rem; border-bottom: 1px solid var(--borde); }
+
+@media (max-width: 420px) {
+  .punto-valores { grid-template-columns: 1fr 1.1fr .7fr auto; }
+}
+
+/* ---------- PDF: acta de inspección y registro de vaciado ---------- */
+@media print {
+  .informe { page: acta; }
+  @page acta {
+    size: A4;
+    margin: 14mm 13mm 16mm;
+    @bottom-left { content: "COORDINATE · Calidad de obra"; font: 7pt "Inter", sans-serif; color: #6b7a90; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 7pt "Inter", sans-serif; color: #6b7a90; }
+  }
+  .informe-estado { display: inline-block; padding: .3mm 2mm; border-radius: 1mm; font-size: 7.5pt; font-weight: 700; border: .6pt solid #c9d3e2; color: #6b7a90; }
+  .informe-estado.si { color: #1f6f3f; border-color: #1f6f3f; }
+  .informe-estado.no { color: #c0392b; border-color: #c0392b; }
+  .informe-evaluacion { margin-top: 3mm; }
+  /* La liberación y sus firmas, siempre juntas en la misma página. */
+  .informe .informe-firma { break-inside: avoid; page-break-inside: avoid; }
+  .informe .informe-firmas { display: flex; gap: 8mm; break-inside: avoid; page-break-inside: avoid; }
+  .informe .informe-firma-caja { flex: 1; break-inside: avoid; }
+}

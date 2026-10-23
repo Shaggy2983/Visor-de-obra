@@ -27,13 +27,15 @@ const REPASOS = 'repasos';
 const BAJAS = 'bajas';
 const SINC = 'sinc';
 const SUBIDOS = 'subidos';
+const INSPECCIONES = 'inspecciones';
+const VACIADOS = 'vaciados';
 
 function abrir() {
   return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 4);
+    const peticion = indexedDB.open(BASE, 5);
     peticion.onupgradeneeded = () => {
       const bd = peticion.result;
-      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC]) {
+      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS]) {
         if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
       }
       if (!bd.objectStoreNames.contains(SUBIDOS)) bd.createObjectStore(SUBIDOS, { keyPath: 'ruta' });
@@ -133,6 +135,45 @@ export async function guardarRepaso(repaso, { callado = false } = {}) {
 
 export function borrarRepaso(id, { callado = false } = {}) {
   return borrarConBaja(REPASOS, 'repasos', id, callado);
+}
+
+/* --- calidad: inspecciones (protocolos de liberación) y vaciados de
+   hormigón. Como los repasos, son de la obra y no de una visita. --- */
+
+const porFecha = (a, b) => (b.fecha || '').localeCompare(a.fecha || '') || (b.creado || 0) - (a.creado || 0);
+
+export async function listarInspecciones() {
+  return ((await operar('readonly', (t) => t.getAll(), INSPECCIONES)) || []).sort(porFecha);
+}
+
+export function leerInspeccion(id) {
+  return operar('readonly', (t) => t.get(id), INSPECCIONES).then((r) => r || null);
+}
+
+export async function guardarInspeccion(r, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(r), INSPECCIONES);
+  avisarCambio(callado);
+}
+
+export function borrarInspeccion(id, { callado = false } = {}) {
+  return borrarConBaja(INSPECCIONES, 'inspecciones', id, callado);
+}
+
+export async function listarVaciados() {
+  return ((await operar('readonly', (t) => t.getAll(), VACIADOS)) || []).sort(porFecha);
+}
+
+export function leerVaciado(id) {
+  return operar('readonly', (t) => t.get(id), VACIADOS).then((r) => r || null);
+}
+
+export async function guardarVaciado(r, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(r), VACIADOS);
+  avisarCambio(callado);
+}
+
+export function borrarVaciado(id, { callado = false } = {}) {
+  return borrarConBaja(VACIADOS, 'vaciados', id, callado);
 }
 
 /* --- estado de la sincronización --- */

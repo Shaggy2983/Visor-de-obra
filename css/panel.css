@@ -147,24 +147,6 @@
 
 .menu-equipo .obra-compartida { width: 100%; }
 
-/* contador sobre el botón de la cabecera */
-.boton-equipo { position: relative; }
-.boton-equipo .contador {
-  position: absolute;
-  top: -.35rem;
-  right: -.35rem;
-  min-width: 1.15rem;
-  height: 1.15rem;
-  padding: 0 .25rem;
-  border-radius: 1rem;
-  background: var(--peligro-texto);
-  color: var(--color-bg);
-  font-size: .7rem;
-  font-weight: 700;
-  line-height: 1.15rem;
-  text-align: center;
-}
-.boton-equipo .contador[hidden] { display: none; }
 
 /* ---------- impresión del panel ---------- */
 

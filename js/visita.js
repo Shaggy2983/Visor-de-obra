@@ -6,7 +6,8 @@
 import {
   listarVisitas, leerVisita, guardarVisita, borrarVisita,
   listarPlanos, leerPlano, guardarPlano, borrarPlano,
-  listarRepasos, leerRepaso, guardarRepaso
+  listarRepasos, leerRepaso, guardarRepaso,
+  listarInspecciones, leerInspeccion, guardarInspeccion, listarVaciados, leerVaciado, guardarVaciado
 } from './partes.js';
 import { avisar } from './interfaz.js';
 import {
@@ -25,6 +26,7 @@ import { equipo, planosRemotos } from './equipo.js';
 import { iniciarEquipoUI } from './equipo-ui.js';
 import { crearMisRepasos } from './mis-repasos.js';
 import { climaActual, permisoUbicacion } from './clima.js';
+import { resumenCalidad } from './calidad-datos.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -170,8 +172,14 @@ async function enrutar() {
     }
     return;
   }
+  // Vistas del menú: cuentas vinculadas, copia de seguridad y novedades.
+  const vista = (location.hash.match(/^#\/(cuentas|copia|novedades)$/) || [])[1] || '';
   visor.cerrar();
-  return mostrarLista();
+  await mostrarLista(vista === 'novedades' ? '' : vista);
+  if (vista === 'novedades') {
+    history.replaceState(null, '', location.pathname);
+    menuEquipo();
+  }
 }
 
 let planoDesdeFicha = false;   // se llegó al plano desde la ficha: "volver" es ir atrás
@@ -192,8 +200,13 @@ function cerrarPlano() {
 /* lista                                                               */
 /* ------------------------------------------------------------------ */
 
-async function mostrarLista() {
+async function mostrarLista(vista = '') {
   actual = null;
+  nodos.vistaLista.classList.toggle('modo-datos', Boolean(vista));
+  $('grupo-cuentas').classList.toggle('activo', vista === 'cuentas');
+  $('grupo-copia').classList.toggle('activo', vista === 'copia');
+  if (vista) nodos.vistaLista.scrollTop = 0;
+  pintarAvisosCalidad();
   liberarUrls();
   liberarUrlsPlanos();
   punch.liberar();
@@ -209,6 +222,26 @@ async function mostrarLista() {
     avisar(nodos.aviso, 'No se pueden leer las visitas guardadas en este navegador.', 5000);
   }
   pintarLista();
+}
+
+/* Avisos de calidad en el inicio: probetas por romper y protocolos de
+   inspección sin cerrar (js/calidad.js). */
+async function pintarAvisosCalidad() {
+  const caja = $('avisos-calidad');
+  let r;
+  try { r = await resumenCalidad(); } catch (e) { return; }
+  const avisos = [];
+  const tarjeta = (href, icono, titulo, texto, urgente) => el('a', { class: `aviso-calidad${urgente ? ' urgente' : ''}`, href },
+    el('span', {}, icono), el('span', {}, el('strong', {}, titulo), el('p', { class: 'pie' }, texto)));
+  if (r.hoy || r.vencidas) {
+    avisos.push(tarjeta('./calidad.html#/vaciados', '🧱',
+      [r.hoy && `${plural(r.hoy, 'probeta', 'probetas')} para romper hoy`, r.vencidas && `${r.vencidas} vencida${r.vencidas === 1 ? '' : 's'}`].filter(Boolean).join(' · '),
+      'Anota el resultado del laboratorio en el vaciado.', r.vencidas > 0));
+  }
+  if (r.bajas) avisos.push(tarjeta('./calidad.html#/vaciados', '⚠️', `${plural(r.bajas, 'vaciado', 'vaciados')} por debajo de f'c a 28 días`, 'Revisa los resultados con el calculista.', true));
+  if (r.abiertas) avisos.push(tarjeta('./calidad.html#/inspecciones', '✅', `${plural(r.abiertas, 'inspección abierta', 'inspecciones abiertas')}`, 'Falta el resultado o la firma de liberación.', false));
+  caja.replaceChildren(...avisos);
+  caja.hidden = !avisos.length;
 }
 
 function coincide(v, texto) {
@@ -1032,12 +1065,39 @@ function seccionRepasos(lista, fecha, url, nombre) {
 async function lanzarImpresion(titulo, urls) {
   // El diálogo de impresión no espera a las imágenes: hay que decodificarlas antes.
   await Promise.all([...nodos.informe.querySelectorAll('img')].map((i) => i.decode().catch(() => {})));
+  // …y las firmas, que van como fondo.
+  await Promise.all([...nodos.informe.querySelectorAll('.informe-hueco[style]')].map((n) => {
+    const m = n.style.backgroundImage.match(/url\("?(.*?)"?\)/);
+    if (!m) return null;
+    const img = new Image();
+    img.src = m[1];
+    return img.decode().catch(() => {});
+  }));
   // El título del documento es el nombre que propone el PDF.
   const tituloAntes = document.title;
   document.title = titulo.trim();
   addEventListener('afterprint', () => { document.title = tituloAntes; }, { once: true });
   window.print();
   setTimeout(() => { for (const u of urls) URL.revokeObjectURL(u); }, 60000);
+}
+
+/* Inspecciones y vaciados de la misma obra y fecha, para el parte. */
+async function calidadDelDia(v) {
+  const tres = (n) => String(n || 0).padStart(3, '0');
+  const RES = { liberada: 'Liberada', condicionada: 'Con observaciones', rechazada: 'Rechazada' };
+  try {
+    const ins = (await listarInspecciones()).filter((r) => r.fecha === v.fecha && mismaObra(r.obra, v.obra));
+    const vac = (await listarVaciados()).filter((r) => r.fecha === v.fecha && mismaObra(r.obra, v.obra));
+    return [
+      ...ins.map((r) => ({ codigo: `IN-${tres(r.numero)}`, titulo: r.titulo, zona: r.zona, resultado: RES[r.resultado] || 'En curso' })),
+      ...vac.map((r) => ({
+        codigo: `VH-${tres(r.numero)}`, titulo: `Vaciado · ${r.elemento || 'hormigón'}`, zona: r.zona,
+        resultado: `${(r.camiones || []).reduce((t, c) => t + (parseFloat(String(c.m3).replace(',', '.')) || 0), 0).toLocaleString('es-DO', { maximumFractionDigits: 2 })} m³${r.fc ? ` · f'c ${r.fc} ${r.unidad}` : ''}`
+      }))
+    ];
+  } catch (e) {
+    return [];
+  }
 }
 
 async function imprimir() {
@@ -1055,6 +1115,7 @@ async function imprimir() {
   }
   nodos.aviso.hidden = true;
 
+  const calidadDia = await calidadDelDia(v);
   // Pasa por el(): los apartados vacíos llegan como null y no deben pintarse.
   seccionN = 0;
   const repasosV = punch.lista(v);
@@ -1106,6 +1167,12 @@ async function imprimir() {
           el('td', {}, etiqueta(i.estado === 'cerrada' ? 'Resuelta' : 'Abierta', i.estado === 'cerrada' ? 'ok' : 'abierta'))))))
     ),
     seccionRepasos(repasosV, v.fecha, url, 'Punch list · repasos de terminaciones'),
+    calidadDia.length > 0 && el('section', {},
+      titulo('Calidad · inspecciones y vaciados del día', plural(calidadDia.length, 'registro', 'registros')),
+      el('table', { class: 'informe-tabla' },
+        el('thead', {}, el('tr', {}, el('th', {}, 'Nº'), el('th', {}, 'Registro'), el('th', {}, 'Zona'), el('th', {}, 'Resultado'))),
+        el('tbody', {}, ...calidadDia.map((x) => el('tr', {},
+          el('td', { class: 'informe-hora' }, x.codigo), el('td', {}, x.titulo), el('td', {}, x.zona || '—'), el('td', {}, x.resultado)))))),
     bloqueN('Observaciones e instrucciones', v.observaciones),
     ...planosInforme.map(({ plano, imagen, notas }) => el('section', { class: 'informe-plano' },
       titulo(`Plano · ${plano.nombre}`, notas.length ? plural(notas.length, 'nota', 'notas') : null),
@@ -1131,7 +1198,9 @@ async function imprimir() {
       titulo('Conformidad'),
       el('div', { class: 'informe-firmas' },
         el('div', { class: 'informe-firma-caja' },
-          v.firma ? el('img', { src: url(v.firma), alt: 'Firma' }) : el('div', { class: 'informe-hueco' }),
+          // Como fondo y no <img>: así Chrome no parte el bloque de firmas.
+          el('div', { class: 'informe-hueco', role: v.firma ? 'img' : null, 'aria-label': v.firma ? 'Firma' : null,
+            style: v.firma ? `background: url("${url(v.firma)}") left bottom / contain no-repeat` : null }),
           el('strong', {}, v.autor || 'Nombre y cargo'),
           el('span', {}, `Elaborado · ${fechaLarga(v.fecha)}`)),
         el('div', { class: 'informe-firma-caja' },
@@ -1338,15 +1407,24 @@ async function generarCopia() {
   for (const r of await listarRepasos()) {
     repasos.push({ ...r, fotos: await Promise.all(r.fotos.map(async (f) => ({ ...f, blob: await aDatos(f.blob) }))) });
   }
+  // Calidad (desde la versión 4): inspecciones con su firma y vaciados.
+  const conFotos = async (r) => ({
+    ...r,
+    firma: r.firma ? await aDatos(r.firma) : null,
+    fotos: await Promise.all((r.fotos || []).map(async (f) => ({ ...f, blob: await aDatos(f.blob) })))
+  });
+  const inspecciones = await Promise.all((await listarInspecciones()).map(conFotos));
+  const vaciados = await Promise.all((await listarVaciados()).map(conFotos));
   const json = JSON.stringify({
-    formato: 'visitas-obra-e04', version: 3, exportada: new Date().toISOString(), visitas: salida, planos, repasos
+    formato: 'visitas-obra-e04', version: 4, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados
   });
   nodos.aviso.hidden = true;
   return {
     blob: new Blob([json], { type: 'application/json' }),
     nombre: `copia-visitas-${hoy()}-${ahora().replace(':', '')}.json`,
-    resumen: `${plural(visitas.length, 'visita', 'visitas')}, ${plural(planos.length, 'plano', 'planos')} y `
-      + plural(repasos.length, 'repaso', 'repasos')
+    resumen: `${plural(visitas.length, 'visita', 'visitas')}, ${plural(planos.length, 'plano', 'planos')}, `
+      + `${plural(repasos.length, 'repaso', 'repasos')}, ${plural(inspecciones.length, 'inspección', 'inspecciones')} y `
+      + plural(vaciados.length, 'vaciado', 'vaciados')
   };
 }
 
@@ -1374,6 +1452,19 @@ async function importar(archivo) {
       const existente = await leerRepaso(r.id);
       if (existente && existente.modificado >= r.modificado) continue;
       await guardarRepaso({ ...r, fotos: await Promise.all(r.fotos.map(async (f) => ({ ...f, blob: await deDatos(f.blob) }))) });
+    }
+    // Las copias anteriores a la versión 4 no traen calidad.
+    const deCopia = async (r) => ({
+      ...r,
+      firma: r.firma ? await deDatos(r.firma) : null,
+      fotos: await Promise.all((r.fotos || []).map(async (f) => ({ ...f, blob: await deDatos(f.blob) })))
+    });
+    for (const [lista, leer, guardar] of [[datos.inspecciones, leerInspeccion, guardarInspeccion], [datos.vaciados, leerVaciado, guardarVaciado]]) {
+      for (const r of lista || []) {
+        const existente = await leer(r.id);
+        if (existente && existente.modificado >= r.modificado) continue;
+        await guardar(await deCopia(r));
+      }
     }
     let nuevas = 0, actualizadas = 0;
     for (const v of datos.visitas) {
@@ -1412,7 +1503,7 @@ nodos.ficha.addEventListener('input', (ev) => {
 
 nodos.botonClima.addEventListener('click', () => tomarClima());
 
-/* El botón ⚙️ Ajustes (tema y accesos) lo maneja js/tema.js. */
+/* El menú del símbolo (funciones y aspecto) lo maneja js/menu.js. */
 
 nodos.botonPersonal.addEventListener('click', () => {
   actual.personal.push({ id: nuevoId(), empresa: '', oficio: '', numero: '' });
@@ -1500,17 +1591,13 @@ async function alFirmar() {
     !conCuenta && el('p', { class: 'pie' }, 'Para mandar también el informe con fotos y planos, vincula Gmail u Outlook en «Cuentas vinculadas».'));
 }
 
-/* --- equipo: novedades, panel y perfil (botón 👥 de la cabecera) --- */
-
-const botonEquipo = document.getElementById('btn-equipo');
-const contadorEquipo = botonEquipo.querySelector('.contador');
+/* --- equipo: novedades, panel y perfil (menú del símbolo → Novedades) --- */
 
 function pintarBotonEquipo() {
-  botonEquipo.hidden = !(equipo.activo && equipo.usuario);
-  const n = novedades.lista(miUid()).length;
-  contadorEquipo.hidden = !n;
-  contadorEquipo.textContent = n > 99 ? '99+' : String(n);
+  const activo = Boolean(equipo.activo && equipo.usuario);
+  if (window.crdMenu) window.crdMenu.equipo(activo, activo ? novedades.lista(miUid()).length : 0);
 }
+if (window.crdMenu) window.crdMenu.alNovedades = () => menuEquipo();
 
 function menuEquipo() {
   const uid = miUid();
@@ -1527,6 +1614,10 @@ function menuEquipo() {
         type: 'button', class: 'obra-compartida',
         onclick: () => {
           if (n.tipo === 'visitas') return ir(`#/v/${encodeURIComponent(n.id)}`);
+          if (n.tipo === 'inspecciones' || n.tipo === 'vaciados') {
+            novedades.quitar(uid, n.id);
+            return ir(`./calidad.html#/${n.tipo === 'vaciados' ? 'vaciado' : 'inspeccion'}/${encodeURIComponent(n.id)}`);
+          }
           novedades.quitar(uid, n.id);
           menuEquipo();
         }
@@ -1542,7 +1633,6 @@ function menuEquipo() {
     }, 'Marcar todo como visto'));
 }
 
-botonEquipo.addEventListener('click', menuEquipo);
 addEventListener('crd-novedades', () => { pintarBotonEquipo(); if (!actual && !nodos.vistaLista.hidden) pintarLista(); });
 
 nodos.borrarFirma.addEventListener('click', () => {

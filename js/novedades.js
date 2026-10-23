@@ -1,4 +1,4 @@
-/* Novedades del equipo: bitácoras y repasos que otros han creado o
+/* Novedades del equipo: bitácoras, repasos, inspecciones y vaciados que otros han creado o
    cambiado en las obras compartidas y que todavía no has abierto.
 
    Las apunta la sincronización (equipo.js, al bajar) y se guardan en el
@@ -60,6 +60,8 @@ export function frase(items) {
       : `${visitas.length} ${visitas.length === 1 ? 'bitácora' : 'bitácoras'} con cambios`);
   }
   if (repasos.length) partes.push(`${repasos.length} ${repasos.length === 1 ? 'repaso' : 'repasos'} con cambios`);
+  const calidad = items.filter((x) => x.tipo === 'inspecciones' || x.tipo === 'vaciados');
+  if (calidad.length) partes.push(`${calidad.length} ${calidad.length === 1 ? 'registro' : 'registros'} de calidad`);
   if (!partes.length) return '';
   const donde = obras.length === 1 ? ` en ${obras[0]}` : ` en ${obras.length} obras`;
   const de = quienes.length ? ` · de ${quienes.length > 2 ? `${quienes.slice(0, 2).join(', ')} y otros` : quienes.join(' y ')}` : '';

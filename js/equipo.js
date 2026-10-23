@@ -4,7 +4,7 @@
    (partes.js) y funciona sin señal. Lo que pertenece a una obra
    compartida se sincroniza cuando hay conexión:
 
-   · subir: cada visita, repaso o plano cuya versión local es más nueva
+   · subir: cada visita, repaso, plano, inspección o vaciado cuya versión local es más nueva
      que la que ya está en la nube. Las fotos, firmas y planos van a
      Storage (obras/{obra}/archivos/…) una sola vez, por su id.
    · bajar: lo que otros han cambiado desde la última vez (marca por
@@ -42,8 +42,13 @@ const ESCRIBEN = ['admin', 'editor'];
 const TIPOS = {
   planos: { listar: partes.listarPlanos, leer: partes.leerPlano, guardar: partes.guardarPlano, borrar: partes.borrarPlano },
   visitas: { listar: partes.listarVisitas, leer: partes.leerVisita, guardar: partes.guardarVisita, borrar: partes.borrarVisita },
-  repasos: { listar: partes.listarRepasos, leer: partes.leerRepaso, guardar: partes.guardarRepaso, borrar: partes.borrarRepaso }
+  repasos: { listar: partes.listarRepasos, leer: partes.leerRepaso, guardar: partes.guardarRepaso, borrar: partes.borrarRepaso },
+  inspecciones: { listar: partes.listarInspecciones, leer: partes.leerInspeccion, guardar: partes.guardarInspeccion, borrar: partes.borrarInspeccion },
+  vaciados: { listar: partes.listarVaciados, leer: partes.leerVaciado, guardar: partes.guardarVaciado, borrar: partes.borrarVaciado }
 };
+// Qué tipos llevan fotos y cuáles firma (como Blob dentro del registro).
+const CON_FOTOS = new Set(['visitas', 'repasos', 'inspecciones', 'vaciados']);
+const CON_FIRMA = new Set(['visitas', 'inspecciones']);
 
 const version = (r) => r.modificada || r.modificado || r.creado || 0;
 const estadoRepaso = (r) => (r.cerrado ? 'cerrado' : r.corregido ? 'corregido' : 'pendiente');
@@ -72,7 +77,7 @@ async function separar(tipo, r, obraId) {
   const datos = { ...r };
   delete datos.fotosRemotas;
   delete datos.firmaRemota;
-  if (tipo === 'visitas' || tipo === 'repasos') {
+  if (CON_FOTOS.has(tipo)) {
     datos.fotos = (r.fotos || []).map(({ blob, ...foto }) => {
       const ruta = `${base}${foto.id}.${extension(blob)}`;
       archivos.push({ ruta, blob });
@@ -82,7 +87,7 @@ async function separar(tipo, r, obraId) {
     const propias = new Set(datos.fotos.map((f) => f.id));
     for (const f of r.fotosRemotas || []) if (!propias.has(f.id)) datos.fotos.push(f);
   }
-  if (tipo === 'visitas') {
+  if (CON_FIRMA.has(tipo)) {
     datos.firma = null;
     datos.firmaRuta = null;
     datos.firmaEnlace = null;
@@ -110,7 +115,7 @@ async function separar(tipo, r, obraId) {
 async function juntar(tipo, datos, local, bajar) {
   const intentar = async (ruta) => { try { return await bajar(ruta); } catch (e) { return null; } };
   const r = { ...datos };
-  if (tipo === 'visitas' || tipo === 'repasos') {
+  if (CON_FOTOS.has(tipo)) {
     r.fotos = [];
     r.fotosRemotas = [];
     for (const { ruta, ...foto } of datos.fotos || []) {
@@ -120,7 +125,7 @@ async function juntar(tipo, datos, local, bajar) {
       else r.fotosRemotas.push({ ...foto, ruta });
     }
   }
-  if (tipo === 'visitas') {
+  if (CON_FIRMA.has(tipo)) {
     r.firma = null;
     r.firmaRemota = null;
     if (datos.firmaRuta) {
@@ -141,6 +146,14 @@ async function juntar(tipo, datos, local, bajar) {
     delete r.ruta;
   }
   return r;
+}
+
+const tresCifras = (n) => String(n || 0).padStart(3, '0');
+function tituloNovedad(tipo, r) {
+  if (tipo === 'visitas') return r.autor || 'Bitácora';
+  if (tipo === 'inspecciones') return `Inspección IN-${tresCifras(r.numero)} · ${r.titulo || ''}${r.zona ? ` · ${r.zona}` : ''}`;
+  if (tipo === 'vaciados') return `Vaciado VH-${tresCifras(r.numero)} · ${r.elemento || ''}`;
+  return `Repaso ${r.numero || ''} ${r.zona ? `· ${r.zona}` : ''}`.trim();
 }
 
 // Errores de subida que indican que no hay Storage (plan sin Blaze).
@@ -951,7 +964,7 @@ export class Equipo extends EventTarget {
           id: d.id, tipo, obraId: obra.id, obra: obra.nombre, nuevo: !local,
           quien: this.nombreDe(obra, x.autor) || r.autor || '',
           fecha: r.fecha || r.desde || '',
-          titulo: tipo === 'visitas' ? (r.autor || 'Bitácora') : `Repaso ${r.numero || ''} ${r.zona ? `· ${r.zona}` : ''}`.trim(),
+          titulo: tituloNovedad(tipo, r),
           cuando: x.actualizado ? x.actualizado.toMillis() : Date.now()
         });
       }

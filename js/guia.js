@@ -77,10 +77,8 @@ const RECORRIDOS = {
       { sel: '#buscar', titulo: 'Buscar', texto: 'Busca por obra, trabajos, incidencias, notas de planos o pinturas.' },
       { sel: '#lista', titulo: 'Tus visitas', texto: 'Cada tarjeta es un parte. Las de tu equipo llevan la etiqueta «Nueva» o «Actualizada».' },
       { sel: '#grupo-equipo', titulo: 'Cuenta y equipo', texto: 'Entra con tu cuenta para compartir obras, invitar a tu equipo con un papel (administrador, editor, lector o contratista) y crear equipos de trabajo.' },
-      { sel: '#btn-equipo', titulo: 'Novedades del equipo', texto: 'El número indica bitácoras nuevas de tu equipo. Desde aquí abres el Panel y tu Perfil.' },
-      { sel: '#cuentas', titulo: 'Cuentas vinculadas', texto: 'Vincula Gmail/Drive u Outlook/OneDrive para enviar los partes por correo y guardarlos en tu nube.' },
-      { sel: () => document.querySelectorAll('.grupo.copia')[1], titulo: 'Copia de seguridad', texto: 'Exporta una copia con todas tus visitas, fotos y planos para pasarla a otro teléfono.' },
-      { sel: '#btn-tema', titulo: 'Ajustes', texto: 'Modo claro u oscuro, accesos directos y esta guía («❓ Guía de uso»).' },
+      { sel: '#avisos-calidad', titulo: 'Avisos de calidad', texto: 'Probetas que toca romper hoy o vencidas, y protocolos de inspección sin cerrar.' },
+      { sel: '.barra-superior .boton-menu', titulo: 'El menú', texto: 'Toca el símbolo de COORDINATE: abre todas las funciones (visitas, inspecciones, vaciados, modelo 3D, panel, perfil, cuentas vinculadas, copia de seguridad) y el modo claro u oscuro. Un punto rojo avisa de novedades o roturas.' },
       { titulo: '¿Seguimos con una visita?', texto: 'Te abro una visita de ejemplo (datos inventados) para enseñarte cada parte del parte de obra.', centrado: true, siguiente: 'visita' }
     ]
   },
@@ -153,6 +151,18 @@ const RECORRIDOS = {
       { sel: '.panel-fecha', titulo: 'Fecha', texto: 'Cambia de día o de semana con las flechas.' },
       { sel: '#imprimir', titulo: 'Reporte en PDF', texto: 'Guarda o imprime el resumen con la marca de COORDINATE.' },
       { sel: '#novedades', titulo: 'Novedades', texto: 'Las bitácoras de tu equipo que aún no has abierto.' }
+    ]
+  },
+
+  calidad: {
+    pagina: 'calidad.html',
+    titulo: 'Inspecciones y vaciados',
+    pasos: [
+      { sel: '.pestanas-calidad', titulo: 'Inspecciones y vaciados', texto: 'Dos registros de calidad por obra: los protocolos de inspección con su liberación y los vaciados de hormigón con sus probetas.' },
+      { sel: '#btn-nuevo', titulo: 'Nueva inspección', texto: 'Elige la partida (acero, encofrado, liberación para vaciar, instalaciones, impermeabilización, drywall, cerámica, pintura o libre). Cada punto se marca Cumple / No cumple / N/A, con nota y foto.' },
+      { titulo: 'Liberar o rechazar', texto: 'Con el checklist revisado, marca el resultado y firma la liberación. Los «No cumple» pasan al punch list con un toque y el acta sale en PDF.', centrado: true },
+      { sel: '#pestana-vaciados', titulo: 'Vaciados de hormigón', texto: 'Elemento, f\'c, revenimiento y volumen; cada camión con su conduce, m³, hora y revenimiento medido (avisa si se sale ±1").', antes: async () => { if (!location.hash.startsWith('#/vaciado')) location.hash = '#/vaciados'; await esperar(400); } },
+      { sel: () => document.querySelector('#agenda:not([hidden])') || document.querySelector('#lista'), titulo: 'Probetas y roturas', texto: '«+ Juego» crea las probetas de 7 y 28 días. El día de cada rotura sale el aviso aquí, en el inicio y en el menú; anota el resultado y la app calcula el % de f\'c.' }
     ]
   },
 

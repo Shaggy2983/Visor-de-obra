@@ -62,19 +62,46 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   y caja de sección (`js/cortes.js`), colorear por propiedad
   (`js/colores.js`), transparencias, rayos X, 6 fondos, aristas, vistas,
   realidad aumentada (WebXR).
-- **Ajustes y modo claro** (`js/tema.js`, cargado en `<head>`): botón ⚙️
-  (`#btn-tema` o `[data-ajustes]`) en todas las páginas, también en la
-  portada del visor 3D; abre la ventana de Ajustes (tema oscuro / claro /
-  como el teléfono y accesos a Visitas, Panel, Perfil y Modelo 3D).
-  localStorage `crd-tema`. Paleta clara en `:root[data-tema="claro"]` de
-  `css/estilos.css` (fondo `#eef1f6`, acento `#3d7cc4`); usar siempre los
-  tokens (`--velo-rgb`, `--peligro-texto`, `--portada-arriba`, …), nunca
-  colores fijos.
+- **Menú del símbolo** (`js/menu.js`, cargado con `defer` en todas las
+  páginas): el símbolo de COORDINATE (anillo de nodos) es el botón, se
+  inserta solo en cada `.barra-superior` y en `[data-menu]` (portada del
+  visor 3D). Al tocarlo los nodos giran y el centro late (sin animación con
+  «reducir movimiento»); baja una hoja con Obra (Visitas, Inspecciones,
+  Vaciados, Modelo 3D), Equipo (Novedades, Panel, Perfil), Datos (Cuentas
+  vinculadas `visita.html#/cuentas`, Copia `#/copia`), Aspecto y Guía.
+  Punto rojo por novedades o probetas por romper (`crd-roturas`). API
+  `window.crdMenu` (`equipo(activo, n)`, `alNovedades`, `avisos()`). Ya no
+  hay botones ⚙️ ni 👥; el inicio de Visitas sólo tiene cuenta, avisos de
+  calidad, buscador y lista.
+- **Tema** (`js/tema.js`, en `<head>`): oscuro / claro / como el teléfono,
+  localStorage `crd-tema`, y aviso de versión nueva. Paleta clara en
+  `:root[data-tema="claro"]` de `css/estilos.css` (fondo `#eef1f6`, acento
+  `#3d7cc4`); usar siempre los tokens (`--velo-rgb`, `--peligro-texto`,
+  `--portada-arriba`, …), nunca colores fijos. Al imprimir, papel blanco.
+- **Calidad** (`calidad.html`, `js/calidad.js`, datos y cuentas en
+  `js/calidad-datos.js`, estilos `css/calidad.css`; tablas IndexedDB
+  `inspecciones` y `vaciados`, base v5). Rutas `#/inspecciones`,
+  `#/inspeccion/ID`, `#/vaciados`, `#/vaciado/ID[/probeta/PID]`.
+  · **Inspecciones** IN-NNN por obra: plantillas por partida (acero,
+  encofrado, liberación para vaciar, mampostería, sanitaria, eléctrica,
+  impermeabilización, drywall, cerámica, pintura, libre); puntos
+  Cumple/No cumple/N/A con nota y foto; resultado liberada / con
+  observaciones / rechazada (se sugiere); firma de liberación (o «mi
+  firma»); «No cumple» → repasos del punch list (`repaso.inspeccion`);
+  acta PDF.
+  · **Vaciados** VH-NNN: elemento, f'c (kg/cm², psi, MPa), revenimiento,
+  camiones (conduce, m³, hora, revenimiento; aviso fuera de ±1"), probetas
+  con fecha de rotura (7/14/28…), resultado y % f'c, evaluación por edad;
+  agenda de roturas y avisos en el inicio; registro PDF. El parte diario
+  PDF lista la calidad de la misma obra y fecha. Se sincronizan como las
+  visitas y van en la copia de seguridad (formato v4).
+  · PDF: firmas como fondo del recuadro (no `<img>`: Chrome partía el
+  bloque de firmas); `@page acta`.
 - **Novedades del equipo** (`js/novedades.js`): al bajar, lo que otro crea o
-  cambia en una obra compartida (visitas y repasos) queda como novedad en el
+  cambia en una obra compartida (visitas, repasos, inspecciones y vaciados) queda como novedad en el
   teléfono (localStorage `crd-novedades:{uid}`); aviso al sincronizar,
-  etiqueta Nueva/Actualizada en la lista y botón 👥 con contador (menú con
-  novedades, Panel y Perfil). La primera bajada de una obra no cuenta.
+  etiqueta Nueva/Actualizada en la lista y «Novedades del equipo» en el menú
+  del símbolo con contador (`visita.html#/novedades`). La primera bajada de una obra no cuenta.
 - **Aviso al firmar** (`alFirmar()` en `js/visita.js`): en obra compartida,
   al terminar la firma se ofrece mandar el parte a los administradores
   (cuenta vinculada con informe, o `mailto:`); marca `avisoAdmin`.
@@ -102,11 +129,11 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - **Guía de uso y recorridos** (`ayuda.html` + `js/ayuda.js`: todas las
   funciones con pasos y buscador; `js/guia.js` en todas las páginas:
   recorridos que iluminan los botones reales — inicio, visita, plano,
-  modelo, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
+  modelo, calidad, panel, perfil). `window.crdGuia.empezar(id)` o `?guia=id`; siguen
   entre páginas (sessionStorage `crd-guia`). La visita de práctica es
   `guia-ejemplo` (se ofrece borrarla). Primer uso: se ofrece el de inicio
-  (localStorage `crd-guia-ofrecida`). Acceso: ⚙️ → Guía de uso; ❓ en el
-  visor de planos. **Al añadir una función, añadirla a la guía.**
+  (localStorage `crd-guia-ofrecida`). Acceso: menú del símbolo → Guía de uso; ❓ en
+  el visor de planos. **Al añadir una función, añadirla a la guía.**
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
 
@@ -122,7 +149,8 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   corrige los repasos que se le asignan, sin cerrarlos; vista
   `js/mis-repasos.js`). **Equipos de trabajo** reutilizables que se
   vinculan a obras con un papel.
-- Reglas: `firestore.rules` y `storage.rules`, con 82 pruebas en
+- Reglas: `firestore.rules` (colecciones visitas, repasos, planos,
+  inspecciones y vaciados) y `storage.rules`, con 87 pruebas en
   `pruebas/` contra los emuladores (`?emulador=1` abre la app contra
   ellos).
 
@@ -169,9 +197,16 @@ Entra) en `js/cuentas-config.js`.
    revisores una cuenta de prueba verificada. Gmail (`gmail.send`) es un
    permiso sensible: para salir del modo de prueba de Google hace falta
    verificar la app.
-4. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
+4. Hoja de ruta del supervisor (acordada el 22/10/2026), por PR:
+   hecho el menú del símbolo, inspecciones y vaciados. Siguen: avance
+   físico por partida con curva S, minutas de reunión con acuerdos, días
+   afectados (lluvia, paro); luego RFI y órdenes de cambio, recepción de
+   materiales, SST (charla de 5 min, EPP, permisos), repasos en el plano y
+   exportar CSV. **Las reglas con `inspecciones` y `vaciados` hay que
+   publicarlas en Firestore** (si no, esas colecciones no sincronizan).
+5. Ideas pendientes de decidir: borrar varias visitas a la vez, marcar los
    repasos en el plano, papel de empresa por encima de los equipos.
-5. Notificación con la app cerrada y resumen semanal por correo automático:
+6. Notificación con la app cerrada y resumen semanal por correo automático:
    necesitan Cloud Functions (plan Blaze).
 
 Navisworks (NWD/NWC) no se puede abrir: es un formato cerrado; se trabaja

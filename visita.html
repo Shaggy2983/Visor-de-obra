@@ -15,6 +15,7 @@
 <link rel="apple-touch-icon" href="./icono-192.png">
 <link rel="preload" href="./vendor/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script src="./js/tema.js"></script>
+<script src="./js/menu.js" defer></script>
 <link rel="stylesheet" href="./css/estilos.css">
 <link rel="stylesheet" href="./css/visita.css">
 <link rel="stylesheet" href="./css/panel.css">
@@ -35,9 +36,6 @@
 <header class="barra-superior barra-solida">
   <h1 class="titulo"><span class="marca" aria-label="COORDINATE">C<svg viewBox="10 10 44 44" aria-hidden="true"><g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g><circle cx="32" cy="32" r="6" fill="var(--color-accent)"/></svg>ORDINATE</span><span class="titulo-seccion">Visitas</span></h1>
   <div class="acciones">
-    <button type="button" id="btn-tema" class="boton boton-tema" aria-label="Ajustes" title="Ajustes">⚙️</button>
-    <button type="button" id="btn-equipo" class="boton boton-equipo" aria-label="Equipo: novedades, panel y perfil" title="Novedades, panel y perfil" hidden>👥<span class="contador" hidden></span></button>
-    <a href="./index.html" class="boton">Modelo 3D</a>
     <button id="btn-nueva" class="boton boton-destacado">Nueva visita</button>
   </div>
 </header>
@@ -45,6 +43,10 @@
 <!-- ---------- lista de visitas ---------- -->
 
 <main id="vista-lista" class="contenido">
+  <div class="ficha-barra datos-barra">
+    <a href="#" class="enlace">← Visitas</a>
+  </div>
+
   <section id="grupo-equipo" class="grupo equipo" hidden>
     <h2>Cuenta y equipo</h2>
     <div id="equipo"></div>
@@ -57,19 +59,21 @@
     <input type="file" id="entrada-mis-galeria" accept="image/*" multiple hidden>
   </section>
 
+  <section id="avisos-calidad" class="avisos-calidad" hidden></section>
+
   <input type="search" id="buscar" class="campo" placeholder="Buscar por obra, trabajos, incidencias…" autocomplete="off">
   <div id="lista" class="tarjetas"></div>
   <p id="lista-vacia" class="vacio" hidden>Todavía no hay visitas. Pulsa <strong>Nueva visita</strong>
      para empezar el parte de hoy. Se guarda en el teléfono según escribes, aunque no haya señal.</p>
 
-  <div class="grupo copia">
+  <div id="grupo-cuentas" class="grupo copia grupo-datos">
     <h2>Cuentas vinculadas</h2>
     <p class="pie">Vincula Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar los
        partes por correo y guardarlos en la nube. La app habla directamente con tu cuenta.</p>
     <div id="cuentas" class="cuentas"></div>
   </div>
 
-  <div class="grupo copia">
+  <div id="grupo-copia" class="grupo copia grupo-datos">
     <h2>Copia de seguridad</h2>
     <p class="pie">Las visitas viven en este teléfono. Exporta una copia de vez en cuando
        para pasarla a otro equipo o guardarla en la nube.</p>

@@ -685,7 +685,6 @@ a.boton {
 .portada-caja .subtitulo { margin: 0 0 1rem; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-tenue); }
 .portada-caja p { color: var(--texto-tenue); font-size: .92rem; }
 .portada-caja .boton { margin-top: 1rem; }
-.portada-ajustes { position: absolute; top: calc(var(--seguro-arriba) + .7rem); right: .8rem; }
 
 .cargando {
   position: fixed;
@@ -795,69 +794,174 @@ a.boton {
   .titulo { font-size: 1.05rem; }
 }
 
-/* En el teléfono la cabecera no da para el logotipo entero y el nombre de
-   la sección: queda sólo el símbolo, que ya identifica la marca. */
+/* En el teléfono la cabecera no da para el logotipo entero: el símbolo ya
+   está en el botón del menú, así que queda el nombre de la sección. */
 @media (max-width: 520px) {
-  .titulo .marca { font-size: 0; }
-  .titulo .marca svg { width: 1.6rem; height: 1.6rem; margin: 0; }
+  .titulo .marca { display: none; }
+  .titulo .titulo-seccion { margin-left: .1rem; padding-left: 0; border-left: 0; color: var(--texto); font-weight: 600; letter-spacing: .02em; }
 }
 
-/* ---------- ajustes (js/tema.js): sirve en todas las páginas ---------- */
+/* ---------- menú del símbolo (js/menu.js): sirve en todas las páginas ----------
+   El botón es el símbolo de la marca con algo de relieve: luz arriba,
+   sombra abajo. Al tocarlo los nodos giran y el centro late. */
 
-.ajustes {
-  width: min(26rem, calc(100vw - 1.5rem));
-  max-height: calc(100vh - 2rem);
+.boton-menu {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.65rem;
+  height: 2.65rem;
   padding: 0;
   border: 1px solid var(--borde);
-  border-radius: .8rem;
-  background: var(--fondo-2);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 28%, rgba(255, 255, 255, .16), transparent 55%),
+    linear-gradient(160deg, var(--fondo-3), var(--fondo-2));
   color: var(--texto);
-  font-family: inherit;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .14),
+    inset 0 -2px 4px rgba(0, 0, 0, .25),
+    0 3px 8px rgba(0, 0, 0, .35);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform .15s ease, box-shadow .2s ease;
 }
-.ajustes::backdrop { background: rgba(var(--velo-rgb), .75); }
-.ajustes-cabecera {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: .6rem .8rem;
-  border-bottom: 1px solid var(--borde);
+:root[data-tema="claro"] .boton-menu {
+  box-shadow: inset 0 1px 0 #fff, inset 0 -2px 4px rgba(27, 53, 96, .12), 0 3px 8px rgba(27, 53, 96, .2);
 }
-.ajustes-cabecera h2 { margin: 0; font-size: 1.05rem; }
-.ajustes-cuerpo { padding: .8rem; overflow-y: auto; }
-.ajustes-cuerpo h3 {
-  margin: .2rem 0 .45rem;
-  font-size: .74rem;
-  letter-spacing: .08em;
+.boton-menu:active { transform: scale(.92); box-shadow: inset 0 2px 5px rgba(0, 0, 0, .3); }
+.boton-menu:focus-visible { outline: 2px solid var(--seleccion); outline-offset: 2px; }
+.boton-menu.abierto { border-color: var(--acento); }
+
+.menu-simbolo { width: 1.7rem; height: 1.7rem; overflow: visible; }
+.menu-nodos {
+  fill: currentColor;
+  transform-origin: 32px 32px;
+  transition: transform .6s cubic-bezier(.34, 1.4, .64, 1);
+}
+.boton-menu.abierto .menu-nodos { transform: rotate(135deg); }
+.menu-centro { fill: var(--color-accent); transform-origin: 32px 32px; }
+.boton-menu.toque .menu-centro { animation: menu-latido .55s ease-out; }
+.boton-menu.toque .menu-nodos circle { animation: menu-nodo .5s ease-out; animation-delay: calc(var(--n, 0) * 25ms); transform-box: fill-box; transform-origin: center; }
+.menu-nodos circle:nth-child(2) { --n: 1; } .menu-nodos circle:nth-child(3) { --n: 2; }
+.menu-nodos circle:nth-child(4) { --n: 3; } .menu-nodos circle:nth-child(5) { --n: 4; }
+.menu-nodos circle:nth-child(6) { --n: 5; } .menu-nodos circle:nth-child(7) { --n: 6; }
+.menu-nodos circle:nth-child(8) { --n: 7; }
+@keyframes menu-latido { 0% { transform: scale(1); } 35% { transform: scale(1.45); } 100% { transform: scale(1); } }
+@keyframes menu-nodo { 0% { transform: scale(1); } 40% { transform: scale(.7); } 100% { transform: scale(1); } }
+
+.menu-aviso {
+  position: absolute;
+  top: .05rem;
+  right: .05rem;
+  width: .7rem;
+  height: .7rem;
+  border: 2px solid var(--fondo);
+  border-radius: 50%;
+  background: var(--peligro-texto);
+}
+.menu-aviso[hidden] { display: none; }
+
+.boton-menu-suelto { position: absolute; top: calc(var(--seguro-arriba) + .7rem); left: .8rem; z-index: 2; }
+
+.menu-velo { position: fixed; inset: 0; z-index: 60; background: rgba(var(--velo-rgb), .45); }
+.menu-velo[hidden] { display: none; }
+
+.menu-hoja {
+  position: fixed;
+  z-index: 61;
+  width: min(22rem, calc(100vw - 1rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: .45rem .45rem .6rem;
+  border: 1px solid var(--borde);
+  border-radius: 1rem;
+  background: var(--fondo-2);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .45);
+  transform-origin: 1.3rem 0;
+}
+.menu-hoja[hidden] { display: none; }
+.menu-hoja.entra { animation: menu-baja .26s cubic-bezier(.2, .8, .2, 1); }
+.menu-hoja.entra .menu-item { animation: menu-item .3s ease-out backwards; animation-delay: calc(var(--i, 0) * 22ms + 40ms); }
+.menu-hoja.sale { animation: menu-sube .16s ease-in forwards; }
+@keyframes menu-baja { from { opacity: 0; transform: translateY(-8px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes menu-sube { to { opacity: 0; transform: translateY(-6px) scale(.97); } }
+@keyframes menu-item { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+.menu-grupo {
+  margin: .55rem .55rem .25rem;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--texto-tenue);
 }
-.ajustes-cuerpo h3 + * { margin-top: 0; }
-.ajustes-cuerpo * + h3 { margin-top: 1rem; }
-.ajustes-temas { display: grid; gap: .45rem; }
-.ajustes-tema {
-  display: grid;
-  grid-template-columns: 2.2rem 1fr;
+.menu-grupo:first-child { margin-top: .2rem; }
+
+.menu-item {
+  display: flex;
   align-items: center;
-  column-gap: .6rem;
-  width: 100%;
-  padding: .65rem .75rem;
+  gap: .7rem;
+  padding: .55rem .6rem;
+  border-radius: .7rem;
+  color: var(--texto);
+  text-decoration: none;
+}
+.menu-item:hover, .menu-item:focus-visible { background: var(--fondo-3); outline: none; }
+.menu-item.actual { background: var(--fondo-3); box-shadow: inset 3px 0 0 var(--acento); }
+.menu-icono { width: 1.6rem; font-size: 1.2rem; text-align: center; flex: 0 0 auto; }
+.menu-textos { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.menu-textos strong { font-size: .93rem; font-weight: 600; }
+.menu-ayuda { font-size: .74rem; color: var(--texto-tenue); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-contador {
+  min-width: 1.35rem;
+  padding: .05rem .4rem;
+  border-radius: 1rem;
+  background: var(--peligro-texto);
+  color: var(--color-bg);
+  font-size: .72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.menu-temas { display: grid; grid-template-columns: repeat(3, 1fr); gap: .35rem; padding: 0 .3rem; }
+.menu-tema {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .1rem;
+  padding: .45rem .2rem;
   border: 1px solid var(--borde);
   border-radius: .65rem;
   background: var(--fondo);
   color: var(--texto);
   font: inherit;
-  text-align: left;
+  font-size: .78rem;
   cursor: pointer;
 }
-.ajustes-tema .ajustes-icono { grid-row: span 2; font-size: 1.45rem; text-align: center; }
-.ajustes-tema strong { font-size: .95rem; }
-.ajustes-ayuda { font-size: .76rem; color: var(--texto-tenue); }
-.ajustes-tema.activo { border: 2px solid var(--acento); background: var(--fondo-3); }
-.ajustes-tema.activo strong::after { content: "  ✓"; color: var(--acento); }
-.ajustes-atajos { display: flex; flex-wrap: wrap; gap: .45rem; }
-.ajustes-nota { margin: .45rem 0 0; font-size: .76rem; color: var(--texto-tenue); }
-.ajustes-nota a { color: var(--seleccion); }
+.menu-tema span:first-child { font-size: 1.1rem; }
+.menu-tema.activo { border: 2px solid var(--acento); background: var(--fondo-3); font-weight: 600; }
+
+.menu-pie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .9rem;
+  margin: .7rem .55rem 0;
+  padding-top: .55rem;
+  border-top: 1px solid var(--borde);
+  font-size: .8rem;
+}
+.menu-enlace { color: var(--seleccion); text-decoration: none; }
+.menu-marca { margin-left: auto; color: var(--texto-tenue); font-size: .72rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-nodos, .boton-menu { transition: none; }
+  .boton-menu.toque .menu-centro, .boton-menu.toque .menu-nodos circle,
+  .menu-hoja.entra, .menu-hoja.entra .menu-item, .menu-hoja.sale { animation: none; }
+}
 
 /* aviso de versión nueva (js/tema.js) */
 .aviso-version {
@@ -974,3 +1078,10 @@ a.boton {
 .guia-globo h3 { margin: .35rem 0 .3rem; font-size: 1.02rem; }
 .guia-globo p { margin: 0; font-size: .9rem; line-height: 1.45; color: var(--texto); }
 .guia-botones { display: flex; justify-content: flex-end; gap: .5rem; margin-top: .75rem; }
+
+/* Al imprimir (informes PDF), siempre papel blanco aunque la app esté en
+   modo oscuro: también los márgenes de la página. */
+@media print {
+  :root, :root[data-tema] { color-scheme: light !important; background: #fff !important; }
+  body { background: #fff !important; }
+}

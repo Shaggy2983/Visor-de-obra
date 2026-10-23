@@ -123,6 +123,13 @@ await prueba('carla no toca la ficha de ana en el equipo', assertFails(updateDoc
 await prueba('usuario guarda su perfil privado', assertSucceeds(setDoc(doc(dP, 'usuarios/pepe'), { nombre: 'Pepe', telefono: '809', cargo: 'Pintor' }, { merge: true })));
 await prueba('nadie lee el perfil privado ajeno', assertFails(getDoc(doc(dA, 'usuarios/pepe'))));
 
+// --- calidad: inspecciones y vaciados (como las visitas) ---
+await prueba('ana escribe inspección', assertSucceeds(setDoc(doc(dA, 'obras/o2/inspecciones/i1'), { datos: '{}', version: 1, borrado: false })));
+await prueba('ana escribe vaciado', assertSucceeds(setDoc(doc(dA, 'obras/o2/vaciados/h1'), { datos: '{}', version: 1, borrado: false })));
+await prueba('pepe (contratista) no lee inspecciones', assertFails(getDoc(doc(dP, 'obras/o2/inspecciones/i1'))));
+await prueba('pepe (contratista) no escribe vaciados', assertFails(setDoc(doc(dP, 'obras/o2/vaciados/h2'), { datos: '{}', version: 1, borrado: false })));
+await prueba('extraño no lee vaciados', assertFails(getDoc(doc(dX, 'obras/o2/vaciados/h1'))));
+
 console.log(`reglas: ${ok} bien, ${mal} mal`);
 await env.cleanup();
 process.exit(mal ? 1 : 0);

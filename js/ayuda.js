@@ -40,13 +40,26 @@ const SECCIONES = [
     ]
   },
   {
+    titulo: 'Calidad: inspecciones y vaciados', icono: '🧱', recorrido: 'calidad',
+    temas: [
+      { t: 'Nueva inspección', p: ['Menú (símbolo de COORDINATE) → «Inspecciones y liberaciones» → «+ Inspección».', 'Elige la obra y la partida: acero, encofrado, liberación para vaciar, mampostería, instalación sanitaria o eléctrica, impermeabilización, drywall, cerámica, pintura o libre.', 'Escribe la zona o elemento y el contratista.'] },
+      { t: 'Checklist', p: ['Marca cada punto Cumple, No cumple o N/A. Con «No cumple» escribe qué falla.', '📷 en cada punto para su foto; «+ Añadir punto» para lo que no esté en la plantilla.', '«Marcar el resto como Cumple» cuando todo lo demás está bien.'] },
+      { t: 'Liberar y firmar', p: ['Resultado: Liberada, Liberada con observaciones o Rechazada (la app propone uno según el checklist).', 'Firma con el dedo o «⭐ Usar mi firma». Escribe quién libera.', '«Acta en PDF»: acta con checklist, fotos y firmas del inspector y del contratista.'] },
+      { t: 'No cumple → punch list', p: ['«Pasar al punch list» crea un repaso por cada punto que no cumple, con su foto como «antes», prioridad alta y el contratista como responsable.', 'Se siguen en las visitas como cualquier repaso.'] },
+      { t: 'Registrar un vaciado', p: ['Menú → «Vaciados de hormigón» → «+ Vaciado».', "Elemento, nivel y ejes, f'c (kg/cm², psi o MPa), revenimiento especificado, volumen previsto, planta y colocación.", 'Si hiciste la liberación para vaciar, enlázala en «Liberación previa».'] },
+      { t: 'Camiones y revenimiento', p: ['«+ Camión» por cada uno: nº de conduce, m³, hora y revenimiento medido.', 'La app suma el volumen y marca en naranja los revenimientos fuera de ±1".'] },
+      { t: 'Probetas y roturas', p: ['«+ Juego (7 · 28 · 28 días)» crea tres probetas con su código; «+ Probeta» para otra edad.', 'El día de la rotura sale el aviso en el inicio, en la lista de vaciados y con un punto rojo en el menú.', "Anota el resultado del laboratorio: la app calcula el % de f'c y si cumple a 28 días.", '«Registro en PDF» con camiones, probetas y resultados.'] },
+      { t: 'En el parte diario', p: ['Las inspecciones y vaciados de la misma obra y día salen en el informe PDF de la visita.'] }
+    ]
+  },
+  {
     titulo: 'Equipo y obras compartidas', icono: '👥', recorrido: 'inicio',
     temas: [
       { t: 'Cuenta', p: ['En Visitas → «Cuenta y equipo» → Entrar o Crear cuenta (o con Google).', 'Verifica tu correo para poder recibir invitaciones.'] },
       { t: 'Compartir una obra', p: ['«+ Compartir una obra» con el nombre de la obra.', 'Invita por correo con un papel: administrador, editor, solo lectura o contratista.', 'Avísale con «Enviar aviso» (WhatsApp o correo).'] },
       { t: 'Equipos de trabajo', p: ['«+ Crear un equipo» y añade a su gente.', 'Vincula el equipo a una obra con un papel: entran todos de una vez.'] },
-      { t: 'Novedades', p: ['El botón 👥 de arriba muestra las bitácoras nuevas o cambiadas de tu equipo.', 'En la lista llevan la etiqueta «Nueva» o «Actualizada».'] },
-      { t: 'Sincronización', p: ['Con señal se sincroniza al guardar, al volver la cobertura y cada 2 minutos.', 'Sin señal sigues trabajando: se sube después.'] },
+      { t: 'Novedades', p: ['Menú → «Novedades del equipo»: bitácoras, repasos, inspecciones y vaciados nuevos o cambiados de tu equipo (el punto rojo del menú avisa).', 'En la lista llevan la etiqueta «Nueva» o «Actualizada».'] },
+      { t: 'Sincronización', p: ['Visitas, repasos, planos, inspecciones y vaciados de las obras compartidas.', 'Con señal se sincroniza al guardar, al volver la cobertura y cada 2 minutos.', 'Sin señal sigues trabajando: se sube después.'] },
       { t: 'Fotos del equipo en tu nube', p: ['En las obras compartidas, tus fotos, firmas y planos se suben a tu Google Drive u OneDrive vinculado (carpeta «COORDINATE Visitas / Obras / obra»).', 'La carpeta se comparte, sólo para ver, con los miembros de la obra.', 'Tus compañeros ven «📷 Ver foto en la nube»; en el panel, «📷 Fotos».', 'Sin cuenta vinculada, los archivos se quedan en tu teléfono: vincúlala en «Cuentas vinculadas».'] }
     ]
   },
@@ -69,12 +82,13 @@ const SECCIONES = [
     ]
   },
   {
-    titulo: 'Ajustes y copia de seguridad', icono: '⚙️', recorrido: 'inicio',
+    titulo: 'Menú, aspecto y copia de seguridad', icono: '◎', recorrido: 'inicio',
     temas: [
-      { t: 'Modo claro u oscuro', p: ['⚙️ → Aspecto: oscuro, claro o como el teléfono.', 'Si sigue oscuro, quita en el navegador del teléfono el «tema oscuro para sitios».'] },
+      { t: 'El menú', p: ['Toca el símbolo de COORDINATE (arriba a la izquierda): los nodos giran y se abre el menú con todas las funciones.', 'Obra: visitas, inspecciones, vaciados y modelo 3D. Equipo: novedades, panel y perfil. Datos: cuentas vinculadas y copia de seguridad.', 'Un punto rojo en el símbolo avisa de novedades o probetas por romper.'] },
+      { t: 'Modo claro u oscuro', p: ['Menú → Aspecto: oscuro, claro o como el teléfono.', 'Si sigue oscuro, quita en el navegador del teléfono el «tema oscuro para sitios».'] },
       { t: 'Actualizaciones', p: ['Cuando sale «Hay una versión nueva · Tocar para actualizar», tócalo.'] },
-      { t: 'Copia de seguridad', p: ['Visitas → «Exportar copia»: un archivo con todo (visitas, fotos, planos, repasos).', '«Importar copia» en otro teléfono, o «En la nube…» con tu cuenta vinculada.'] },
-      { t: 'Cuentas vinculadas', p: ['Vincula Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar y guardar los partes.'] }
+      { t: 'Copia de seguridad', p: ['Menú → «Copia de seguridad» → «Exportar copia»: un archivo con todo (visitas, fotos, planos, repasos, inspecciones y vaciados).', '«Importar copia» en otro teléfono, o «En la nube…» con tu cuenta vinculada.'] },
+      { t: 'Cuentas vinculadas', p: ['Menú → «Cuentas vinculadas»: Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar y guardar los partes.'] }
     ]
   }
 ];

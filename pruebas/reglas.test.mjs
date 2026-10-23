@@ -2,9 +2,11 @@
    contra los emuladores de Firebase. Ver pruebas/LEEME.md. */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
 import { doc, setDoc, getDoc, updateDoc, deleteDoc, collection, query, where, getDocs, FieldPath, deleteField, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { ref, uploadBytes, getBytes, deleteObject } from 'firebase/storage';
-const R = new URL('../', import.meta.url).pathname;
+// fileURLToPath y no .pathname: en Windows .pathname da «/C:/…» y rompe la ruta.
+const R = fileURLToPath(new URL('../', import.meta.url));
 const env = await initializeTestEnvironment({
   projectId: 'demo-coordinate',
   firestore: { rules: readFileSync(R + 'firestore.rules', 'utf8'), host: '127.0.0.1', port: 8080 },

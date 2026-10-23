@@ -203,7 +203,7 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   vinculan a obras con un papel.
 - Reglas: `firestore.rules` (colecciones visitas, repasos, planos,
   inspecciones, vaciados, programas, minutas, rfis, cambios, recepciones y
-  seguridad) y `storage.rules`, con 97 pruebas en
+  seguridad) y `storage.rules`, con 97 pruebas (todas bien el 23/10/2026) en
   `pruebas/` contra los emuladores (`?emulador=1` abre la app contra
   ellos).
 
@@ -239,13 +239,18 @@ Entra) en `js/cuentas-config.js`.
    archivos se quedan en el teléfono y el registro queda en
    `crd-archivos-pendientes` para reintentar. `crd-sin-storage` recuerda 6 h
    que no hay Storage. Con Blaze: crear Storage en us-east1 y publicar
-   `storage.rules`: vuelve a usarse solo. `firestore.rules` publicadas el
-   22/10/2026 (con `actualizaMiFicha`); falta correr `npm run reglas` en el
-   PC (aquí no se puede descargar el emulador).
+   `storage.rules`: vuelve a usarse solo. Pruebas de reglas pasadas el
+   23/10/2026 en el PC de Luis (97 bien, 0 mal; en la nube no se puede
+   descargar el emulador, se corren en el PC con Desktop Commander).
 2. **Primera prueba real** de cuentas: crear cuenta, compartir una obra,
-   invitar, equipo y contratista, en teléfonos de verdad.
-3. **Google Play:** la cuenta de desarrollador espera la verificación de
-   Google. Al subir el `.aab`, añadir la huella SHA-256 de la firma de
+   invitar, equipo y contratista, en teléfonos de verdad. Guion paso a
+   paso en `pruebas/prueba-real.md` (no se puede hacer desde aquí: hacen
+   falta cuentas y teléfonos reales).
+3. **Google Play:** prueba cerrada **publicada y activa** (versión 16,
+   1.0.0; comprobado 23/10/2026). Para pedir producción faltan **12 testers
+   que acepten** (había 9 de 20 invitados) y luego **14 días** de prueba.
+   Enlace para unirse: https://play.google.com/apps/testing/com.coordinate.bitacora
+   (web) o la ficha en Play desde Android. Al subir el `.aab`, añadir la huella SHA-256 de la firma de
    Google Play a `assetlinks.json` (sin quitar la de subida) y dar a los
    revisores una cuenta de prueba verificada. Gmail (`gmail.send`) es un
    permiso sensible: para salir del modo de prueba de Google hace falta
@@ -256,8 +261,9 @@ Entra) en `js/cuentas-config.js`.
    materiales, SST, repasos en el plano y exportar CSV. Reglas con todas
    las colecciones publicadas el 23/10/2026 (idénticas al repositorio). El programa es un documento por
    obra: si dos personas anotan avance a la vez, gana la última escritura.
-5. Ideas pendientes de decidir: borrar varias visitas a la vez, papel de
-   empresa por encima de los equipos.
+5. Hecho el 23/10/2026: borrar varias visitas a la vez («Seleccionar
+   varias» en la lista; `seleccion` en `js/visita.js`). Queda por decidir:
+   papel de empresa por encima de los equipos.
 6. Notificación con la app cerrada y resumen semanal por correo automático:
    necesitan Cloud Functions (plan Blaze).
 

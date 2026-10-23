@@ -6,7 +6,7 @@
 
 import { el, ahora } from './utiles.js';
 
-export const CONTACTO = 'hola.coordinate.rd@gmail.com · coordinate.do · Santo Domingo, RD';
+export const CONTACTO = 'hola.coordinate.rd@gmail.com · Santo Domingo, RD';
 export const LEMA = 'Los problemas se resuelven en el modelo, no en obra.';
 
 export function logotipo() {

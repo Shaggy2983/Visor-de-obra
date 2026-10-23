@@ -253,9 +253,8 @@ Entra) en `js/cuentas-config.js`.
 4. Hoja de ruta del supervisor (acordada el 22/10/2026): **hecha entera**
    — menú del símbolo, inspecciones, vaciados, avance con curva S,
    minutas, días afectados, RFI, órdenes de cambio, recepción de
-   materiales, SST, repasos en el plano y exportar CSV. Reglas publicadas
-   hasta `programas` y `minutas`; **`rfis`, `cambios`, `recepciones` y
-   `seguridad` hay que publicarlas**. El programa es un documento por
+   materiales, SST, repasos en el plano y exportar CSV. Reglas con todas
+   las colecciones publicadas el 23/10/2026 (idénticas al repositorio). El programa es un documento por
    obra: si dos personas anotan avance a la vez, gana la última escritura.
 5. Ideas pendientes de decidir: borrar varias visitas a la vez, papel de
    empresa por encima de los equipos.

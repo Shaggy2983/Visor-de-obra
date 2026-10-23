@@ -1,0 +1,169 @@
+/* Seguimiento de obra (seguimiento.html): avance y curva S, minutas y días
+   afectados. Se carga detrás de estilos.css, visita.css, panel.css y
+   calidad.css (pestañas, agenda, etiquetas). */
+
+/* Series de la curva S, validadas para daltonismo y contraste (azul real,
+   naranja programado; la programada además va discontinua). */
+:root {
+  --serie-real: #5d97dd;
+  --serie-prog: #cf7d37;
+  --curva-rejilla: rgba(var(--borde-rgb), .55);
+}
+:root[data-tema="claro"] { --serie-real: #3d7cc4; --serie-prog: #c0601a; }
+@media (prefers-color-scheme: light) {
+  :root[data-tema="auto"] { --serie-real: #3d7cc4; --serie-prog: #c0601a; }
+}
+
+.pestanas-tres { grid-template-columns: repeat(3, 1fr); }
+
+/* ---------- indicadores ---------- */
+.indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .5rem; }
+.indicador {
+  display: flex; flex-direction: column; gap: .1rem;
+  padding: .6rem .7rem;
+  border: 1px solid var(--borde); border-left: 3px solid var(--acento);
+  border-radius: .7rem; background: var(--fondo);
+}
+.indicador strong { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+.indicador span { font-size: .76rem; color: var(--texto-tenue); }
+/* El estado va con palabra («Atrasada», «Adelantada») además del color. */
+.indicador.bien { border-left-color: var(--acento); }
+.indicador.regular { border-left-color: var(--aviso-texto); }
+.indicador.mal { border-left-color: var(--peligro-texto); }
+
+/* ---------- curva S ---------- */
+.curva { position: relative; outline: none; }
+.curva:focus-visible { box-shadow: 0 0 0 2px var(--seleccion); border-radius: .5rem; }
+.curva-leyenda { display: flex; gap: 1rem; margin-bottom: .3rem; font-size: .8rem; color: var(--texto-tenue); }
+.curva-leyenda span { display: inline-flex; align-items: center; gap: .35rem; }
+.clave { display: inline-block; width: 1.1rem; height: 0; border-top: 2px solid var(--serie-real); vertical-align: middle; }
+.clave.prog { border-top: 2px dashed var(--serie-prog); }
+.curva-lienzo { position: relative; }
+.curva-svg { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; }
+.curva-rejilla { stroke: var(--curva-rejilla); stroke-width: 1; }
+.curva-base { stroke: var(--borde); stroke-width: 1; }
+.curva-eje { fill: var(--texto-tenue); font-size: 11px; font-family: inherit; }
+.curva-hoy { stroke: var(--texto-tenue); stroke-width: 1; stroke-dasharray: 3 3; }
+.curva-prog { fill: none; stroke: var(--serie-prog); stroke-width: 2; stroke-dasharray: 6 4; stroke-linecap: round; stroke-linejoin: round; }
+.curva-real { fill: none; stroke: var(--serie-real); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.curva-punto { fill: var(--serie-real); stroke: var(--fondo-2); stroke-width: 2; }
+.curva-punto.prog { fill: var(--serie-prog); }
+.curva-etiqueta { font-size: 12px; font-weight: 700; fill: var(--texto); font-family: inherit; }
+.curva-cursor { stroke: var(--texto-tenue); stroke-width: 1; }
+.curva-globo {
+  position: absolute; top: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: .15rem;
+  min-width: 9rem; padding: .45rem .6rem;
+  border: 1px solid var(--borde); border-radius: .55rem;
+  background: var(--fondo-2); box-shadow: 0 6px 18px rgba(0, 0, 0, .3);
+  font-size: .8rem; color: var(--texto-tenue); pointer-events: none;
+}
+.curva-globo[hidden] { display: none; }
+.curva-globo strong { color: var(--texto); font-size: .92rem; margin: 0 .2rem 0 .35rem; font-variant-numeric: tabular-nums; }
+.curva-globo-fecha { color: var(--texto); font-weight: 600; }
+.curva-tabla { margin-top: .4rem; font-size: .85rem; }
+.curva-tabla summary { cursor: pointer; color: var(--seleccion); }
+.curva-tabla table { width: 100%; margin-top: .4rem; border-collapse: collapse; }
+.curva-tabla th, .curva-tabla td { padding: .25rem .35rem; border-bottom: 1px solid var(--borde); text-align: left; }
+.curva-tabla td + td, .curva-tabla th + th { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- partidas ---------- */
+.partidas { display: flex; flex-direction: column; gap: .55rem; }
+.partida { padding: .55rem .65rem .4rem; border: 1px solid var(--borde); border-radius: .7rem; background: var(--fondo); }
+.partida.atrasada { border-left: 3px solid var(--aviso-texto); }
+.partida-cab { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; }
+.partida-cab strong { font-size: .93rem; }
+.partida-valor { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.partida-deslizador { position: relative; margin: .45rem 0 .25rem; }
+.partida input[type=range] {
+  -webkit-appearance: none; appearance: none;
+  display: block; width: 100%; height: 1.6rem; margin: 0;
+  background: transparent; cursor: pointer;
+}
+.partida input[type=range]::-webkit-slider-runnable-track {
+  height: .55rem; border-radius: 1rem;
+  background: linear-gradient(to right, var(--serie-real) var(--v, 0%), var(--fondo-3) var(--v, 0%));
+}
+.partida input[type=range]::-moz-range-track { height: .55rem; border-radius: 1rem; background: var(--fondo-3); }
+.partida input[type=range]::-moz-range-progress { height: .55rem; border-radius: 1rem; background: var(--serie-real); }
+.partida input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 1.35rem; height: 1.35rem; margin-top: -.4rem;
+  border: 3px solid var(--fondo); border-radius: 50%;
+  background: var(--serie-real); box-shadow: 0 1px 4px rgba(0, 0, 0, .35);
+}
+.partida input[type=range]::-moz-range-thumb {
+  width: 1.1rem; height: 1.1rem; border: 3px solid var(--fondo); border-radius: 50%; background: var(--serie-real);
+}
+.partida input[type=range]:focus-visible { outline: 2px solid var(--seleccion); outline-offset: 3px; border-radius: 1rem; }
+/* La raya de lo programado, sobre la pista (el pulgar mide 1.35rem). */
+.partida-prog {
+  position: absolute; top: .3rem; bottom: .3rem; width: 3px;
+  left: calc(.675rem + (100% - 1.35rem) * var(--p) / 100 - 1.5px);
+  border-radius: 2px; background: var(--serie-prog); pointer-events: none;
+}
+.partida .pie { margin: 0; }
+
+.editor-programa summary { cursor: pointer; font-weight: 600; color: var(--seleccion); margin-bottom: .6rem; }
+.filas-programa { display: flex; flex-direction: column; gap: .5rem; margin: .4rem 0; }
+.fila-programa {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr 4.6rem 2.4rem;
+  grid-template-areas: "n nombre peso quitar" "n inicio fin fin";
+  gap: .35rem .4rem; align-items: end;
+  padding: .45rem .5rem; border: 1px solid var(--borde); border-radius: .65rem; background: var(--fondo);
+}
+.fila-programa > :nth-child(1) { grid-area: n; align-self: center; }
+.fila-programa > :nth-child(2) { grid-area: nombre; }
+.fila-programa > :nth-child(3) { grid-area: peso; }
+.fila-programa > :nth-child(4) { grid-area: inicio; }
+.fila-programa > :nth-child(5) { grid-area: fin; }
+.fila-programa > :nth-child(6) { grid-area: quitar; }
+.fila-programa label { font-size: .7rem; }
+.fila-programa .campo { margin: 0; padding: .5rem .45rem; }
+@media (min-width: 640px) {
+  .fila-programa { grid-template-columns: 1.4rem 1fr 5rem 9rem 9rem 2.4rem; grid-template-areas: "n nombre peso inicio fin quitar"; }
+}
+
+/* ---------- minutas ---------- */
+.asistentes, .acuerdos { display: flex; flex-direction: column; gap: .45rem; margin-bottom: .4rem; }
+.asistente { display: grid; grid-template-columns: auto 1fr 1fr 2.4rem; gap: .35rem; align-items: center; }
+.asistente .campo { margin: 0; padding: .5rem .45rem; }
+.asistente .casilla input { margin: 0; }
+.acuerdo { padding: .5rem .6rem .55rem; border: 1px solid var(--borde); border-left: 3px solid var(--acento); border-radius: .7rem; background: var(--fondo); }
+.acuerdo.vencido { border-left-color: var(--peligro-texto); }
+.acuerdo.cumplido { opacity: .65; border-left-color: var(--texto-tenue); }
+.acuerdo.cumplido textarea { text-decoration: line-through; }
+.acuerdo-cab { display: flex; align-items: center; gap: .4rem; margin-bottom: .35rem; }
+.acuerdo-cab .quitar { margin-left: auto; min-height: 2rem; }
+.acuerdo .campo { margin: 0; }
+.acuerdo-datos { display: grid; grid-template-columns: 1fr 9.5rem auto; gap: .4rem; align-items: end; margin-top: .35rem; }
+.acuerdo-datos .casilla { padding-bottom: .55rem; }
+@media (max-width: 420px) {
+  .acuerdo-datos { grid-template-columns: 1fr 1fr; }
+  .acuerdo-datos .casilla { grid-column: span 2; padding-bottom: 0; }
+}
+
+/* ---------- días afectados ---------- */
+.causas { display: flex; flex-direction: column; gap: .35rem; margin-top: .8rem; }
+.causa { display: grid; grid-template-columns: 9rem 1fr 2.6rem; gap: .5rem; align-items: center; font-size: .86rem; }
+.causa-barra { height: .55rem; border-radius: 1rem; background: var(--fondo-3); overflow: hidden; }
+.causa-barra span { display: block; height: 100%; border-radius: 1rem; background: var(--aviso-texto); }
+.causa strong { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- impresión ---------- */
+@media print {
+  .curva { --serie-real: #3d7cc4; --serie-prog: #c0601a; --curva-rejilla: #e1e7ef; --texto-tenue: #6b7a90; --texto: #121826; --borde: #c9d3e2; --fondo-2: #fff; }
+  .informe .curva-svg { max-height: 85mm; }
+  .informe .curva-leyenda { font-size: 8pt; }
+  .informe-asistentes td.informe-firma-celda { width: 40%; height: 9mm; }
+  .informe-lista { margin: 0; padding-left: 5mm; }
+  .informe .informe-larga .num { width: auto; white-space: nowrap; }
+  .informe-lista li { margin: .5mm 0; }
+  @page seguimiento {
+    size: A4;
+    margin: 14mm 13mm 16mm;
+    @bottom-left { content: "COORDINATE · Seguimiento de obra"; font: 7pt "Inter", sans-serif; color: #6b7a90; }
+    @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 7pt "Inter", sans-serif; color: #6b7a90; }
+  }
+}

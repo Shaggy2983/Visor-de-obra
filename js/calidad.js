@@ -21,12 +21,11 @@ import {
   numero, resumenCalidad
 } from './calidad-datos.js';
 import { equipo } from './equipo.js';
+import { documento, dato, cifra, cabecera, pie, hueco, imprimir } from './impreso.js';
 
 const $ = (id) => document.getElementById(id);
 const LADO_FOTO = 1600;
 const CALIDAD_FOTO = 0.8;
-const CONTACTO = 'hola@coordinate.do · coordinate.do · Santo Domingo, RD';
-const LEMA = 'Los problemas se resuelven en el modelo, no en obra.';
 const CLAVE_OBRA = 'crd-obra-calidad';
 
 const nodos = {
@@ -833,61 +832,15 @@ async function borrar(r) {
 /* PDF: acta de inspección y registro de vaciado                       */
 /* ------------------------------------------------------------------ */
 
-let seccionN = 0;
-function logotipo() {
-  const marca = el('span', { class: 'marca', 'aria-label': 'COORDINATE' });
-  marca.innerHTML = 'C<svg viewBox="10 10 44 44" aria-hidden="true">'
-    + '<g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g>'
-    + '<circle cx="32" cy="32" r="6" fill="#62a0e8"/></svg>ORDINATE';
-  return marca;
-}
-function titulo(texto, extra) {
-  seccionN += 1;
-  return el('h2', { class: 'informe-h2' },
-    el('span', { class: 'informe-h2-n' }, String(seccionN).padStart(2, '0')),
-    el('span', {}, texto),
-    extra ? el('span', { class: 'informe-h2-extra' }, extra) : null);
-}
-/* La firma va como fondo de su recuadro y no como <img>: Chrome a veces
-   manda una imagen sola a la página siguiente y parte el bloque de firmas. */
-const firmaImpresa = (u) => el('div', { class: 'informe-hueco', role: u ? 'img' : null, 'aria-label': u ? 'Firma' : null,
-  style: u ? `background: url("${u}") left bottom / contain no-repeat` : null });
-const dato = (t, valor) => el('div', { class: 'informe-dato' }, el('span', {}, t), el('strong', {}, valor || '—'));
-const cifra = (n, t, clase = '') => el('div', { class: `informe-cifra ${clase}` }, el('strong', {}, String(n)), el('span', {}, t));
+const firmaImpresa = hueco;
 
-function cabecera(tipoDoc, numeroDoc, h1, obra) {
-  return [
-    el('div', { class: 'informe-banda' }, logotipo(),
-      el('div', { class: 'informe-banda-doc' }, el('span', { class: 'informe-tipo' }, tipoDoc), el('strong', {}, numeroDoc))),
-    el('header', { class: 'informe-cabecera' },
-      el('div', {}, el('h1', {}, h1), el('p', { class: 'informe-obra' }, obra || 'Obra sin nombre')),
-      el('div', { class: 'informe-sello' }, el('span', {}, 'Emitido'),
-        el('strong', {}, new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })), el('span', {}, ahora())))
-  ];
-}
-const pie = () => el('footer', { class: 'informe-pie' }, el('span', {}, LEMA), el('span', {}, CONTACTO));
-
-async function imprimirDoc(nombre, nodosDoc, pieTexto) {
+async function imprimirDoc(nombre, nodosDoc) {
   await guardarYa();
-  nodos.informe.dataset.pie = pieTexto;
-  nodos.informe.replaceChildren(...el('div', {}, ...nodosDoc).childNodes);
-  await Promise.all([...nodos.informe.querySelectorAll('img')].map((i) => i.decode().catch(() => {})));
-  // …y las firmas, que van como fondo.
-  await Promise.all([...nodos.informe.querySelectorAll('.informe-hueco[style]')].map((n) => {
-    const m = n.style.backgroundImage.match(/url\("?(.*?)"?\)/);
-    if (!m) return null;
-    const img = new Image();
-    img.src = m[1];
-    return img.decode().catch(() => {});
-  }));
-  const antes = document.title;
-  document.title = nombre;
-  addEventListener('afterprint', () => { document.title = antes; }, { once: true });
-  window.print();
+  await imprimir(nodos.informe, nombre, nodosDoc);
 }
 
 function actaInspeccion(r) {
-  seccionN = 0;
+  const { titulo } = documento();
   const c = cuentaPuntos(r);
   const fotosDe = (punto) => r.fotos.filter((f) => f.punto === punto.id);
   const generales = r.fotos.filter((f) => !f.punto);
@@ -925,11 +878,11 @@ function actaInspeccion(r) {
         el('div', { class: 'informe-firma-caja' }, el('div', { class: 'informe-hueco' }),
           el('strong', {}, r.contratista || 'Nombre y cargo'), el('span', {}, 'Contratista · enterado')))),
     pie()
-  ], `COORDINATE · Acta de inspección ${codigo('IN', r.numero)}`);
+  ]);
 }
 
 function registroVaciado(v) {
-  seccionN = 0;
+  const { titulo } = documento();
   const ev = evaluacion(v);
   const real = volumenReal(v);
   const numeroDoc = `${codigo('VH', v.numero)}-${(v.fecha || '').replaceAll('-', '')}`;
@@ -982,7 +935,7 @@ function registroVaciado(v) {
         el('div', { class: 'informe-firma-caja' }, el('div', { class: 'informe-hueco' }), el('strong', {}, v.autor || 'Nombre y cargo'), el('span', {}, 'Supervisión')),
         el('div', { class: 'informe-firma-caja' }, el('div', { class: 'informe-hueco' }), el('strong', {}, v.proveedor || 'Nombre y cargo'), el('span', {}, 'Contratista / suplidor')))),
     pie()
-  ], `COORDINATE · Registro de vaciado ${codigo('VH', v.numero)}`);
+  ]);
 }
 
 /* ------------------------------------------------------------------ */

@@ -130,6 +130,12 @@ await prueba('pepe (contratista) no lee inspecciones', assertFails(getDoc(doc(dP
 await prueba('pepe (contratista) no escribe vaciados', assertFails(setDoc(doc(dP, 'obras/o2/vaciados/h2'), { datos: '{}', version: 1, borrado: false })));
 await prueba('extraño no lee vaciados', assertFails(getDoc(doc(dX, 'obras/o2/vaciados/h1'))));
 
+// --- seguimiento: programa de avance y minutas ---
+await prueba('ana escribe programa', assertSucceeds(setDoc(doc(dA, 'obras/o2/programas/prog-o2'), { datos: '{}', version: 1, borrado: false })));
+await prueba('ana escribe minuta', assertSucceeds(setDoc(doc(dA, 'obras/o2/minutas/m1'), { datos: '{}', version: 1, borrado: false })));
+await prueba('pepe (contratista) no lee minutas', assertFails(getDoc(doc(dP, 'obras/o2/minutas/m1'))));
+await prueba('extraño no lee el programa', assertFails(getDoc(doc(dX, 'obras/o2/programas/prog-o2'))));
+
 console.log(`reglas: ${ok} bien, ${mal} mal`);
 await env.cleanup();
 process.exit(mal ? 1 : 0);

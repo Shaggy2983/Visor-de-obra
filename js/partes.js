@@ -29,13 +29,15 @@ const SINC = 'sinc';
 const SUBIDOS = 'subidos';
 const INSPECCIONES = 'inspecciones';
 const VACIADOS = 'vaciados';
+const PROGRAMAS = 'programas';
+const MINUTAS = 'minutas';
 
 function abrir() {
   return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 5);
+    const peticion = indexedDB.open(BASE, 6);
     peticion.onupgradeneeded = () => {
       const bd = peticion.result;
-      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS]) {
+      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS, PROGRAMAS, MINUTAS]) {
         if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
       }
       if (!bd.objectStoreNames.contains(SUBIDOS)) bd.createObjectStore(SUBIDOS, { keyPath: 'ruta' });
@@ -174,6 +176,43 @@ export async function guardarVaciado(r, { callado = false } = {}) {
 
 export function borrarVaciado(id, { callado = false } = {}) {
   return borrarConBaja(VACIADOS, 'vaciados', id, callado);
+}
+
+/* --- seguimiento: programa de avance (uno por obra, con sus partidas y
+   los avances anotados) y minutas de reunión con sus acuerdos. --- */
+
+export async function listarProgramas() {
+  return (await operar('readonly', (t) => t.getAll(), PROGRAMAS)) || [];
+}
+
+export function leerPrograma(id) {
+  return operar('readonly', (t) => t.get(id), PROGRAMAS).then((r) => r || null);
+}
+
+export async function guardarPrograma(r, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(r), PROGRAMAS);
+  avisarCambio(callado);
+}
+
+export function borrarPrograma(id, { callado = false } = {}) {
+  return borrarConBaja(PROGRAMAS, 'programas', id, callado);
+}
+
+export async function listarMinutas() {
+  return ((await operar('readonly', (t) => t.getAll(), MINUTAS)) || []).sort(porFecha);
+}
+
+export function leerMinuta(id) {
+  return operar('readonly', (t) => t.get(id), MINUTAS).then((r) => r || null);
+}
+
+export async function guardarMinuta(r, { callado = false } = {}) {
+  await operar('readwrite', (t) => t.put(r), MINUTAS);
+  avisarCambio(callado);
+}
+
+export function borrarMinuta(id, { callado = false } = {}) {
+  return borrarConBaja(MINUTAS, 'minutas', id, callado);
 }
 
 /* --- estado de la sincronización --- */

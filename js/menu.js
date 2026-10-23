@@ -21,9 +21,16 @@
   var GRUPOS = [
     ['Obra', [
       ['visita.html', '📋', 'Visitas diarias', 'Parte de obra, incidencias, repasos y planos'],
-      ['calidad.html#/inspecciones', '✅', 'Inspecciones y liberaciones', 'Checklist por partida con firma'],
-      ['calidad.html#/vaciados', '🧱', 'Vaciados de hormigón', 'Conduces, slump y roturas de probetas', 'roturas'],
       ['index.html', '🧊', 'Modelo 3D y planos DXF', 'IFC, medir, cortes y realidad aumentada']
+    ]],
+    ['Calidad', [
+      ['calidad.html#/inspecciones', '✅', 'Inspecciones y liberaciones', 'Checklist por partida con firma'],
+      ['calidad.html#/vaciados', '🧱', 'Vaciados de hormigón', 'Conduces, slump y roturas de probetas', 'roturas']
+    ]],
+    ['Seguimiento', [
+      ['seguimiento.html#/avance', '📈', 'Avance y curva S', 'Programado frente a real por partida'],
+      ['seguimiento.html#/minutas', '🗒️', 'Minutas de reunión', 'Asistentes, temas y acuerdos', 'acuerdos'],
+      ['seguimiento.html#/dias', '🌧️', 'Días afectados', 'Lluvia, paros y horas perdidas']
     ]],
     ['Equipo', [
       ['#novedades', '👥', 'Novedades del equipo', 'Bitácoras nuevas o cambiadas', 'novedades'],
@@ -56,13 +63,18 @@
     } catch (e) { return 0; }
   }
 
+  function acuerdos() {
+    // seguimiento-datos.js deja aquí cuántos acuerdos de minuta están vencidos.
+    try { return Number(localStorage.getItem('crd-acuerdos-vencidos')) || 0; } catch (e) { return 0; }
+  }
+
   function pagina() { return location.pathname.split('/').pop() || 'index.html'; }
 
   function esActual(href) {
     var partes = href.split('#');
     if ((partes[0] || pagina()) !== pagina()) return false;
     var h = partes[1] ? '#' + partes[1] : '';
-    if (pagina() === 'calidad.html') return location.hash.indexOf(h) === 0;
+    if (pagina() === 'calidad.html' || pagina() === 'seguimiento.html') return location.hash.indexOf(h) === 0 || (h === '#/minutas' && location.hash.indexOf('#/minuta/') === 0);
     return h ? location.hash === h : !/^#\/(cuentas|copia)/.test(location.hash);
   }
 
@@ -113,10 +125,10 @@
         textos.appendChild(nodo('strong', '', a[2]));
         textos.appendChild(nodo('span', 'menu-ayuda', a[3]));
         enlace.appendChild(textos);
-        var n = a[4] === 'novedades' ? estado.novedades : a[4] === 'roturas' ? roturas() : 0;
+        var n = a[4] === 'novedades' ? estado.novedades : a[4] === 'roturas' ? roturas() : a[4] === 'acuerdos' ? acuerdos() : 0;
         if (n) {
           var c = nodo('span', 'menu-contador', n > 99 ? '99+' : String(n));
-          c.title = a[4] === 'roturas' ? 'Probetas por romper hoy o vencidas' : 'Novedades sin abrir';
+          c.title = a[4] === 'roturas' ? 'Probetas por romper hoy o vencidas' : a[4] === 'acuerdos' ? 'Acuerdos vencidos' : 'Novedades sin abrir';
           enlace.appendChild(c);
         }
         hoja.appendChild(enlace);
@@ -157,7 +169,7 @@
   }
 
   function pintarBotones() {
-    var n = estado.novedades + roturas();
+    var n = estado.novedades + roturas() + acuerdos();
     botones.forEach(function (b) {
       b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
       b.classList.toggle('abierto', abierto);
@@ -231,7 +243,7 @@
     pintarBotones();
     addEventListener('resize', function () { if (abierto) cerrar(true); });
     addEventListener('hashchange', function () { if (abierto) cerrar(true); });
-    addEventListener('storage', function (ev) { if (ev.key === 'crd-roturas') pintarBotones(); });
+    addEventListener('storage', function (ev) { if (ev.key === 'crd-roturas' || ev.key === 'crd-acuerdos-vencidos') pintarBotones(); });
   }
 
   window.crdMenu = {

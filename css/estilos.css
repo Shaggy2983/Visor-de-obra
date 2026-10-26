@@ -1097,3 +1097,4 @@ a.boton {
 .aviso-mudanza p { margin: 0 0 .6rem; font-size: .9rem; }
 .mudanza-estado.ok { color: var(--color-accent); }
 .mudanza-estado.error { color: var(--peligro-texto); }
+.boton[hidden] { display: none !important; }

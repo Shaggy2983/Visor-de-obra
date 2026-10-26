@@ -257,6 +257,10 @@
     addEventListener('resize', function () { if (abierto) cerrar(true); });
     addEventListener('hashchange', function () { if (abierto) cerrar(true); });
     addEventListener('storage', function (ev) { if (ev.key === 'crd-roturas' || ev.key === 'crd-acuerdos-vencidos' || ev.key === 'crd-control-avisos') pintarBotones(); });
+    // Aviso de cambio de dirección (js/mudanza.js; no sale mientras no esté activa).
+    if (!/mudanza\.html$/.test(location.pathname)) {
+      import('./mudanza.js').then(function (m) { m.avisoEnPagina(); }).catch(function () {});
+    }
   }
 
   window.crdMenu = {

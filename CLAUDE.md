@@ -54,7 +54,10 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
 - **Firma adjunta** (`firma` en `js/visita.js`): «📎 Adjuntar firma» (foto o
   PNG; recorta al trazo, papel → transparente, encaja sin deformar),
   «Guardar como mi firma» (localStorage `crd-mi-firma`, sólo ese teléfono)
-  y «⭐ Usar mi firma».
+  y «⭐ Usar mi firma». Con cuenta, «mi firma» también va a
+  `usuarios/{uid}.miFirma` (+ `miFirmaEn`; gana la más reciente,
+  `ponerAlDiaMiFirma` en `js/equipo.js`), así vuelve en otro teléfono o
+  dirección.
 - **Predictivo y corrector** (`js/predictivo.js`): sugerencias de frases y
   listas (empresa, oficio, obra, autor, zona) aprendidas de las visitas y
   repasos locales y de los registros de calidad, seguimiento y control;
@@ -209,6 +212,17 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   el visor de planos. **Al añadir una función, añadirla a la guía.**
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
+  Al pasar a segundo plano con cambios pendientes se sincroniza ya
+  (`pendiente` en `js/equipo.js`).
+- **Mudanza de dirección** (`mudanza.html`, `js/mudanza.js`): paso de
+  `shaggy2983.github.io/Visor-de-obra/` a `app.coordinate.com.do`
+  (Firebase Hosting, decidido el 26/10/2026). Lo local va atado al origen;
+  la misma página en las dos direcciones se abre con `window.open` y pasa
+  IndexedDB (con Blob) y `crd-*`/`coordinate-*` de localStorage por
+  `postMessage` con origen exacto; al importar no pisa lo más nuevo.
+  `ACTIVA = false` hasta publicar la nueva; con `true`, `menu.js` pone el
+  aviso «Mudar mis datos» / «Traer mis datos». Pruebas locales:
+  `mudanza.html?vieja=http://127.0.0.1:8001&nueva=http://127.0.0.1:8002`.
 
 ## Cuentas y equipo (Firebase)
 

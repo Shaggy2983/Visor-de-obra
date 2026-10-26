@@ -76,7 +76,7 @@ function pintarPerfil() {
       ? el('img', { class: 'firma-muestra', src: miFirma, alt: 'Tu firma guardada' })
       : null,
     el('p', { class: 'pie' }, miFirma
-      ? 'Guardada en este dispositivo. En cada visita: «⭐ Usar mi firma».'
+      ? 'Guardada en este dispositivo y en tu cuenta (vuelve sola al entrar en otro teléfono). En cada visita: «⭐ Usar mi firma».'
       : 'Todavía no hay firma guardada en este dispositivo. En una visita, firma o adjunta tu firma y toca «Guardar como mi firma».'));
 }
 

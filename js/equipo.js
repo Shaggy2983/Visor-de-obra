@@ -198,6 +198,11 @@ function tituloNovedad(tipo, r) {
 // Errores de subida que indican que no hay Storage (plan sin Blaze).
 const FALTA_STORAGE = ['storage/unknown', 'storage/bucket-not-found', 'storage/project-not-found', 'storage/no-default-bucket', 'storage/unauthorized'];
 
+const MI_FIRMA = 'crd-mi-firma';
+const MI_FIRMA_EN = 'crd-mi-firma-en';
+function leerLocal(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function escribirLocal(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* sin memoria */ } }
+
 export class Equipo extends EventTarget {
   constructor() {
     super();
@@ -247,9 +252,14 @@ export class Equipo extends EventTarget {
       }
       this.avisar();
     });
-    addEventListener('crd-cambio', () => this.programar(4000));
+    addEventListener('crd-cambio', () => { this.pendiente = true; this.programar(4000); });
     addEventListener('online', () => this.programar(500));
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.programar(800); });
+    // Al salir de la app (otra app, pantalla apagada) se sube ya lo
+    // pendiente: es lo que más a menudo se queda sin subir.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) this.programar(800);
+      else if (this.pendiente) this.programar(0);
+    });
     setInterval(() => { if (!document.hidden) this.programar(0); }, 120000);
   }
 
@@ -320,7 +330,39 @@ export class Equipo extends EventTarget {
     await fb.setDoc(ref, { nombre: this.nombre, correo: this.correo, visto: fb.serverTimestamp() }, { merge: true });
     const d = (await fb.getDoc(ref)).data() || {};
     this.perfil = { cargo: d.cargo || '', empresa: d.empresa || '', telefono: d.telefono || '', foto: d.foto || '' };
+    await this.ponerAlDiaMiFirma(d).catch((e) => console.warn('mi firma', e.code || e));
     this.avisar();
+  }
+
+  /* «Mi firma» vive en el teléfono (localStorage, para usarla sin señal) y
+     también en la ficha privada de la cuenta (usuarios/{uid}.miFirma), para
+     que no se pierda al cambiar de teléfono o de dirección de la app. Gana
+     la más reciente (crd-mi-firma-en). */
+  async ponerAlDiaMiFirma(d) {
+    const local = leerLocal(MI_FIRMA);
+    const localEn = Number(leerLocal(MI_FIRMA_EN)) || 0;
+    const nube = typeof d.miFirma === 'string' ? d.miFirma : '';
+    const nubeEn = Number(d.miFirmaEn) || 0;
+    if (nube && (!local || nubeEn > localEn)) {
+      if (nube !== local) {
+        escribirLocal(MI_FIRMA, nube);
+        escribirLocal(MI_FIRMA_EN, String(nubeEn || Date.now()));
+        dispatchEvent(new CustomEvent('crd-mi-firma'));
+      }
+    } else if (local && local !== nube) {
+      await this.guardarMiFirma(local, localEn || Date.now());
+    }
+  }
+
+  async guardarMiFirma(datos, en = Date.now()) {
+    escribirLocal(MI_FIRMA_EN, String(en));
+    if (!this.usuario || !this.f) return false;
+    // Una ficha de Firestore no pasa de 1 MB: una firma recortada ocupa
+    // unas decenas de kB; si fuera enorme, se queda sólo en el teléfono.
+    if (!datos || datos.length > 700000) return false;
+    const { fb, db } = this.f;
+    await fb.setDoc(fb.doc(db, 'usuarios', this.usuario.uid), { miFirma: datos, miFirmaEn: en }, { merge: true });
+    return true;
   }
 
   /* Guarda el perfil y pone al día la ficha que ven los demás en cada obra
@@ -778,6 +820,7 @@ export class Equipo extends EventTarget {
       return;
     }
     this.sincronizando = true;
+    this.pendiente = false;
     this.ponerEstado('sincronizando', 'Sincronizando…');
     const cambiados = new Set();
     const nuevas = [];
@@ -813,6 +856,7 @@ export class Equipo extends EventTarget {
       this.ponerEstado('ok', this.obras.length ? `Sincronizado a las ${ahora()}` : '');
     } catch (e) {
       console.error(e);
+      this.pendiente = true;
       this.ponerEstado('error', 'No se pudo sincronizar; se reintentará solo.');
     } finally {
       this.sincronizando = false;

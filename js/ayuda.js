@@ -120,7 +120,8 @@ const SECCIONES = [
       { t: 'Actualizaciones', p: ['Cuando sale «Hay una versión nueva · Tocar para actualizar», tócalo.'] },
       { t: 'Exportar a Excel', p: ['Menú → «Exportar a Excel (CSV)»: elige una obra o todas.', 'Una tabla por tipo: visitas, incidencias, personal, repasos, inspecciones, vaciados, probetas, avance, acuerdos, RFI, cambios, materiales y seguridad.', '«Descargar todo» baja todas las tablas; se abren en Excel, Google Sheets o LibreOffice.'] },
       { t: 'Copia de seguridad', p: ['Menú → «Copia de seguridad» → «Exportar copia»: un archivo con todo (visitas, fotos, planos, repasos, inspecciones y vaciados).', '«Importar copia» en otro teléfono, o «En la nube…» con tu cuenta vinculada.'] },
-      { t: 'Cuentas vinculadas', p: ['Menú → «Cuentas vinculadas»: Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar y guardar los reportes.'] }
+      { t: 'Cuentas vinculadas', p: ['Menú → «Cuentas vinculadas»: Google (Gmail y Drive) o Microsoft (Outlook y OneDrive) para enviar y guardar los reportes.'] },
+      { t: 'Nueva dirección de la app', p: ['Cuando la app cambie de dirección, sale un aviso arriba: «Mudar mis datos» pasa todo lo del teléfono (visitas, repasos, registros, mi firma, modelo y ajustes) a la nueva. No se borra nada ni se duplica.', 'En la nueva, «Traer mis datos» hace lo mismo desde allí. Lo sincronizado con tu cuenta vuelve solo al entrar; «mi firma» también, si tienes cuenta.', 'Si algo falla: «Copia de seguridad» → Exportar en la antigua e Importar en la nueva.'] }
     ]
   }
 ];

@@ -1,4 +1,46 @@
 {
+  "hosting": {
+    "site": "coordinate-obra",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".git/**",
+      ".github/**",
+      ".gitignore",
+      ".nojekyll",
+      "**/node_modules/**",
+      "android/**",
+      "apk/**",
+      "pruebas/**",
+      "tienda/**",
+      "herramientas/**",
+      "**/*.md",
+      "firestore.rules",
+      "storage.rules",
+      "**/*-debug.log"
+    ],
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      },
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ]
+      }
+    ]
+  },
   "firestore": {
     "rules": "firestore.rules"
   },

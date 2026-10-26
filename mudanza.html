@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es" class="pagina-visita">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>COORDINATE · Nueva dirección</title>
+<meta name="theme-color" content="#121826">
+<link rel="icon" href="./marca/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="./vendor/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="./js/tema.js"></script>
+<link rel="stylesheet" href="./css/estilos.css">
+<link rel="stylesheet" href="./css/visita.css">
+</head>
+<body>
+<header class="barra-superior barra-solida">
+  <h1 class="titulo"><span class="marca" aria-label="COORDINATE">C<svg viewBox="10 10 44 44" aria-hidden="true"><g fill="currentColor"><circle cx="32.00" cy="14.67" r="4.53"/><circle cx="44.25" cy="19.75" r="4.53"/><circle cx="49.33" cy="32.00" r="4.53"/><circle cx="44.25" cy="44.25" r="4.53"/><circle cx="32.00" cy="49.33" r="4.53"/><circle cx="19.75" cy="44.25" r="4.53"/><circle cx="14.67" cy="32.00" r="4.53"/><circle cx="19.75" cy="19.75" r="4.53"/></g><circle cx="32" cy="32" r="6" fill="var(--color-accent)"/></svg>ORDINATE</span><span class="titulo-seccion">Nueva dirección</span></h1>
+</header>
+<main class="contenido">
+  <section class="grupo">
+    <p id="mudanza-texto"></p>
+    <div class="fila-botones">
+      <button type="button" id="btn-mudar" class="boton boton-destacado" hidden>Mudar mis datos</button>
+      <button type="button" id="btn-traer" class="boton boton-destacado" hidden>Traer mis datos</button>
+      <a id="btn-abrir" class="boton" hidden>Abrir la nueva dirección</a>
+      <a id="btn-entrar" class="boton boton-destacado" hidden>Entrar en la app</a>
+      <a id="btn-volver" class="boton" href="./visita.html" hidden>Volver a la app</a>
+    </div>
+    <p id="mudanza-estado" class="pie mudanza-estado" role="status" aria-live="polite"></p>
+    <p class="pie">Si algo falla: menú → Datos → «Copia de seguridad» → Exportar aquí e Importar en la otra.</p>
+  </section>
+</main>
+<script type="module">
+  import { iniciarPagina } from './js/mudanza.js';
+  const $ = (id) => document.getElementById(id);
+  iniciarPagina({
+    texto: $('mudanza-texto'),
+    estado: $('mudanza-estado'),
+    botones: { mudar: $('btn-mudar'), traer: $('btn-traer'), abrir: $('btn-abrir'), entrar: $('btn-entrar'), volver: $('btn-volver') }
+  });
+</script>
+</body>
+</html>

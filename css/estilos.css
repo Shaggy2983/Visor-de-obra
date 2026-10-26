@@ -1085,3 +1085,16 @@ a.boton {
   :root, :root[data-tema] { color-scheme: light !important; background: #fff !important; }
   body { background: #fff !important; }
 }
+
+/* Cambio de dirección de la app (js/mudanza.js, mudanza.html) */
+.aviso-mudanza {
+  margin: 0 0 1rem;
+  padding: .8rem .9rem;
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+.aviso-mudanza p { margin: 0 0 .6rem; font-size: .9rem; }
+.mudanza-estado.ok { color: var(--color-accent); }
+.mudanza-estado.error { color: var(--peligro-texto); }
+.boton[hidden] { display: none !important; }

@@ -1074,9 +1074,13 @@ const firma = (() => {
   nodos.firmaGuardar.addEventListener('click', async () => {
     if (!actual?.firma) return;
     try {
-      localStorage.setItem(MI_FIRMA, await aDatos(actual.firma));
+      const datos = await aDatos(actual.firma);
+      localStorage.setItem(MI_FIRMA, datos);
       pintarEstado();
-      avisar(nodos.aviso, 'Guardada como tu firma en este teléfono. En las próximas visitas: «⭐ Usar mi firma».', 4000);
+      const enCuenta = await equipo.guardarMiFirma(datos).catch(() => false);
+      avisar(nodos.aviso, enCuenta
+        ? 'Guardada como tu firma, en este teléfono y en tu cuenta. En las próximas visitas: «⭐ Usar mi firma».'
+        : 'Guardada como tu firma en este teléfono. En las próximas visitas: «⭐ Usar mi firma».', 4000);
     } catch {
       avisar(nodos.aviso, 'No se ha podido guardar la firma en este teléfono.', 4000);
     }

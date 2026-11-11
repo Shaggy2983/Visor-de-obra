@@ -28,7 +28,8 @@ export const ACTIVA = false;
 export const VIEJA = { origen: 'https://shaggy2983.github.io', ruta: '/Visor-de-obra/' };
 export const NUEVA = { origen: 'https://app.coordinate.com.do', ruta: '/' };
 
-const BASES = ['visitas-obra-e04', 'visor-obra-e04'];
+// Las nuevas y las de las primeras versiones (por si este teléfono aún no se mudó de nombre).
+const BASES = ['coordinate-obra-visitas', 'coordinate-obra-modelo', 'visitas-obra-e04', 'visor-obra-e04'];
 // Propias de este navegador y este momento: no tienen sentido en la otra.
 const NO_COPIAR = /^(crd-sin-storage|crd-dictado-arranque|crd-mudanza-|crd-mudada|coordinate-oauth-)/;
 const HECHA = 'crd-mudada';              // en la vieja: cuándo se mudó

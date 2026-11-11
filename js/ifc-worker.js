@@ -571,10 +571,34 @@ function valores(clave) {
   return { tipo: 'valores', clave, valores: m ? Array.from(m) : [] };
 }
 
+/* Modelo ya visto: la geometría llega de la caché del teléfono y aquí
+   sólo hace falta abrir el archivo para las propiedades, sin teselar. */
+let preparado = Promise.resolve();
+
+async function abrirSinGeometria(datos, ids) {
+  await iniciar();
+  if (modelo !== -1) {
+    api.CloseModel(modelo);
+    modelo = -1;
+  }
+  modelo = api.OpenModel(new Uint8Array(datos), {
+    COORDINATE_TO_ORIGIN: true,
+    CIRCLE_SEGMENTS: 12
+  });
+  indice = null;
+  idsElementos = new Set(ids);
+}
+
 /* ------------------------------------------------------------------ */
 
 self.onmessage = async (ev) => {
   const orden = ev.data;
+  if (orden.tipo === 'abrir') {
+    // Un fallo aquí no tira el modelo, que ya se ve: sólo faltarían propiedades.
+    preparado = abrirSinGeometria(orden.datos, orden.ids).catch(() => {});
+    return;
+  }
+  if (orden.tipo !== 'cargar') await preparado;
   try {
     if (orden.tipo === 'cargar') {
       await cargar(orden.datos);

@@ -18,9 +18,12 @@
    Las tablas «sinc» y «subidos» son de la sincronización: la versión de
    cada registro que ya está en la nube y los archivos ya subidos. */
 
-// Nombre heredado de la primera versión: cambiarlo dejaría huérfanas las
-// visitas ya guardadas en los teléfonos.
-const BASE = 'visitas-obra-e04';
+import { abrirBase } from './bd.js';
+
+// La base de las primeras versiones tenía otro nombre; js/bd.js copia sus
+// datos a la nueva la primera vez y la borra.
+const BASE = 'coordinate-obra-visitas';
+const HEREDADA = 'visitas-obra-e04';
 const TABLA = 'visitas';
 const PLANOS = 'planos';
 const REPASOS = 'repasos';
@@ -34,18 +37,12 @@ const MINUTAS = 'minutas';
 const CONTROL = { rfis: 'rfis', cambios: 'cambios', recepciones: 'recepciones', seguridad: 'seguridad' };
 
 function abrir() {
-  return new Promise((cumplir, fallar) => {
-    const peticion = indexedDB.open(BASE, 7);
-    peticion.onupgradeneeded = () => {
-      const bd = peticion.result;
-      for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS, PROGRAMAS, MINUTAS, ...Object.values(CONTROL)]) {
-        if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
-      }
-      if (!bd.objectStoreNames.contains(SUBIDOS)) bd.createObjectStore(SUBIDOS, { keyPath: 'ruta' });
-    };
-    peticion.onsuccess = () => cumplir(peticion.result);
-    peticion.onerror = () => fallar(peticion.error);
-  });
+  return abrirBase(BASE, 7, (bd) => {
+    for (const tabla of [TABLA, PLANOS, REPASOS, BAJAS, SINC, INSPECCIONES, VACIADOS, PROGRAMAS, MINUTAS, ...Object.values(CONTROL)]) {
+      if (!bd.objectStoreNames.contains(tabla)) bd.createObjectStore(tabla, { keyPath: 'id' });
+    }
+    if (!bd.objectStoreNames.contains(SUBIDOS)) bd.createObjectStore(SUBIDOS, { keyPath: 'ruta' });
+  }, HEREDADA);
 }
 
 async function operar(modo, hacer, tabla = TABLA) {

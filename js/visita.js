@@ -1605,7 +1605,7 @@ async function generarCopia() {
   const control = {};
   for (const [k, listar] of Object.entries(TABLAS_CONTROL)) control[k] = await Promise.all((await listar.listar()).map(conFotos));
   const json = JSON.stringify({
-    formato: 'visitas-obra-e04', version: 6, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados, programas, minutas, ...control
+    formato: 'coordinate-visitas', version: 6, exportada: new Date().toISOString(), visitas: salida, planos, repasos, inspecciones, vaciados, programas, minutas, ...control
   });
   nodos.aviso.hidden = true;
   return {
@@ -1630,7 +1630,8 @@ async function exportar() {
 async function importar(archivo) {
   try {
     const datos = JSON.parse(await archivo.text());
-    if (datos.formato !== 'visitas-obra-e04' || !Array.isArray(datos.visitas)) {
+    // «visitas-obra-e04»: copias hechas con las primeras versiones.
+    if (!['coordinate-visitas', 'visitas-obra-e04'].includes(datos.formato) || !Array.isArray(datos.visitas)) {
       throw new Error('formato');
     }
     // Las copias de la versión 1 no traen planos.

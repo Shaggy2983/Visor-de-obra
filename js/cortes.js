@@ -212,8 +212,7 @@ export class Cortes {
       p.textContent = t;
       return p;
     };
-    // Las cotas se cuentan desde la planta baja (±0.00); lo que queda por
-    // debajo (cimentación, sótanos) sale en negativo.
+    // Las cotas se cuentan desde la base del modelo, que está apoyada en 0.
     const cota = (comp) => (t) => metros(L.min[comp] + t * (L.max[comp] - L.min[comp]));
     const invertir = this.boton('Invertir lado', () => { this.invertido = !this.invertido; this.aplicar(); });
 

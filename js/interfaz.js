@@ -70,7 +70,7 @@ export function nombreDeClase(tipo) {
 /* --------------------------------------------------------------- */
 
 /* alTransparentar (opcional) añade un botón ◐ para ver la fila en transparente. */
-export function fila({ etiqueta, cuenta, marcada, alCambiar, transparente, alTransparentar }) {
+export function fila({ etiqueta, cuenta, marcada, alCambiar, transparente, alTransparentar, alVer }) {
   const div = document.createElement('label');
   div.className = 'fila';
 
@@ -90,6 +90,20 @@ export function fila({ etiqueta, cuenta, marcada, alCambiar, transparente, alTra
     n.className = 'fila-cuenta';
     n.textContent = cuenta;
     div.append(n);
+  }
+  if (alVer) {
+    const v = document.createElement('button');
+    v.type = 'button';
+    v.className = 'fila-tenue';
+    v.textContent = '⌖';
+    v.title = 'Ver sólo esta planta, desde arriba';
+    v.setAttribute('aria-label', `${etiqueta}: ver sola desde arriba`);
+    v.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      alVer();
+    });
+    div.append(v);
   }
   if (alTransparentar) {
     const b = document.createElement('button');

@@ -330,10 +330,10 @@ export class Visor {
     if (this.rejilla) this.rejilla.visible = si;
   }
 
-  vista(nombre) {
+  /* «caja»: la de lo que se quiere encuadrar; por defecto, todo el modelo. */
+  vista(nombre, caja = this.cajaModelo()) {
     const d = VISTAS[nombre];
-    if (!d) return;
-    const caja = this.cajaModelo();
+    if (!d || !caja) return;
     if (caja.isEmpty()) return;
     const centro = caja.getCenter(new THREE.Vector3());
     const radio = Math.max(caja.getSize(new THREE.Vector3()).length() / 2, 0.5);
@@ -422,6 +422,15 @@ export class Visor {
     this.camara.position.copy(centro).addScaledVector(direccion, distancia);
     this.controles.target.copy(centro);
     this.controles.update();
+  }
+
+  cajaDeElementos(ids) {
+    const caja = new THREE.Box3();
+    for (const id of ids) {
+      const c = this.cajaDeElemento(id);
+      if (c) caja.union(c);
+    }
+    return caja.isEmpty() ? null : caja;
   }
 
   cajaDeElemento(id) {

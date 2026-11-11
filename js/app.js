@@ -5,7 +5,7 @@ import { Medidor, metros } from './medir.js';
 import { Cortes } from './cortes.js';
 import { Colores } from './colores.js';
 import { arDisponible, RealidadAumentada } from './ar.js';
-import { guardarModelo, leerModelo } from './almacen.js';
+import { guardarModelo, leerModelo, guardarGeometria, leerGeometria } from './almacen.js';
 import { esDxf, leerDxf, crearVisorDxf } from './dxf.js';
 import {
   nombreDeClase, fila, filaResultado, pintarPropiedades, resumenAR, avisar
@@ -138,14 +138,35 @@ function nuevoTrabajador() {
   return trabajador;
 }
 
+/* Caché de geometría: mientras se procesa un modelo nuevo se apartan los
+   lotes; al terminar se guardan con la huella del archivo. Subir la versión
+   si cambia cómo se genera la geometría, para no reutilizar la vieja. */
+const VERSION_GEOMETRIA = 'geo-1';
+let captura = null;   // {firma, lotes} del modelo que se está procesando
+
+async function huella(datos) {
+  try {
+    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', datos));
+    return VERSION_GEOMETRIA + ':' + datos.byteLength + ':' + Array.from(h, (b) => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    return null;   // sin crypto.subtle (http): se procesa siempre
+  }
+}
+
 function recibir(m) {
   if (m.tipo === 'estado') {
     nodos.cargandoTexto.textContent = m.texto;
     nodos.progreso.style.width = `${m.porcentaje}%`;
   } else if (m.tipo === 'lote') {
     visor.anadirLote(m);
+    if (captura) captura.lotes.push(m);
   } else if (m.tipo === 'listo') {
     terminarCarga(m);
+    if (captura) {
+      const c = captura;
+      captura = null;
+      guardarGeometria(c.firma, { lotes: c.lotes, listo: m });
+    }
   } else if (m.tipo === 'propiedades') {
     mostrarPropiedades(m);
   } else if (m.tipo === 'claves' || m.tipo === 'valores') {
@@ -188,6 +209,21 @@ async function cargar(datos, nombre, recordar) {
 
   if (recordar) await guardarModelo(nombre, datos.slice(0));
 
+  const firma = await huella(datos);
+  const previa = firma ? await leerGeometria(firma) : null;
+  if (previa) {
+    // Ya procesado antes en este teléfono: se pinta al momento y el
+    // lector abre el archivo por detrás sólo para las propiedades.
+    captura = null;
+    nodos.cargandoTexto.textContent = 'Abriendo desde la memoria del teléfono…';
+    nodos.progreso.style.width = '60%';
+    for (const lote of previa.lotes) visor.anadirLote(lote);
+    terminarCarga(previa.listo);
+    nuevoTrabajador().postMessage({ tipo: 'abrir', datos, ids: previa.listo.elementos.map((e) => e[0]) }, [datos]);
+    return;
+  }
+
+  captura = firma ? { firma, lotes: [] } : null;
   nuevoTrabajador().postMessage({ tipo: 'cargar', datos }, [datos]);
 }
 
@@ -291,7 +327,8 @@ function pintarFiltros() {
       etiqueta: p.nombre,
       cuenta: p.cuenta,
       marcada: p.visible,
-      alCambiar: (v) => { p.visible = v; aplicar(); }
+      alCambiar: (v) => { p.visible = v; aplicar(); },
+      alVer: () => verPlanta(id)
     }));
   }
   if (estado.sinPlanta.cuenta) {
@@ -317,6 +354,21 @@ function pintarFiltros() {
       alTransparentar: (v) => { cat.transparente = v; pintarFiltros(); aplicar(); }
     }));
   }
+}
+
+/* Una planta sola, vista desde arriba. «Todo» devuelve el modelo entero. */
+function verPlanta(id) {
+  const planta = estado.plantas.get(id);
+  if (!planta) return;
+  for (const [k, p] of estado.plantas) p.visible = k === id;
+  estado.sinPlanta.visible = false;
+  pintarFiltros();
+  aplicar();
+  const ids = [];
+  for (const [idElemento, e] of estado.elementos) if (e.planta === id) ids.push(idElemento);
+  visor.vista('superior', visor.cajaDeElementos(ids));
+  nodos.panel.hidden = true;
+  avisar(nodos.aviso, `${planta.nombre} · vista superior. «Todo» vuelve al modelo completo.`, 3500);
 }
 
 function marcarTodas(cuales) {

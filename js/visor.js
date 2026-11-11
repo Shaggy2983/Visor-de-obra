@@ -71,7 +71,8 @@ export class Visor {
     this.controles.enableDamping = true;
     this.controles.dampingFactor = 0.08;
     this.controles.screenSpacePanning = false;
-    this.controles.maxPolarAngle = Math.PI * 0.495;
+    // Giro completo: se puede mirar el modelo por debajo (cimentación, losas).
+    this.controles.maxPolarAngle = Math.PI;
 
     // Luz de cielo y suelo, sol, un relleno desde el lado contrario para
     // que las fachadas en sombra no se queden planas, y una luz suave que
@@ -245,12 +246,8 @@ export class Visor {
   }
 
   /* Recentra el modelo sobre el origen, apoyado en el suelo, y prepara
-     la rejilla y el encuadre. Se llama una vez terminada la carga.
-     «suelo»: cota (en coordenadas del modelo) del nivel de planta baja.
-     Si no llega, el suelo es el punto más bajo del modelo; pero con
-     cimentaciones, pilotes, terreno o algún elemento perdido muy abajo
-     eso dejaba el edificio flotando sobre la rejilla. */
-  asentar(suelo) {
+     la rejilla y el encuadre. Se llama una vez terminada la carga. */
+  asentar() {
     this.raiz.position.set(0, 0, 0);
     this.ancla.position.set(0, 0, 0);
     this.ancla.scale.set(1, 1, 1);
@@ -261,8 +258,7 @@ export class Visor {
     if (caja.isEmpty()) return { tamano: 1, alto: 1 };
 
     const centro = caja.getCenter(new THREE.Vector3());
-    const base = Number.isFinite(suelo) && suelo > caja.min.y && suelo < caja.max.y ? suelo : caja.min.y;
-    this.raiz.position.set(-centro.x, -base, -centro.z);
+    this.raiz.position.set(-centro.x, -caja.min.y, -centro.z);
 
     const medidas = caja.getSize(new THREE.Vector3());
     const tamano = Math.max(medidas.x, medidas.y, medidas.z, 1);
@@ -277,31 +273,6 @@ export class Visor {
     this.crearRejilla();
     this.encuadrar();
     return { tamano, alto: medidas.y };
-  }
-
-  /* Cota de apoyo de un grupo de elementos: la mediana de la cota más
-     baja de cada uno (muros, puertas y losas de una planta arrancan casi
-     todos del mismo nivel; un pilar o una zapata que bajen más no la
-     arrastran). Coordenadas del modelo, antes de recentrar. */
-  cotaDeApoyo(ids) {
-    const minimos = [];
-    for (const id of ids) {
-      const trozos = this.porElemento.get(id);
-      if (!trozos) continue;
-      let min = Infinity;
-      for (const { malla, inicio, largo } of trozos) {
-        const pos = malla.geometry.attributes.position.array;
-        const idx = malla.userData.indicesOriginales;
-        for (let k = inicio, fin = inicio + largo; k < fin; k++) {
-          const y = pos[idx[k] * 3 + 1];
-          if (y < min) min = y;
-        }
-      }
-      if (min !== Infinity) minimos.push(min);
-    }
-    if (!minimos.length) return undefined;
-    minimos.sort((a, b) => a - b);
-    return minimos[Math.floor(minimos.length / 2)];
   }
 
   crearRejilla() {

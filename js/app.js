@@ -191,6 +191,21 @@ async function cargar(datos, nombre, recordar) {
   nuevoTrabajador().postMessage({ tipo: 'cargar', datos }, [datos]);
 }
 
+/* Nivel de planta baja: la planta (IfcBuildingStorey) con elementos cuya
+   cota IFC está más cerca de 0. La rejilla se apoya ahí y no en el punto
+   más bajo del modelo, que puede ser una zapata, un pilote o el terreno. */
+function cotaDelSuelo() {
+  let ref;
+  for (const [id, p] of estado.plantas) {
+    if (!p.cuenta) continue;
+    if (ref === undefined || Math.abs(p.cota) < Math.abs(estado.plantas.get(ref).cota)) ref = id;
+  }
+  if (ref === undefined) return undefined;
+  const ids = [];
+  for (const [id, e] of estado.elementos) if (e.planta === ref) ids.push(id);
+  return visor.cotaDeApoyo(ids);
+}
+
 function terminarCarga(m) {
   for (const [id, tipo, nombre, guid] of m.elementos) {
     estado.elementos.set(id, { clase: nombreDeClase(tipo), tipo, nombre, guid, planta: undefined });
@@ -210,7 +225,7 @@ function terminarCarga(m) {
     cat.ids.push(id);
   }
 
-  visor.asentar();
+  visor.asentar(cotaDelSuelo());
   visor.mostrarRejilla(nodos.verRejilla.checked);
   pintarFiltros();
   cortes.preparar();

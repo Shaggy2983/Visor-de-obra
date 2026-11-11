@@ -72,6 +72,11 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   realidad aumentada (WebXR). «Abrir» acepta cualquier archivo (`*/*`, para
   que OneDrive/Drive en Android no lo bloqueen) y reconoce IFC/DXF/DWG por
   la cabecera si llega sin extensión (`tipoDe` en `js/app.js`).
+- **Incidencias enlazadas al modelo**: «⚠ Incidencia» en la ficha del
+  elemento deja `crd-incidencia-modelo` en localStorage; `js/visita.js`
+  (`recogerIncidenciaDelModelo`) la mete en la visita de hoy con
+  `incidencia.elemento = {guid, nombre, clase, planta, modelo}`. El enlace
+  de vuelta es `index.html?elemento=<GlobalId>` (`irAlElementoPedido`).
 - **Menú del símbolo** (`js/menu.js`, cargado con `defer` en todas las
   páginas): el símbolo de COORDINATE (anillo de nodos) es el botón, se
   inserta solo en cada `.barra-superior` y en `[data-menu]` (portada del

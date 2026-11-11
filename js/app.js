@@ -45,6 +45,7 @@ const nodos = {
   ocultar: $('btn-ocultar'),
   transparentar: $('btn-transparentar'),
   rayos: $('btn-rayos'),
+  incidenciaModelo: $('btn-incidencia-modelo'),
   barraMedir: $('barra-medir'),
   medirAyuda: $('medir-ayuda'),
   capaMedidas: $('capa-medidas'),
@@ -265,6 +266,48 @@ function terminarCarga(m) {
 
   const total = estado.elementos.size;
   avisar(nodos.aviso, `${total.toLocaleString('es-ES')} elementos · ${m.esquema || 'IFC'}`, 3200);
+  irAlElementoPedido();
+}
+
+/* «index.html?elemento=<GlobalId>»: así llega una incidencia de la visita
+   a su elemento. Se busca por GlobalId, que no cambia entre exportaciones
+   del mismo modelo; se atiende una sola vez. */
+function irAlElementoPedido() {
+  const guid = new URLSearchParams(location.search).get('elemento');
+  if (!guid) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  for (const [id, e] of estado.elementos) {
+    if (e.guid === guid) {
+      seleccionar(id);
+      visor.encuadrar(id);
+      return;
+    }
+  }
+  avisar(nodos.aviso, 'Ese elemento no está en el modelo abierto. Abre el modelo de la incidencia.', 6000);
+}
+
+/* Incidencia desde el modelo: se deja apuntada con los datos del elemento
+   y la visita de hoy la recoge al abrirse (js/visita.js). */
+const INCIDENCIA_MODELO = 'crd-incidencia-modelo';
+
+function incidenciaDelElemento() {
+  const e = estado.elementos.get(visor.seleccion);
+  if (!e) return;
+  const planta = e.planta !== undefined && estado.plantas.get(e.planta);
+  try {
+    localStorage.setItem(INCIDENCIA_MODELO, JSON.stringify({
+      guid: e.guid,
+      nombre: e.nombre || '',
+      clase: e.clase,
+      planta: planta ? planta.nombre : '',
+      modelo: nodos.titulo.textContent || '',
+      creada: Date.now()
+    }));
+  } catch (err) {
+    avisar(nodos.aviso, 'No se pudo apuntar la incidencia en este teléfono.', 5000);
+    return;
+  }
+  location.href = 'visita.html';
 }
 
 /* ------------------------------------------------------------------ */
@@ -725,6 +768,8 @@ for (const boton of document.querySelectorAll('[data-todo]')) {
 nodos.encuadrar.addEventListener('click', () => {
   visor.encuadrar(visor.seleccion ?? undefined);
 });
+
+nodos.incidenciaModelo.addEventListener('click', incidenciaDelElemento);
 
 nodos.aislar.addEventListener('click', () => {
   visor.aislar(!visor.aislado);

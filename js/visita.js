@@ -384,7 +384,7 @@ function tarjeta(v) {
 
 /* Una visita nueva arranca con la obra, el autor y el personal de la
    anterior, y arrastra las incidencias que quedaron sin resolver. */
-async function nuevaVisita() {
+async function crearVisita() {
   const anterior = (await listarVisitas())[0];
   const v = {
     id: nuevoId(),
@@ -414,7 +414,43 @@ async function nuevaVisita() {
     modificada: Date.now()
   };
   await guardarVisita(v);
-  location.hash = rutaVisita(v);
+  return v;
+}
+
+async function nuevaVisita() {
+  location.hash = rutaVisita(await crearVisita());
+}
+
+/* Incidencia apuntada desde el modelo 3D (js/app.js): entra en la visita
+   de hoy —si no hay, se crea— enlazada al elemento por su GlobalId, y se
+   abre con el cursor en su texto. Lo apuntado hace más de diez minutos se
+   descarta: sería de otra sesión. */
+const INCIDENCIA_MODELO = 'crd-incidencia-modelo';
+let incidenciaAEnfocar = null;
+
+async function recogerIncidenciaDelModelo() {
+  let p = null;
+  try {
+    p = JSON.parse(localStorage.getItem(INCIDENCIA_MODELO) || 'null');
+    localStorage.removeItem(INCIDENCIA_MODELO);
+  } catch (e) { return; }
+  if (!p || !p.guid || !(Date.now() - p.creada < 10 * 60 * 1000)) return;
+  try {
+    let v = (await listarVisitas()).find((x) => x.fecha === hoy());
+    if (!v) v = await crearVisita();
+    const nombre = p.nombre || p.clase || 'Elemento';
+    const inc = {
+      id: nuevoId(),
+      texto: `${nombre}${p.planta ? ` (${p.planta})` : ''}: `,
+      gravedad: 'media', estado: 'abierta', desde: v.fecha, hora: ahora(),
+      elemento: { guid: p.guid, nombre, clase: p.clase || '', planta: p.planta || '', modelo: p.modelo || '' }
+    };
+    v.incidencias.push(inc);
+    v.modificada = Date.now();
+    await guardarVisita(v);
+    incidenciaAEnfocar = inc.id;
+    history.replaceState(null, '', location.pathname + rutaVisita(v));
+  } catch (e) { /* la visita se abre igual, sin la incidencia */ }
 }
 
 /* ------------------------------------------------------------------ */
@@ -616,6 +652,11 @@ function pintarIncidencias() {
         class: 'campo', rows: 2, value: inc.texto, placeholder: 'Qué pasa, dónde y quién debe resolverlo',
         oninput: (ev) => { inc.texto = ev.target.value; cambiado(); }
       }),
+      inc.elemento && inc.elemento.guid && el('a', {
+        class: 'incidencia-elemento',
+        href: `index.html?elemento=${encodeURIComponent(inc.elemento.guid)}`,
+        title: `Ver en el modelo 3D${inc.elemento.modelo ? ` (${inc.elemento.modelo})` : ''}`
+      }, `⌖ ${inc.elemento.nombre || 'Elemento'}${inc.elemento.planta ? ` · ${inc.elemento.planta}` : ''} · ver en el modelo`),
       el('div', { class: 'incidencia-pie' },
         el('select', {
           class: 'campo', 'aria-label': 'Gravedad',
@@ -647,6 +688,16 @@ function pintarIncidencias() {
   const n = abiertas(actual).length;
   nodos.totalIncidencias.textContent = actual.incidencias.length
     ? plural(n, 'abierta', 'abiertas') : '';
+  if (incidenciaAEnfocar) {
+    const fila = nodos.incidencias.children[actual.incidencias.findIndex((x) => x.id === incidenciaAEnfocar)];
+    incidenciaAEnfocar = null;
+    if (fila) setTimeout(() => {
+      fila.scrollIntoView({ block: 'center' });
+      const t = fila.querySelector('textarea');
+      t.focus();
+      t.setSelectionRange(t.value.length, t.value.length);
+    }, 300);
+  }
 }
 
 /* --- fotos --- */
@@ -1318,7 +1369,8 @@ async function imprimir() {
         el('thead', {}, el('tr', {}, el('th', {}, 'Hora'), el('th', {}, 'Descripción'), el('th', {}, 'Gravedad'), el('th', {}, 'Estado'))),
         el('tbody', {}, ...v.incidencias.map((i) => el('tr', {},
           el('td', { class: 'informe-hora' }, horasIncidencia(i, v.fecha).replace('🕒 ', '') || '—'),
-          el('td', {}, i.texto),
+          el('td', {}, i.texto, i.elemento && i.elemento.guid && el('div', { class: 'informe-elemento' },
+            `Modelo: ${[i.elemento.nombre, i.elemento.planta, i.elemento.modelo].filter(Boolean).join(' · ')} · GlobalId ${i.elemento.guid}`)),
           el('td', {}, etiqueta(GRAVEDADES[i.gravedad] || i.gravedad, `grav-${i.gravedad}`)),
           el('td', {}, etiqueta(i.estado === 'cerrada' ? 'Resuelta' : 'Abierta', i.estado === 'cerrada' ? 'ok' : 'abierta'))))))
     ),
@@ -1499,7 +1551,7 @@ function resumen(v) {
     v.materiales && `\nMateriales:\n${v.materiales}`,
     v.incidencias.length && '\nIncidencias:',
     ...v.incidencias.map((i) =>
-      `  · ${i.hora ? `${i.hora} ` : ''}[${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? `, resuelta${i.resuelta ? ` ${i.resuelta}` : ''}` : ''}] ${i.texto}`),
+      `  · ${i.hora ? `${i.hora} ` : ''}[${(GRAVEDADES[i.gravedad] || i.gravedad).toUpperCase()}${i.estado === 'cerrada' ? `, resuelta${i.resuelta ? ` ${i.resuelta}` : ''}` : ''}] ${i.texto}${i.elemento && i.elemento.guid ? ` (GlobalId ${i.elemento.guid})` : ''}`),
     repasos.length && '\nPunch list (repasos):',
     ...repasos.map((r) =>
       `  ${r.numero}. [${ESTADOS[estadoEn(r, v.fecha)].toUpperCase()}] `
@@ -1937,4 +1989,4 @@ equipo.addEventListener('cambio', () => {
 const avisoCuentas = avisoPendiente();
 if (avisoCuentas) avisar(nodos.aviso, avisoCuentas.texto, avisoCuentas.error ? 7000 : 4000);
 
-enrutar();
+recogerIncidenciaDelModelo().then(enrutar);

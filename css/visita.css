@@ -1124,3 +1124,11 @@ a.foto-remota { color: var(--acento); }
 }
 .hoja-firma .fila-botones { justify-content: flex-end; margin: 0; }
 @media print { .hoja-firma { display: none !important; } }
+
+/* Incidencia enlazada a un elemento del modelo 3D. */
+.incidencia-elemento {
+  display: inline-block; margin: 0 0 .45rem; padding: .3rem .6rem;
+  border: 1px solid var(--acento); border-radius: 999px;
+  color: var(--acento); font-size: .85rem; text-decoration: none;
+}
+.informe-elemento { margin-top: .2rem; font-size: .8em; opacity: .75; word-break: break-all; }

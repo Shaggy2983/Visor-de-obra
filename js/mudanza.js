@@ -1,5 +1,5 @@
 /* Mudanza de dirección: de shaggy2983.github.io/Visor-de-obra/ a
-   app.coordinate.com.do.
+   obra.coordinate.do.
 
    Lo que la app guarda en el teléfono (IndexedDB y localStorage) va atado
    a la dirección: en la nueva el teléfono empieza vacío. Lo sincronizado
@@ -26,7 +26,7 @@
 
 export const ACTIVA = false;
 export const VIEJA = { origen: 'https://shaggy2983.github.io', ruta: '/Visor-de-obra/' };
-export const NUEVA = { origen: 'https://app.coordinate.com.do', ruta: '/' };
+export const NUEVA = { origen: 'https://obra.coordinate.do', ruta: '/' };
 
 // Las nuevas y las de las primeras versiones (por si este teléfono aún no se mudó de nombre).
 const BASES = ['coordinate-obra-visitas', 'coordinate-obra-modelo', 'visitas-obra-e04', 'visor-obra-e04'];

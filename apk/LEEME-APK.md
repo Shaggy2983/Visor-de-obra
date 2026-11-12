@@ -33,10 +33,15 @@ y deja dos archivos para descargar:
 
 ## 1. Publicar la web
 
-La app Android abre `https://shaggy2983.github.io/Visor-de-obra/visita.html`.
-Hasta que los cambios lleguen a `main`, esa dirección sirve la versión
-antigua. Fusiona el PR en GitHub; el flujo de Pages publica solo en un
-par de minutos. Comprueba en el móvil que abre la visita diaria.
+La app Android abre `https://obra.coordinate.do/visita.html` (Cloudflare
+Pages, rama `main` del repositorio). Hasta que los cambios lleguen a
+`main`, esa dirección sirve la versión antigua: fusiona el PR en GitHub y
+Cloudflare publica solo en un par de minutos. Comprueba en el móvil que
+abre la visita diaria.
+
+Las versiones de Play anteriores a la 1.1.0 abren la dirección vieja,
+`https://shaggy2983.github.io/Visor-de-obra/visita.html`, que se mantiene
+publicada para que sigan funcionando.
 
 Después, cualquier cambio en la web llega a los teléfonos **sin subir
 otra versión a Play**: la app siempre abre la web publicada. Sólo hace
@@ -123,7 +128,7 @@ Todo está en [`tienda/`](../tienda):
   de contenido** y **Acceso a la app**.
 - `grafico-destacado-1024x500.png` y `captura-*.png` (1080×1920).
 - Icono de 512×512: `icono-512.png` en la raíz.
-- Política de privacidad: `https://shaggy2983.github.io/Visor-de-obra/privacidad.html`
+- Política de privacidad: `https://obra.coordinate.do/privacidad.html`
   (archivo `privacidad.html`, revísala antes de publicar).
 
 ## 6. Verificar el dominio
@@ -132,23 +137,31 @@ Sin este paso la app funciona, pero muestra arriba una **barra con la
 dirección**, como una pestaña del navegador. Para quitarla, Android
 comprueba un archivo `assetlinks.json` en la **raíz del dominio**:
 
-    https://shaggy2983.github.io/.well-known/assetlinks.json
+    https://obra.coordinate.do/.well-known/assetlinks.json
 
-Ojo: en la raíz del dominio, no dentro de `/Visor-de-obra/`. Por eso no
-vale el que hay en este repositorio. Dos maneras:
+Ojo: en la raíz del dominio. Con el dominio propio la raíz es este
+repositorio, así que vale su `.well-known/assetlinks.json`, que ya lleva
+las dos huellas. Cómo se llegó aquí:
 
-**a) Repositorio de usuario.** Crea en GitHub un repositorio llamado
-exactamente `shaggy2983.github.io` con el archivo
-`.well-known/assetlinks.json` y un `.nojekyll` vacío en la raíz. GitHub
-lo publica en la raíz del dominio.
+**a) Repositorio de usuario** (lo que se hizo para la 1.0.0): un
+repositorio llamado exactamente `shaggy2983.github.io` con el archivo
+`.well-known/assetlinks.json` en la raíz. Sigue publicado, porque las
+versiones ya instaladas abren esa dirección.
 
-**b) Dominio propio** (recomendado si tienes `coordinate.do`): por
-ejemplo `obra.coordinate.do` apuntando a GitHub Pages
-(*Settings → Pages → Custom domain*). Entonces la raíz del dominio es
-este repositorio y basta su `.well-known/assetlinks.json`. Hay que
-cambiar `twaHost` y `twaRuta` en `android/gradle.properties`
-(`obra.coordinate.do` y `/`), recompilar, y registrar la nueva URI de
-redirección en Google y Microsoft. También facilita el paso 7.
+**b) Dominio propio** (lo que se hace desde la 1.1.0):
+`obra.coordinate.do` en Cloudflare Pages, conectado a este repositorio.
+La raíz del dominio es el repositorio, así que basta su
+`.well-known/assetlinks.json`, que ya lleva las dos huellas.
+
+Antes de subir una versión con la dirección nueva hay que dar de alta
+`obra.coordinate.do` en los tres sitios donde se autoriza el origen, o
+las cuentas dejan de entrar:
+
+| Dónde | Qué añadir |
+|---|---|
+| Firebase → Authentication → Settings → Dominios autorizados | `obra.coordinate.do` |
+| Google Cloud → Credenciales → cliente web «COORDINATE Visor» | origen y URI de redirección `https://obra.coordinate.do` |
+| Microsoft Entra → app «COORDINATE Visor» → Autenticación | URI de redirección `https://obra.coordinate.do` |
 
 El contenido del archivo lleva **dos huellas SHA-256**: la de la clave de
 subida (sale en el registro de la compilación) y la de la **clave de

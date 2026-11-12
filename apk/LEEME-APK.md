@@ -155,7 +155,10 @@ versiones ya instaladas abren esa dirección.
 `https://coordinate.do/obra/`, un apartado de la web de COORDINATE. El
 contenido sale del proyecto Pages «coordinate-obra», conectado a este
 repositorio, y el Worker `coordinate-obra-ruta` lo enseña bajo esa ruta.
-`https://obra.coordinate.do` sigue viva como dirección de respaldo.
+`https://obra.coordinate.do` ya no sirve la app: una regla de
+redirección temporal (302) la manda a `https://coordinate.do/obra/`.
+No declararla nunca como `twaHost`: Android deja de verificar un dominio
+que redirige a otro, y la app aparecería con la barra del navegador.
 
 Antes de subir una versión con la dirección nueva hay que dar de alta
 `coordinate.do` en los tres sitios donde se autoriza el origen, o

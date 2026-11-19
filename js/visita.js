@@ -13,6 +13,7 @@ import {
   listarRecepciones, leerRecepcion, guardarRecepcion, listarSeguridad, leerSeguridad, guardarSeguridad
 } from './partes.js';
 import { avisar } from './interfaz.js';
+import { crearObraEjemplo, borrarObraEjemplo, esEjemplo, OBRA_EJEMPLO } from './ejemplo.js';
 import {
   el, nuevoId, dos, hoy, ahora, fechaLarga, plural, decodificar, reducirImagen,
   aDatos, deDatos, descargar, enlaceSeguro, mismaObra
@@ -342,6 +343,7 @@ function pintarLista() {
   nodos.lista.classList.toggle('seleccionando', Boolean(seleccion));
   nodos.lista.replaceChildren(...visibles.map(tarjeta));
   nodos.listaVacia.hidden = todas.length > 0;
+  $('quitar-ejemplo').hidden = !todas.some(esEjemplo);
   if (todas.length && !visibles.length) {
     nodos.lista.append(el('p', { class: 'vacio' }, 'Ninguna visita coincide con la búsqueda.'));
   }
@@ -368,7 +370,9 @@ function tarjeta(v) {
     el('div', { class: 'tarjeta-fecha' }, fechaLarga(v.fecha), v.hora ? ` · ${v.hora}` : '',
       nov && el('span', { class: `etiqueta ${nov.nuevo ? 'ok' : 'atencion'}` }, nov.nuevo ? 'Nueva' : 'Actualizada'),
       nov && nov.quien && el('span', { class: 'pie' }, ` de ${nov.quien}`)),
-    el('div', { class: 'tarjeta-obra' }, v.obra || 'Obra sin nombre'),
+    v.obra
+      ? el('div', { class: 'tarjeta-obra' }, v.obra)
+      : el('div', { class: 'tarjeta-obra sin-nombre' }, '⚠ Falta el nombre de la obra'),
     v.trabajos && el('div', { class: 'tarjeta-texto' }, v.trabajos),
     el('div', { class: 'tarjeta-datos' },
       el('span', {}, plural(totalPersonas(v), 'persona', 'personas')),
@@ -385,7 +389,8 @@ function tarjeta(v) {
 /* Una visita nueva arranca con la obra, el autor y el personal de la
    anterior, y arrastra las incidencias que quedaron sin resolver. */
 async function crearVisita() {
-  const anterior = (await listarVisitas())[0];
+  // La obra de ejemplo no se copia a las visitas de verdad.
+  const anterior = (await listarVisitas()).find((x) => !esEjemplo(x));
   const v = {
     id: nuevoId(),
     fecha: hoy(),
@@ -417,8 +422,24 @@ async function crearVisita() {
   return v;
 }
 
+/* Sin visita anterior no hay obra que copiar: se pide el nombre antes de
+   crearla, para que no quede ninguna «Obra sin nombre» en la lista. */
 async function nuevaVisita() {
-  location.hash = rutaVisita(await crearVisita());
+  const anterior = (await listarVisitas()).find((v) => v.obra && !esEjemplo(v));
+  let obra = '';
+  if (!anterior) {
+    obra = (prompt('¿Cómo se llama la obra? (nombre o código)') || '').trim();
+    if (!obra) {
+      avisar(nodos.aviso, 'Para empezar la visita hace falta el nombre de la obra.', 3500);
+      return;
+    }
+  }
+  const v = await crearVisita();
+  if (obra) {
+    v.obra = obra;
+    await guardarVisita(v);
+  }
+  location.hash = rutaVisita(v);
 }
 
 /* Incidencia apuntada desde el modelo 3D (js/app.js): entra en la visita
@@ -1748,6 +1769,23 @@ async function importar(archivo) {
 
 nodos.nueva.addEventListener('click', () => {
   nuevaVisita().catch(() => avisar(nodos.aviso, 'No se ha podido crear la visita.', 4000));
+});
+
+$('ver-ejemplo').addEventListener('click', async () => {
+  try {
+    await crearObraEjemplo();
+    avisar(nodos.aviso, `Lista «${OBRA_EJEMPLO}»: 2 visitas, 3 repasos y una inspección, con datos inventados.`, 5000);
+    await mostrarLista();
+  } catch (e) {
+    avisar(nodos.aviso, 'No se ha podido crear la obra de ejemplo.', 4000);
+  }
+});
+
+$('quitar-ejemplo').addEventListener('click', async () => {
+  if (!confirm(`¿Quitar «${OBRA_EJEMPLO}»? Se borran sus visitas, repasos e inspección de ejemplo. Tus obras no se tocan.`)) return;
+  await borrarObraEjemplo().catch(() => {});
+  avisar(nodos.aviso, 'Obra de ejemplo quitada.', 3000);
+  await mostrarLista();
 });
 nodos.buscar.addEventListener('input', pintarLista);
 

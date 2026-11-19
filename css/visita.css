@@ -1132,3 +1132,10 @@ a.foto-remota { color: var(--acento); }
   color: var(--acento); font-size: .85rem; text-decoration: none;
 }
 .informe-elemento { margin-top: .2rem; font-size: .8em; opacity: .75; word-break: break-all; }
+
+/* Obra de ejemplo y obras sin nombre */
+#lista-vacia { display: grid; gap: .6rem; justify-items: start; }
+#lista-vacia[hidden], .quitar-ejemplo[hidden] { display: none; }
+#lista-vacia p { margin: 0; }
+.quitar-ejemplo { margin: .4rem 0 1rem; }
+.tarjeta-obra.sin-nombre { color: var(--peligro-texto); }

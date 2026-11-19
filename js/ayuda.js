@@ -7,7 +7,8 @@ const SECCIONES = [
   {
     titulo: 'Reporte de visita', icono: '📋', recorrido: 'visita',
     temas: [
-      { t: 'Crear una visita', p: ['En Visitas toca «Nueva visita».', 'Se copian la obra, el autor, el personal y las incidencias abiertas de la visita anterior.', 'Todo se guarda solo según escribes, aunque no haya señal.'] },
+      { t: 'Crear una visita', p: ['En Visitas toca «Nueva visita».', 'La primera vez te pide el nombre de la obra; después se copian la obra, el autor, el personal y las incidencias abiertas de la visita anterior.', 'Todo se guarda solo según escribes, aunque no haya señal.'] },
+      { t: 'Obra de ejemplo', p: ['Con la lista vacía, toca «Ver una obra de ejemplo».', 'Aparecen dos visitas, tres repasos y una inspección con datos inventados, para ver cómo queda cada cosa.', 'Cuando termines, «Quitar la obra de ejemplo» la borra entera; tus obras no se tocan.'] },
       { t: 'Jornada afectada', p: ['Si la jornada es «Parcial» o «Sin actividad», marca la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Se suman en Seguimiento → Días afectados.'] },
       { t: 'Borrar varias visitas', p: ['En la lista de Visitas toca «Seleccionar varias» y toca las que quieras (o «Todas»: respeta lo que hayas buscado).', '«Borrar» pide confirmación; en obras compartidas también se borran para el equipo.'] },
       { t: 'Tiempo del lugar', p: ['Al abrir la visita del día, la app toma la temperatura y el tiempo de donde estás.', 'Para repetirlo: «📍 Tomar del lugar». Usa una ubicación aproximada.'] },

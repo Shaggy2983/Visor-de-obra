@@ -72,7 +72,7 @@ Los problemas se resuelven en el modelo, no en obra.
 
 ## Novedades de esta versión (máx. 500)
 
-Calidad (inspecciones y vaciados con probetas), avance con curva S, minutas, días afectados, RFI, órdenes de cambio, recepción de materiales y seguridad. Firmas en el teléfono en todos los registros. Panel del equipo con calidad, avance y vencidos. Menú nuevo en el símbolo de COORDINATE. Exportar a Excel.
+1.1.1: obra de ejemplo con datos inventados para ver la app llena desde el primer día (se quita con un toque). La primera visita pide el nombre de la obra y las visitas sin obra se marcan para completarlas. Ayuda actualizada.
 
 ## Gráficos
 

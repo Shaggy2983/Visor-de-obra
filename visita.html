@@ -64,8 +64,14 @@
   <input type="search" id="buscar" class="campo" placeholder="Buscar por obra, trabajos, incidencias…" autocomplete="off">
   <div id="barra-seleccion" class="barra-seleccion"></div>
   <div id="lista" class="tarjetas"></div>
-  <p id="lista-vacia" class="vacio" hidden>Todavía no hay visitas. Toca <strong>Nueva visita</strong>
-     para empezar el reporte de hoy. Se guarda en el teléfono según escribes, aunque no haya señal.</p>
+  <div id="lista-vacia" class="vacio" hidden>
+    <p>Todavía no hay visitas. Toca <strong>Nueva visita</strong> para empezar el reporte de hoy.
+       Se guarda en el teléfono según escribes, aunque no haya señal.</p>
+    <p>¿Quieres ver primero cómo queda? Abre una obra de ejemplo con datos inventados: visitas,
+       incidencias, punch list e inspección. La quitas con un toque.</p>
+    <button type="button" id="ver-ejemplo" class="boton">Ver una obra de ejemplo</button>
+  </div>
+  <button type="button" id="quitar-ejemplo" class="boton quitar-ejemplo" hidden>Quitar la obra de ejemplo</button>
 
   <div id="grupo-cuentas" class="grupo copia grupo-datos">
     <h2>Cuentas vinculadas</h2>

@@ -215,6 +215,13 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   `guia-ejemplo` (se ofrece borrarla). Primer uso: se ofrece el de inicio
   (localStorage `crd-guia-ofrecida`). Acceso: menú del símbolo → Guía de uso; ❓ en
   el visor de planos. **Al añadir una función, añadirla a la guía.**
+- **Obra de ejemplo** (`js/ejemplo.js`): con la lista vacía, «Ver una obra de
+  ejemplo» crea «Residencial Los Pinos (ejemplo)» —2 visitas, 3 repasos y
+  una inspección, datos inventados, ids `ejemplo-…`, guardados `callado`
+  (no se suben)— y «Quitar la obra de ejemplo» la borra entera. Pensada para
+  testers y revisores de Play. `crearVisita` no copia de ella ni de la
+  visita de la guía. Sin visita anterior, «Nueva visita» pide el nombre de
+  la obra (`prompt`); la tarjeta sin obra dice «⚠ Falta el nombre de la obra».
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
   Al pasar a segundo plano con cambios pendientes se sincroniza ya

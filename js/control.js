@@ -510,7 +510,7 @@ async function cambioDesdeRfi(r) {
 function pdfRfi(r) {
   const { titulo } = documento();
   imprimir(nodos.informe, `${codigo('RFI', r.numero)} ${r.obra} ${r.fecha}`, [
-    ...cabecera('Solicitud de información (RFI)', `${codigo('RFI', r.numero)}-${r.fecha.replaceAll('-', '')}`, r.asunto || 'Consulta', r.obra),
+    ...cabecera('Solicitud de información (RFI)', `${codigo('RFI', r.numero)}-${r.fecha.replaceAll('-', '')}`, r.asunto || 'Consulta', r.obra, { disciplina: r.disciplina }),
     el('div', { class: 'informe-ficha' },
       dato('Fecha', fechaLarga(r.fecha)), dato('Disciplina', DISCIPLINAS[r.disciplina]), dato('Referencia', r.referencia),
       dato('Dirigida a', r.dirigidaA), dato('Solicita', r.solicita), dato('Respuesta requerida', r.requerida ? fechaLarga(r.requerida) : '')),

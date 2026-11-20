@@ -46,6 +46,7 @@ const nodos = {
   transparentar: $('btn-transparentar'),
   rayos: $('btn-rayos'),
   incidenciaModelo: $('btn-incidencia-modelo'),
+  qrElemento: $('btn-qr-elemento'),
   barraMedir: $('barra-medir'),
   medirAyuda: $('medir-ayuda'),
   capaMedidas: $('capa-medidas'),
@@ -284,6 +285,21 @@ function irAlElementoPedido() {
     }
   }
   avisar(nodos.aviso, 'Ese elemento no está en el modelo abierto. Abre el modelo de la incidencia.', 6000);
+}
+
+/* QR del elemento: «index.html?elemento=<GlobalId>» abre el modelo
+   guardado en el teléfono y lo selecciona (irAlElementoPedido). */
+async function qrDelElemento() {
+  const e = estado.elementos.get(visor.seleccion);
+  if (!e || !e.guid) return;
+  const planta = e.planta !== undefined && estado.plantas.get(e.planta);
+  const { mostrarQR, enlaceApp } = await import('./qr.js');
+  mostrarQR({
+    titulo: e.nombre || e.clase,
+    subtitulo: [e.clase, planta && planta.nombre, nodos.titulo.textContent].filter(Boolean).join(' · '),
+    url: enlaceApp('index.html', { elemento: e.guid }),
+    nota: 'Pégalo junto al elemento: al escanearlo se abre el modelo en él (en los teléfonos que tengan este modelo abierto alguna vez).'
+  }).catch(() => avisar(nodos.aviso, 'No se ha podido crear el código QR.', 3500));
 }
 
 /* Incidencia desde el modelo: se deja apuntada con los datos del elemento
@@ -770,6 +786,7 @@ nodos.encuadrar.addEventListener('click', () => {
 });
 
 nodos.incidenciaModelo.addEventListener('click', incidenciaDelElemento);
+nodos.qrElemento.addEventListener('click', qrDelElemento);
 
 nodos.aislar.addEventListener('click', () => {
   visor.aislar(!visor.aislado);

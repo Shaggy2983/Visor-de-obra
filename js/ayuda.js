@@ -8,6 +8,8 @@ const SECCIONES = [
     titulo: 'Reporte de visita', icono: '📋', recorrido: 'visita',
     temas: [
       { t: 'Crear una visita', p: ['En Visitas toca «Nueva visita».', 'La primera vez te pide el nombre de la obra; después se copian la obra, el autor, el personal y las incidencias abiertas de la visita anterior.', 'Todo se guarda solo según escribes, aunque no haya señal.'] },
+      { t: 'Código QR de la obra', p: ['En la visita, junto al nombre de la obra, toca «▦ QR de la obra».', 'Compártelo, imprímelo o guárdalo y pégalo en la caseta o el acceso.', 'Al escanearlo se abre la lista de visitas filtrada por esa obra, en los teléfonos del equipo que la tengan.'] },
+      { t: 'Código del proyecto (ISO 19650)', p: ['En la visita, «Código del proyecto» fija el código corto de la obra (por ejemplo RLP).', 'Si lo dejas vacío se toma de las iniciales del nombre.', 'Todos los PDF de esa obra llevan, bajo su número, el código PROYECTO-CRD-ZZ-ZZ-TIPO-DISCIPLINA-NÚMERO.'] },
       { t: 'Obra de ejemplo', p: ['Con la lista vacía, toca «Ver una obra de ejemplo».', 'Aparecen dos visitas, tres repasos y una inspección con datos inventados, para ver cómo queda cada cosa.', 'Cuando termines, «Quitar la obra de ejemplo» la borra entera; tus obras no se tocan.'] },
       { t: 'Jornada afectada', p: ['Si la jornada es «Parcial» o «Sin actividad», marca la causa (lluvia, paro, falta de material…), las horas perdidas y un detalle.', 'Se suman en Seguimiento → Días afectados.'] },
       { t: 'Borrar varias visitas', p: ['En la lista de Visitas toca «Seleccionar varias» y toca las que quieras (o «Todas»: respeta lo que hayas buscado).', '«Borrar» pide confirmación; en obras compartidas también se borran para el equipo.'] },
@@ -109,6 +111,7 @@ const SECCIONES = [
       { t: 'Abrir un modelo IFC', p: ['Modelo 3D → «Abrir» y elige el .ifc (exportado de Revit u otro programa).', 'Queda guardado y se abre solo la próxima vez.'] },
       { t: 'Explorar el modelo', p: ['Toca un elemento: ficha, propiedades, aislar, ocultar, transparentar, rayos X.', 'Panel: plantas, categorías, buscar y colorear por propiedad.'] },
       { t: 'Incidencia de un elemento', p: ['Toca el elemento y «⚠ Incidencia»: se apunta en la visita de hoy (si no hay, se crea) con el nombre y la planta ya escritos.', 'En la visita, la incidencia lleva «⌖ … ver en el modelo»: tócalo y el modelo se abre en ese elemento.', 'En el informe PDF sale su GlobalId, para encontrarlo en Revit u otro programa.'] },
+      { t: 'QR de un elemento', p: ['Toca el elemento y «▦ QR».', 'Pega la etiqueta junto a él en obra: al escanearla se abre el modelo en ese elemento.', 'Funciona en los teléfonos que ya abrieron ese modelo alguna vez.'] },
       { t: 'Medir, cortar y vista', p: ['«Medir» entre puntos del modelo.', '«Cortes»: planos y caja de sección.', '«Vista»: fondos, aristas, transparencia y luz.'] },
       { t: 'Ver en obra (realidad aumentada)', p: ['«Ver en obra» en los teléfonos que lo admiten: el modelo sobre el sitio real.'] },
       { t: 'Planos DXF en 2D', p: ['«Abrir» y elige un .dxf: se ve con sus capas (botón «Capas»).', '📏 Medir con enganche a extremos, centros y puntos medios: medida exacta.', 'Los DWG no se abren: guárdalos como DXF.'] }

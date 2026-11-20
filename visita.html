@@ -121,6 +121,10 @@
         <label>Hora<input type="time" class="campo" data-campo="hora"></label>
       </div>
       <label>Obra<input type="text" class="campo" data-campo="obra" placeholder="Nombre o código de la obra"></label>
+      <div class="fila-obra-extra">
+        <label>Código del proyecto (ISO 19650)<input type="text" id="codigo-proyecto" class="campo" maxlength="8" autocapitalize="characters" spellcheck="false" placeholder="Se toma de las iniciales"></label>
+        <button type="button" id="btn-qr-obra" class="boton" title="Código QR que abre las visitas de esta obra">▦ QR de la obra</button>
+      </div>
       <label>Visita realizada por<input type="text" class="campo" data-campo="autor" placeholder="Nombre y cargo"></label>
     </section>
 

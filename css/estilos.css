@@ -1098,3 +1098,20 @@ a.boton {
 .mudanza-estado.ok { color: var(--color-accent); }
 .mudanza-estado.error { color: var(--peligro-texto); }
 .boton[hidden] { display: none !important; }
+
+/* Código QR de la obra o del elemento (js/qr.js). Va aquí y no en
+   visita.css porque también lo abre el visor 3D. */
+.qr-dialogo {
+  width: min(26rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); overflow-y: auto;
+  padding: 1rem; border: 1px solid var(--borde); border-radius: 14px;
+  background: var(--fondo-2); color: var(--texto);
+}
+.qr-dialogo::backdrop { background: rgba(var(--velo-rgb), .7); }
+.qr-dialogo h2 { margin: 0 0 .6rem; font-size: 1.05rem; }
+.qr-imagen { display: block; width: 100%; height: auto; border-radius: 8px; background: #fff; }
+.qr-nota, .qr-estado { margin: .6rem 0 0; font-size: .85rem; color: var(--texto-tenue); }
+.qr-estado:empty { display: none; }
+.qr-acciones { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
+.qr-acciones .boton { text-decoration: none; }
+.fila-obra-extra { display: flex; flex-wrap: wrap; align-items: flex-end; gap: .6rem; }
+.fila-obra-extra label { flex: 1 1 12rem; }

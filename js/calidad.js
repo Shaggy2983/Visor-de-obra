@@ -846,7 +846,7 @@ function actaInspeccion(r) {
   const generales = r.fotos.filter((f) => !f.punto);
   const numeroDoc = `${codigo('IN', r.numero)}-${(r.fecha || '').replaceAll('-', '')}`;
   imprimirDoc(`Acta ${codigo('IN', r.numero)} ${r.obra} ${r.fecha}`, [
-    ...cabecera('Acta de inspección y liberación', numeroDoc, r.titulo || 'Inspección', r.obra),
+    ...cabecera('Acta de inspección y liberación', numeroDoc, r.titulo || 'Inspección', r.obra, { plantilla: r.plantilla }),
     el('div', { class: 'informe-ficha' },
       dato('Fecha', `${fechaLarga(r.fecha)}${r.hora ? ` · ${r.hora}` : ''}`),
       dato('Zona o elemento', r.zona),

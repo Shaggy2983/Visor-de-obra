@@ -13,6 +13,9 @@ import {
   listarRecepciones, leerRecepcion, guardarRecepcion, listarSeguridad, leerSeguridad, guardarSeguridad
 } from './partes.js';
 import { avisar } from './interfaz.js';
+import { lineaISO } from './impreso.js';
+import { codigoGuardado, codigoSugerido, guardarCodigoProyecto, limpiarCodigo } from './iso19650.js';
+import { mostrarQR, enlaceApp } from './qr.js';
 import { crearObraEjemplo, borrarObraEjemplo, esEjemplo, OBRA_EJEMPLO } from './ejemplo.js';
 import {
   el, nuevoId, dos, hoy, ahora, fechaLarga, plural, decodificar, reducirImagen,
@@ -243,6 +246,7 @@ async function mostrarLista(vista = '') {
     todas = [];
     avisar(nodos.aviso, 'No se pueden leer las visitas guardadas en este navegador.', 5000);
   }
+  filtrarPorObraPedida();
   pintarLista();
 }
 
@@ -487,6 +491,7 @@ function abrirFicha(v, { recarga = false } = {}) {
   for (const campo of nodos.ficha.querySelectorAll('[data-campo]')) {
     campo.value = v[campo.dataset.campo] || '';
   }
+  pintarCodigoProyecto();
   pintarClima();
   pintarPersonal();
   pintarIncidencias();
@@ -506,6 +511,46 @@ function abrirFicha(v, { recarga = false } = {}) {
   nodos.estadoGuardado.textContent = 'Guardado';
   if (!recarga) scrollTo(0, 0);
   if (!recarga && v.fecha === hoy() && !v.temperatura) tomarClima({ automatico: true });
+}
+
+/* --- código ISO 19650 del proyecto y QR de la obra --- */
+
+const campoCodigo = $('codigo-proyecto');
+function pintarCodigoProyecto() {
+  const obra = actual ? actual.obra : '';
+  campoCodigo.value = codigoGuardado(obra);
+  campoCodigo.placeholder = obra ? `${codigoSugerido(obra)} (de las iniciales)` : 'Se toma de las iniciales';
+}
+campoCodigo.addEventListener('change', () => {
+  if (!actual || !actual.obra) {
+    avisar(nodos.aviso, 'Escribe primero el nombre de la obra.', 3000);
+    campoCodigo.value = '';
+    return;
+  }
+  guardarCodigoProyecto(actual.obra, campoCodigo.value);
+  campoCodigo.value = codigoGuardado(actual.obra);
+  avisar(nodos.aviso, `Código del proyecto: ${campoCodigo.value || codigoSugerido(actual.obra)}. Sale en los PDF de esta obra.`, 3500);
+});
+campoCodigo.addEventListener('input', () => { campoCodigo.value = limpiarCodigo(campoCodigo.value); });
+nodos.ficha.querySelector('[data-campo="obra"]').addEventListener('change', pintarCodigoProyecto);
+
+$('btn-qr-obra').addEventListener('click', () => {
+  const obra = actual && actual.obra && actual.obra.trim();
+  if (!obra) { avisar(nodos.aviso, 'Escribe primero el nombre de la obra.', 3000); return; }
+  mostrarQR({
+    titulo: obra,
+    subtitulo: 'Visitas, partes e incidencias de la obra',
+    url: enlaceApp('visita.html', { obra }),
+    nota: 'Imprímelo y pégalo en la caseta o el acceso: al escanearlo se abre la lista de visitas de esta obra (en los teléfonos del equipo que la tengan).'
+  }).catch(() => avisar(nodos.aviso, 'No se ha podido crear el código QR.', 3500));
+});
+
+/* «visita.html?obra=<nombre>» (QR de la obra): abre la lista filtrada por esa obra. */
+function filtrarPorObraPedida() {
+  const obra = new URLSearchParams(location.search).get('obra');
+  if (!obra) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  nodos.buscar.value = obra;
 }
 
 /* --- tiempo del lugar (js/clima.js) --- */
@@ -1353,7 +1398,8 @@ async function imprimir() {
       logotipo(),
       el('div', { class: 'informe-banda-doc' },
         el('span', { class: 'informe-tipo' }, 'Reporte diario de obra'),
-        el('strong', {}, numeroParte(v)))),
+        el('strong', {}, numeroParte(v)),
+        lineaISO({ obra: v.obra, tipoDoc: 'Reporte diario de obra', numeroDoc: numeroParte(v) }))),
     el('header', { class: 'informe-cabecera' },
       el('div', {},
         el('h1', {}, 'Reporte de visita de obra'),
@@ -1468,7 +1514,8 @@ async function imprimirPunch() {
       logotipo(),
       el('div', { class: 'informe-banda-doc' },
         el('span', { class: 'informe-tipo' }, 'Punch list de terminaciones'),
-        el('strong', {}, numeroParte(v).replace('PV-', 'PL-')))),
+        el('strong', {}, numeroParte(v).replace('PV-', 'PL-')),
+        lineaISO({ obra: v.obra, tipoDoc: 'Punch list de terminaciones', numeroDoc: numeroParte(v) }))),
     el('header', { class: 'informe-cabecera' },
       el('div', {},
         el('h1', {}, 'Punch list de terminaciones'),

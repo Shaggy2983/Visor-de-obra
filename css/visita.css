@@ -909,6 +909,7 @@ textarea.campo { resize: vertical; min-height: 2.8rem; line-height: 1.4; }
   .informe-banda { margin: 0 0 4mm; padding: 4mm 5mm; border-radius: 1.5mm; background: linear-gradient(90deg, #121826, #1b3560); }
   .informe-banda-doc { display: flex; flex-direction: column; align-items: flex-end; gap: .4mm; }
   .informe-banda-doc strong { font-size: 10pt; letter-spacing: .06em; color: #fff; font-variant-numeric: tabular-nums; }
+  .informe-iso { font-size: 7pt; letter-spacing: .04em; color: #b9c8e0; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
   .informe-cabecera { display: flex; justify-content: space-between; align-items: flex-end; gap: 6mm; padding-bottom: 3mm; border-bottom: .6pt solid #c9d3e2; }
   .informe-cabecera h1 { font-size: 19pt; font-weight: 700; letter-spacing: -.01em; }

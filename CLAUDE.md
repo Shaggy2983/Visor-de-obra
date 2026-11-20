@@ -222,6 +222,18 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   testers y revisores de Play. `crearVisita` no copia de ella ni de la
   visita de la guía. Sin visita anterior, «Nueva visita» pide el nombre de
   la obra (`prompt`); la tarjeta sin obra dice «⚠ Falta el nombre de la obra».
+- **Códigos QR** (`js/qr.js`, qrcode-generator MIT en `vendor/qrcode/`):
+  etiqueta PNG 900×1100 (marca, título, QR, lema) con Compartir/Guardar/
+  Copiar enlace. «▦ QR de la obra» en la visita → `visita.html?obra=<nombre>`
+  (`filtrarPorObraPedida` rellena el buscador); «▦ QR» en la ficha del
+  elemento del visor → `index.html?elemento=<GlobalId>`.
+- **Códigos ISO 19650** (`js/iso19650.js`): bajo el número de cada PDF,
+  `PROYECTO-CRD-ZZ-ZZ-TIPO-DISCIPLINA-NNNN` (`lineaISO` en `js/impreso.js`;
+  parte y punch list en `js/visita.js`). PROYECTO: campo «Código del
+  proyecto» de la visita (localStorage `crd-codigos-proyecto`, por obra) o
+  iniciales del nombre. TIPO: RP, DR, MI, RI, CO, SH. DISCIPLINA: la del
+  RFI, la de la plantilla de inspección (acero/encofrado… EST, sanitaria
+  SAN, eléctrica ELE) o ARQ. NNNN: correlativo o MMDDHHMM.
 - **Bienvenida** animada de ~5 s una vez por sesión (`js/bienvenida.js`).
 - Datos locales en IndexedDB (`js/partes.js`, base `visitas-obra-e04`).
   Al pasar a segundo plano con cambios pendientes se sincroniza ya

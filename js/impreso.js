@@ -5,6 +5,7 @@
    nombre «acta» de css/calidad.css. */
 
 import { el, ahora } from './utiles.js';
+import { codigoISO } from './iso19650.js';
 
 export const CONTACTO = 'hola.coordinate.rd@gmail.com · Santo Domingo, RD';
 export const LEMA = 'Los problemas se resuelven en el modelo, no en obra.';
@@ -34,10 +35,14 @@ export function documento() {
 export const dato = (t, valor) => el('div', { class: 'informe-dato' }, el('span', {}, t), el('strong', {}, valor || '—'));
 export const cifra = (n, t, clase = '') => el('div', { class: `informe-cifra ${clase}` }, el('strong', {}, String(n)), el('span', {}, t));
 
-export function cabecera(tipoDoc, numeroDoc, h1, obra) {
+/* Código ISO 19650 de COORDINATE bajo el número del documento. */
+export const lineaISO = (datos) => el('span', { class: 'informe-iso', title: 'Código ISO 19650' }, codigoISO(datos));
+
+export function cabecera(tipoDoc, numeroDoc, h1, obra, { disciplina, plantilla } = {}) {
   return [
     el('div', { class: 'informe-banda' }, logotipo(),
-      el('div', { class: 'informe-banda-doc' }, el('span', { class: 'informe-tipo' }, tipoDoc), el('strong', {}, numeroDoc))),
+      el('div', { class: 'informe-banda-doc' }, el('span', { class: 'informe-tipo' }, tipoDoc), el('strong', {}, numeroDoc),
+        lineaISO({ obra, tipoDoc, numeroDoc, disciplina, plantilla }))),
     el('header', { class: 'informe-cabecera' },
       el('div', {}, el('h1', {}, h1), el('p', { class: 'informe-obra' }, obra || 'Obra sin nombre')),
       el('div', { class: 'informe-sello' }, el('span', {}, 'Emitido'),

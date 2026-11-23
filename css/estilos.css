@@ -685,6 +685,9 @@ a.boton {
 .portada-caja .subtitulo { margin: 0 0 1rem; font-size: .78rem; letter-spacing: .16em; text-transform: uppercase; color: var(--texto-tenue); }
 .portada-caja p { color: var(--texto-tenue); font-size: .92rem; }
 .portada-caja .boton { margin-top: 1rem; }
+.portada-sitio { display: inline-block; margin-top: 1.2rem; padding: .4rem .6rem; color: var(--seleccion); font-size: .88rem; text-decoration: none; }
+.portada-sitio:hover, .portada-sitio:focus-visible { text-decoration: underline; }
+.menu-sitio { margin-bottom: .2rem; border-bottom: 1px solid var(--borde); border-radius: .7rem .7rem 0 0; }
 
 .cargando {
   position: fixed;

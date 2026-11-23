@@ -49,6 +49,7 @@
       ['visita.html#/exportar', '📊', 'Exportar a Excel (CSV)', 'Tablas de todos los registros']
     ]]
   ];
+  var SITIO = 'https://coordinate.do/';
   var TEMAS = [['oscuro', '🌙', 'Oscuro'], ['claro', '☀️', 'Claro'], ['auto', '◐', 'Teléfono']];
 
   var estado = { equipo: false, novedades: 0 };
@@ -109,6 +110,16 @@
   function pintar() {
     hoja.textContent = '';
     var i = 0;
+    // Vuelta a la web de COORDINATE (la app vive en coordinate.do/obra/).
+    var sitio = nodo('a', 'menu-item menu-sitio');
+    sitio.href = SITIO;
+    sitio.style.setProperty('--i', i++);
+    sitio.appendChild(nodo('span', 'menu-icono', '🌐'));
+    var tSitio = nodo('span', 'menu-textos');
+    tSitio.appendChild(nodo('strong', '', 'coordinate.do'));
+    tSitio.appendChild(nodo('span', 'menu-ayuda', 'Volver a la web de COORDINATE'));
+    sitio.appendChild(tSitio);
+    hoja.appendChild(sitio);
     GRUPOS.forEach(function (g) {
       var visibles = g[1].filter(function (a) { return a[4] !== 'novedades' || estado.equipo; });
       if (!visibles.length) return;

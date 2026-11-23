@@ -85,7 +85,9 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   Calidad (Inspecciones, Vaciados), Seguimiento (Avance, Minutas, Días
   afectados), Control (RFI, Cambios, Materiales, SST), Equipo (Novedades,
   Panel, Perfil), Datos (Cuentas vinculadas `visita.html#/cuentas`, Copia
-  `#/copia`, Exportar `#/exportar`), Aspecto y Guía. Punto rojo por
+  `#/copia`, Exportar `#/exportar`), Aspecto y Guía. Arriba del todo,
+  «🌐 coordinate.do» vuelve a la web (`SITIO`); la portada del visor 3D
+  tiene además «← Volver a coordinate.do». Punto rojo por
   novedades, probetas por romper (`crd-roturas`), acuerdos vencidos o
   avisos de control. API
   `window.crdMenu` (`equipo(activo, n)`, `alNovedades`, `avisos()`). Ya no

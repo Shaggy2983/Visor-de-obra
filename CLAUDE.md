@@ -169,6 +169,11 @@ https://shaggy2983.github.io/Visor-de-obra/ (rama `gh-pages`, espejo de
   ficha. Salen en el informe PDF, en el PDF del punch list
   (`componerPlano(..., repasos)`) y en el informe interactivo (marcas «R3»
   que llevan a la ficha del repaso).
+- **Exportar a BCF 2.1** (`js/bcf.js`, ZIP propio sin compresión en `js/zip.js`): en
+  `visita.html#/exportar`, «Incidencias en BCF» baja un `.bcfzip` con las incidencias de las
+  visitas (última aparición de cada una) y los repasos; Guid estable sacado del id (al
+  reexportar se actualizan los mismos temas); la incidencia con `elemento.guid` lleva
+  `viewpoint.bcfv` con ese IfcGuid seleccionado. Sin cámara ni captura.
 - **Exportar a Excel (CSV)** (`js/exportar.js`, `visita.html#/exportar`,
   menú → Datos): 13 tablas (visitas, incidencias, personal, repasos,
   inspecciones, vaciados, probetas, avance, acuerdos, RFI, cambios,

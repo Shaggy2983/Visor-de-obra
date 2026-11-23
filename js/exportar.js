@@ -6,6 +6,7 @@
 
 import * as partes from './partes.js';
 import { hoy, mismaObra, el, descargar, plural } from './utiles.js';
+import { armarBcf } from './bcf.js';
 import { estadoEn, CATEGORIAS, ESTADOS as ESTADOS_REPASO } from './repasos.js';
 import { cuentaPuntos, RESULTADOS, volumenReal, fechaRotura, numero, codigo } from './calidad-datos.js';
 import { CAUSAS, programadoPartida, realPartida } from './seguimiento-datos.js';
@@ -171,9 +172,24 @@ export async function pintarExportar(contenedor, obras, avisar) {
       }, 'CSV'))));
   };
   selector.addEventListener('change', pintarLista);
+  // BCF: incidencias y repasos para Revit, Navisworks, BIMcollab o Solibri.
+  const filaBcf = el('div', { class: 'exportar-fila' },
+    el('span', {}, el('strong', {}, 'Incidencias en BCF'), el('span', { class: 'pie' }, 'Para Revit (BCF Manager), Navisworks, BIMcollab o Solibri')),
+    el('button', {
+      type: 'button', class: 'boton', onclick: async () => {
+        const obra = selector.value;
+        const visitas = (await partes.listarVisitas()).filter(deObra(obra));
+        const repasos = (await partes.listarRepasos()).filter(deObra(obra));
+        const { blob, temas, conElemento } = await armarBcf({ visitas, repasos, proyecto: obra });
+        if (!temas) { avisar('No hay incidencias ni repasos que exportar.', 3000); return; }
+        descargar(blob, nombreArchivo('incidencias', obra).replace(/\.csv$/, '.bcfzip'));
+        avisar(`${plural(temas, 'tema', 'temas')} en BCF${conElemento ? `, ${conElemento} enlazados al modelo` : ''}.`, 4000);
+      }
+    }, 'BCF'));
   contenedor.replaceChildren(
     el('label', {}, 'Obra', selector),
     lista,
+    filaBcf,
     el('div', { class: 'fila-botones' }, el('button', {
       type: 'button', class: 'boton boton-destacado', onclick: async () => {
         let n = 0;

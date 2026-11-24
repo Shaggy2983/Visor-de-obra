@@ -428,6 +428,14 @@ async function enviarOutlook({ para, cc, asunto, texto, adjuntos }) {
   await api('microsoft', `${G}/messages/${borrador.id}/send`, { method: 'POST' });
 }
 
+/* Blob → base64url (sin relleno), por trozos para no reventar la pila. */
+async function base64url(blob) {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
 /* correo: { para: [], cc: [], asunto, texto, adjuntos: [{ nombre, tipo, blob }] } */
 export async function enviarCorreo(proveedor, correo) {
   const limpio = { cc: [], adjuntos: [], ...correo };
@@ -435,8 +443,11 @@ export async function enviarCorreo(proveedor, correo) {
   if (!limpio.para.length) throw new Error('Falta al menos un destinatario.');
   if (malas.length) throw new Error(`Dirección no válida: ${malas.join(', ')}`);
   if (proveedor === 'google') {
-    await api('google', 'https://gmail.googleapis.com/upload/gmail/v1/users/me/messages/send?uploadType=media', {
-      method: 'POST', headers: { 'Content-Type': 'message/rfc822' }, body: await mimeGmail(limpio)
+    // El punto /upload/ de Gmail no responde con CORS al POST desde el navegador
+    // («Failed to fetch»): se manda el mensaje entero en `raw` (base64url) por JSON.
+    const raw = await base64url(await mimeGmail(limpio));
+    await api('google', 'https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ raw })
     });
   } else {
     await enviarOutlook(limpio);
